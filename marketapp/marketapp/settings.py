@@ -123,3 +123,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#Allows for the editing of the User model
+AUTH_USER_MODEL = 'listings.User'
