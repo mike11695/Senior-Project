@@ -81,6 +81,7 @@ DATABASES = {
         'NAME': 'market app',
         'USER': 'mikethecoder',
         'PASSWORD': 'mylittletimmy36',
+        'PORT': '3306',
     }
 }
 
