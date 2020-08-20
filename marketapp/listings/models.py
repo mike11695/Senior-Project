@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -22,13 +22,27 @@ class User(AbstractUser):
 
 #Admin class that will be responsible for the site running smoothly
 #Admins will be in charge of different responsiblities
-"""class Admin(User):
+class Admin(User):
     #potential extra fields will be added here
-    warnUser = models.BooleanField(default=False)
-    banUser = models.BooleanField(default=False)
-    superAdmin = models.BooleanField(default=False)
+    superAdmin = models.BooleanField(default=False, verbose_name="Super Admin",
+        help_text="Admin that is able to set, remove and configure other Admin accounts.")
+    handleListings = models.BooleanField(default=False,
+        verbose_name="Can Handle Listings",
+        help_text="Admin is able to manage user listings.")
+    handleEvents = models.BooleanField(default=False,
+        verbose_name="Can Handle Events",
+        help_text="Admin is able to manage user events.")
+    handleWishlists = models.BooleanField(default=False,
+        verbose_name="Can Handle Wishlists",
+        help_text="Admin is able to manage user wishlists.")
+    handleImages = models.BooleanField(default=False,
+        verbose_name="Can Handle Images",
+        help_text="Admin is able to manage user images.")
+    handleRatings = models.BooleanField(default=False,
+        verbose_name="Can Handle Ratings",
+        help_text="Admin is able to manage user ratings.")
 
-class Profile(models.Model):
+"""class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=1000, blank=True, verbose_text="Biography",
         help_text="A biography for your profile so others can know you better.")
