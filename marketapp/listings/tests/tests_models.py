@@ -1,5 +1,5 @@
 from django.test import TestCase
-from listings.models import User, Admin, Profile, Rating
+from listings.models import User, Admin, Profile, Rating, Warning, Conversation
 
 # Create your tests here.
 class MyTestCase(TestCase):
@@ -316,7 +316,7 @@ class ProfileModelTest(MyTestCase):
         help_text = profile._meta.get_field('deliveryAddress').help_text
         self.assertEquals(help_text, "Submit an delivery address that you pick up items from.")
 
-#Tests for Profile Class
+#Tests for Rating Class
 class RatingModelTest(MyTestCase):
     def setUp(self):
         #Set up rating record for testing
@@ -341,3 +341,120 @@ class RatingModelTest(MyTestCase):
         rating = self.rating
         help_text = rating._meta.get_field('feedback').help_text
         self.assertEquals(help_text, "Leave feedback for the user you're rating.")
+
+#Tests for Warning Class
+class WarningModelTest(MyTestCase):
+    def setUp(self):
+        #Set up warning record for testing
+        super(WarningModelTest, self).setUp()
+        self.warning = Warning.objects.create(user=self.global_user1, admin=self.global_admin,
+            warningCount=1, reason="For testing", actionsTaken="None")
+
+    #Checks to ensure that warningCount field verbose text is correct
+    def test_warning_count_label(self):
+        warning = self.warning
+        field_label = warning._meta.get_field('warningCount').verbose_name
+        self.assertEquals(field_label, "Warning Count")
+
+    #Checks to ensure that reason field length is correct
+    def test_reason_max_length(self):
+        warning = self.warning
+        max_length = warning._meta.get_field('reason').max_length
+        self.assertEquals(max_length, 250)
+
+    #Checks to ensure that reason field verbose text is correct
+    def test_reason_label(self):
+        warning = self.warning
+        field_label = warning._meta.get_field('reason').verbose_name
+        self.assertEquals(field_label, "Reason for Warning")
+
+    #Checks to ensure that the reason field help text is correct
+    def test_reason_help_text(self):
+        warning = self.warning
+        help_text = warning._meta.get_field('reason').help_text
+        self.assertEquals(help_text, "Submit reasoning for why you warned this user.")
+
+    #Checks to ensure that actionsTaken length is correct
+    def test_actions_taken_max_length(self):
+        warning = self.warning
+        max_length = warning._meta.get_field('actionsTaken').max_length
+        self.assertEquals(max_length, 500)
+
+    #Checks to ensure that actionsTaken field verbose text is correct
+    def test_actions_taken_label(self):
+        warning = self.warning
+        field_label = warning._meta.get_field('actionsTaken').verbose_name
+        self.assertEquals(field_label, "Actions Taken")
+
+    #Checks to ensure that the actionsTaken field help text is correct
+    def test_actions_taken_help_text(self):
+        warning = self.warning
+        help_text = warning._meta.get_field('actionsTaken').help_text
+        self.assertEquals(help_text, "What actions were made regarding this user?")
+
+#Tests for Conversation Class
+class ConversationModelTest(MyTestCase):
+    def setUp(self):
+        #Set up conversation record for testing
+        super(ConversationModelTest, self).setUp()
+        self.conversation = Conversation.objects.create(sender=self.global_user1,
+            recipient=self.global_user2, topic="Nothing.")
+
+    #Checks to ensure that topic field length is correct
+    def test_topic_max_length(self):
+        conversation = self.conversation
+        max_length = conversation._meta.get_field('topic').max_length
+        self.assertEquals(max_length, 100)
+
+    #Checks to ensure that topic field help text is correct
+    def test_topic_help_text_length(self):
+        conversation = self.conversation
+        help_text = conversation._meta.get_field('topic').help_text
+        self.assertEquals(help_text, "Topic of the Conversation")
+
+    #Checks to ensure that unread field defaults to true
+    def test_unread_eaault(self):
+        conversation = self.conversation
+        default = conversation._meta.get_field('unread').default
+        self.assertEquals(default, True)
+
+
+#Tests for Message Class
+
+#Tests for Image Class
+
+#Tests for Wishlist Class
+
+#Tests for WishlistItem Class
+
+#Tests for Event Class
+
+#Tests for Report Class
+
+#Tests for ListingReport subclass
+
+#Tests for EventReport subclass
+
+#Tests for UserReport subclass
+
+#Tests for RatingReport subclass
+
+#Tests for WishlistReport subclass
+
+#Tests for ImageReport subclass
+
+#Tests for Listing Class
+
+#Tests for OfferListing subclass
+
+#Tests for SearchListing subclass
+
+#Tests for AuctionListing subclass
+
+#Tests for Offer class
+
+#Tests for Bid class
+
+#Tests for Favorites class
+
+#Tests for Receipts class
