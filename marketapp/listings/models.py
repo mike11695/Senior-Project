@@ -131,7 +131,7 @@ class Conversation(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender")
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recipient")
     topic = models.TextField(max_length=100, help_text="Topic of the Conversation")
-    unrea = models.BooleanField(default=True)
+    unread = models.BooleanField(default=True)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Conversation.
@@ -145,7 +145,7 @@ class Conversation(models.Model):
 #Fields needed: Author, content, dateSent
 class Message(models.Model):
     #Fields for Message
-    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(max_length=500, default="None")
     dateSent = models.DateTimeField(auto_now_add=True, verbose_name="Date Sent")
 
@@ -157,10 +157,25 @@ class Message(models.Model):
         #String for representing the Message object.
         return f'"Mesage from: ", {self.author}'
 
+#Model for Tags, used to catagorize images
+#Fields needed: Name
+class Tag(models.Model):
+    #Fields for Tag
+    name = models.TextField(max_length=50, verbose_name="Tag Name")
+
+    def __str__(self):
+        #String for representing the Tag object.
+        return f'{self.name}'
+
 #Model for Images, used in wishlists and listings
-#Fields needed: Image, name, imageType
-"""class Image(models.Model):
+#Fields needed: Owner, image, name, type
+class Image(models.Model):
     #Fields for Image
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="marketapp\listings\images")
+    name = models.TextField(max_length=50, verbose_name="Name of Image")
+    tags = models.ManyToManyField(Tag, verbose_name="Item Tags",
+        help_text="Qualities of the item in the photo, purpose and where one can find it can be used as tags.")
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Image.
@@ -168,12 +183,16 @@ class Message(models.Model):
 
     def __str__(self):
         #String for representing the Image object.
-        return f'{self.name}'"""
+        return f'{self.name}'
 
 #Model for Wishlists, which a user can use to list items they want
-#Fields needed: Title, description
-"""class Wishlist(models.Model):
+#Fields needed: Owner, title, description
+class Wishlist(models.Model):
     #Fields for Wishlist
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.TextField(max_length=50)
+    description = models.TextField(max_length=250,
+        help_text="A brief description of your wishlist and what it contains.")
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Wishlist.
@@ -181,12 +200,17 @@ class Message(models.Model):
 
     def __str__(self):
         #String for representing the Wishlist object.
-        return f'{self.title}'"""
+        return f'{self.title}'
 
 #Model for WishlistItem, an item found in wishlists (Should this be replaced by item class?)
-#Fields needed: Image, name, description, attributes
-"""class WishlistItem(models.Model):
+#Fields needed: Image, name, description
+class WishlistItem(models.Model):
     #Fields for WishlistItem
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
+    images = models.ManyToManyField(Image)
+    name = models.TextField(max_length=50, verbose_name="Item Name")
+    description = models.TextField(max_length=250,
+        help_text="A brief description of the item in the image(s).")
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of WishlistItem.
@@ -194,7 +218,7 @@ class Message(models.Model):
 
     def __str__(self):
         #String for representing the WishlistItem object.
-        return f'{self.name}'"""
+        return f'{self.name}'
 
 #Model for Event, when users want to organize an event with others
 #Fields needed: Host, participants, title, context, date, location

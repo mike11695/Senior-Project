@@ -1,5 +1,7 @@
 from django.test import TestCase
-from listings.models import User, Admin, Profile, Rating, Warning, Conversation
+from listings.models import (User, Admin, Profile, Rating, Warning, Conversation,
+    Message, Image, Tag, Wishlist, WishlistItem)
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 # Create your tests here.
 class MyTestCase(TestCase):
@@ -18,6 +20,12 @@ class MyTestCase(TestCase):
         self.global_user1 = user1
         self.global_admin = admin
         self.global_user2 = user2
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        self.global_image = Image.objects.create(owner=self.global_user1,
+            image=test_image, name="Test Image")
+        self.tag = Tag.objects.create(name="Test Tag")
+        self.global_image.tags.add(self.tag)
+        self.global_image.save
 
 #Tests for User class
 class UserModelTest(MyTestCase):
@@ -418,14 +426,128 @@ class ConversationModelTest(MyTestCase):
         default = conversation._meta.get_field('unread').default
         self.assertEquals(default, True)
 
-
 #Tests for Message Class
+class MessageModelTest(MyTestCase):
+    def setUp(self):
+        #Set up conversation and message record for testing
+        super(MessageModelTest, self).setUp()
+        self.conversation = Conversation.objects.create(sender=self.global_user1,
+            recipient=self.global_user2, topic="Nothing.")
+        self.message = Message.objects.create(author=self.global_user1,
+            content="Nothing")
+
+    #Checks to ensure that content length is correct
+    def test_content_max_length(self):
+        message = self.message
+        max_length = message._meta.get_field('content').max_length
+        self.assertEquals(max_length, 500)
+
+    #Checks to ensure that dateSent field verbose text is correct
+    def test_date_sent_label(self):
+        message = self.message
+        field_label = message._meta.get_field('dateSent').verbose_name
+        self.assertEquals(field_label, "Date Sent")
 
 #Tests for Image Class
+class ImageAndTagsModelTest(MyTestCase):
+    #Checks to ensure that Image name length is correct
+    def test_image_name_max_length(self):
+        image = self.global_image
+        max_length = image._meta.get_field('name').max_length
+        self.assertEquals(max_length, 50)
+
+    #Checks to ensure that name field for Image verbose text is correct
+    def test_image_name_label(self):
+        image = self.global_image
+        verbose_name = image._meta.get_field('name').verbose_name
+        self.assertEquals(verbose_name, "Name of Image")
+
+    #Checks to ensure that tags field verbose text is correct
+    def test_image_tag_label(self):
+        image = self.global_image
+        verbose_name = image._meta.get_field('tags').verbose_name
+        self.assertEquals(verbose_name, "Item Tags")
+
+    #Checks to ensure that tags field help text is correct
+    def test_image_tag_help_text(self):
+        image = self.global_image
+        help_text = image._meta.get_field('tags').help_text
+        self.assertEquals(help_text, "Qualities of the item in the photo, purpose and where one can find it can be used as tags.")
+
+    #Checks to ensure that Tag name length is correct
+    def test_tag_name_max_length(self):
+        tag = self.tag
+        max_length = tag._meta.get_field('name').max_length
+        self.assertEquals(max_length, 50)
+
+    #Checks to ensure that name field for Tag verbose text is correct
+    def test_image_name_label(self):
+        tag = self.tag
+        verbose_name = tag._meta.get_field('name').verbose_name
+        self.assertEquals(verbose_name, "Tag Name")
 
 #Tests for Wishlist Class
+class WishlistModelTest(MyTestCase):
+    def setUp(self):
+        #Set up wishlist record for testing
+        super(WishlistModelTest, self).setUp()
+        self.wishlist = Wishlist.objects.create(owner=self.global_user1,
+            title="My Boring Wishlist", description="Nothing.")
+
+    #Checks to ensure that Wishlist title length is correct
+    def test_wishlist_title_max_length(self):
+        wishlist = self.wishlist
+        max_length = wishlist._meta.get_field('title').max_length
+        self.assertEquals(max_length, 50)
+
+    #Checks to ensure that Wishlist description length is correct
+    def test_wishlist_description_max_length(self):
+        wishlist = self.wishlist
+        max_length = wishlist._meta.get_field('description').max_length
+        self.assertEquals(max_length, 250)
+
+    #Checks to ensure that Wishlist description help text is correct
+    def test_wishlist_description_max_length(self):
+        wishlist = self.wishlist
+        help_text = wishlist._meta.get_field('description').help_text
+        self.assertEquals(help_text, "A brief description of your wishlist and what it contains.")
 
 #Tests for WishlistItem Class
+class WishlistItemModelTest(MyTestCase):
+    def setUp(self):
+        #Set up wishlist item record for testing
+        super(WishlistItemModelTest, self).setUp()
+        self.wishlist = Wishlist.objects.create(owner=self.global_user1,
+            title="My Boring Wishlist", description="Nothing.")
+        self.wishlist_item = WishlistItem.objects.create(wishlist=self.wishlist,
+            name="My Boring Wishlist Item", description="Nothing.")
+        self.wishlist_item.images.add = self.global_image
+        self.wishlist_item.save
+
+    #Checks to ensure that WishlistItem name length is correct
+    def test_wishlist_item_name_max_length(self):
+        wishlist_item = self.wishlist_item
+        max_length = wishlist_item._meta.get_field('name').max_length
+        self.assertEquals(max_length, 50)
+
+    #Checks to ensure that WishlistItem name verbose text is correct
+    def test_wishlist_item_name_label(self):
+        wishlist_item = self.wishlist_item
+        verbose_name = wishlist_item._meta.get_field('name').verbose_name
+        self.assertEquals(verbose_name, "Item Name")
+
+    #Checks to ensure that WishlistItem description length is correct
+    def test_wishlist_item_description_max_length(self):
+        wishlist_item = self.wishlist_item
+        max_length = wishlist_item._meta.get_field('description').max_length
+        self.assertEquals(max_length, 250)
+
+    #Checks to ensure that WishlistItem name help text is correct
+    def test_wishlist_item_description_help_text(self):
+        wishlist_item = self.wishlist_item
+        help_text = wishlist_item._meta.get_field('description').help_text
+        self.assertEquals(help_text, "A brief description of the item in the image(s).")
+
 
 #Tests for Event Class
 
