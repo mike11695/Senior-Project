@@ -298,9 +298,34 @@ class Event(models.Model):
     #Fields for ImageReport"""
 
 #Model for Listing, which contains a item(s) that users can search for and offer/bid on
-#Fields needed: Name, images, description, attributes
-"""class Listing(models.Model):
+#Fields needed: Owner, name, description, endTimeChoice, endTime, listingEnded
+class Listing(models.Model):
     #Fields for Listing
+    ONEHOUR = '1h'
+    TWOHOURS = '2h'
+    FOURHOURS = '4h'
+    EIGHTHOURS = '8h'
+    TWELVEHOURS = '12h'
+    ONEDAY = '1d'
+    THREEDAYS = '3d'
+    SEVENDAYS = '7d'
+    END_TIME_CHOICES = (
+        (ONEHOUR, 'One Hours'),
+        (TWOHOURS, 'Two Hours'),
+        (FOURHOURS, 'Four Hours'),
+        (EIGHTHOURS, 'Eight Hours'),
+        (TWELVEHOURS, 'Twelve Hours'),
+        (ONEDAY, 'One Day'),
+        (THREEDAYS, 'Three Days'),
+        (SEVENDAYS, 'Seven Days'),
+    )
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.TextField(max_length=100, verbose_name="Listing Name")
+    description = models.TextField(max_length=500, verbose_name="Listing Description",
+            help_text="A short description of what the listing obtains.")
+    endTimeChoices = models.CharField(max_length=3, choices=END_TIME_CHOICES, default=ONEHOUR)
+    endTime = models.DateTimeField(blank=True)
+    listingEnded = models.BooleanField(default=False)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Listing.
@@ -308,25 +333,43 @@ class Event(models.Model):
 
     def __str__(self):
         #String for representing the Listing object.
-        return f'{self.name}'"""
+        return f'{self.name}'
 
 #Subclass for OfferListing, a listing that is interested in offers
-#Fields needed: Price, notes, items
-"""class OfferListing(Report):
-    #Fields for OfferListing"""
+#Fields needed: openToMoneyOffers, minRange, maxRange, notes, items
+class OfferListing(Listing):
+    #Fields for OfferListing
+    openToMoneyOffers = models.BooleanField(default=True, verbose_name="Open to Money Offers?",
+        help_text="Leave this field unchecked if you're only interested in item offers.")
+    minRange = models.DecimalField(default=None, max_digits=9, decimal_places=2,
+        verbose_name="Minimum Price Range",
+        help_text="Minimum money offers you'll consider.")
+    maxRange = models.DecimalField(default=None, max_digits=9, decimal_places=2,
+        verbose_name="Maximum Price Range",
+        help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).")
+    notes = models.TextField(max_length=500, help_text="Include here what offers you're seeking.")
 
 #Subclass for SearchListing, a listing that is looking for item(s)
 #Fields needed: PriceOffer, itemsOffer, notes
-"""class SearchListing(Report):
+"""class SearchListing(Listing):
     #Fields for SearchListing"""
 
 #Subclass for AuctionListing, a listing that is interested in bids (should this contain Item field?)
-#Fields needed: StartingBid, endTime, startingBid, currentBid, autobuy
-"""class AuctionListing(Report):
-    #Fields for AuctionListing"""
+#Fields needed: StartingBid, minimumIncrement, autobuy
+class AuctionListing(Listing):
+    #Fields for AuctionListing
+    startingBid = models.DecimalField(max_digits=9, decimal_places=2,
+        verbose_name="Starting Bid",
+        help_text="Money amount bidding should start at for auction.")
+    minimumIncrement = models.DecimalField(max_digits=9, decimal_places=2,
+        verbose_name="Minimum Increment",
+        help_text="Minimum increment bid that can be placed on the auction (maximum increment bid will be x3 this value).")
+    autobuy = models.DecimalField(default=None, max_digits=9, decimal_places=2,
+        verbose_name="Starting Bid",
+        help_text="If a user bids the amount you set in this field, the auction will close and they will win the auction.")
 
 #Model for Bids, which is a money amount offered by a user on an auction
-#Fields needed: Bidder, bidAmount
+#Fields needed: AuctionListing, bidder, bidAmount, highestCurrentBid, winningBid
 """class Bid(models.Model):
     #Fields for Bid
 
@@ -339,7 +382,7 @@ class Event(models.Model):
         return f'{self.id}'"""
 
 #Model for Offers, which are items offered on an OfferListing (should this contain Item field?)
-#Fields needed: offerUser, items, amount
+#Fields needed: OfferListing, offerUser, items, amount
 """class Offer(models.Model):
     #Fields for Offer
 
