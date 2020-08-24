@@ -1,7 +1,10 @@
 from django.test import TestCase
 from listings.models import (User, Admin, Profile, Rating, Warning, Conversation,
-    Message, Image, Tag, Wishlist, WishlistItem)
+    Message, Image, Tag, Wishlist, WishlistItem, Event)
 from django.core.files.uploadedfile import SimpleUploadedFile
+from datetime import datetime
+from django.utils.timezone import make_aware
+from django.conf import settings
 
 # Create your tests here.
 class MyTestCase(TestCase):
@@ -548,8 +551,64 @@ class WishlistItemModelTest(MyTestCase):
         help_text = wishlist_item._meta.get_field('description').help_text
         self.assertEquals(help_text, "A brief description of the item in the image(s).")
 
-
 #Tests for Event Class
+class EventModelTest(MyTestCase):
+    def setUp(self):
+        #Set up event record for testing
+        super(EventModelTest, self).setUp()
+        date = datetime.today()
+        settings.TIME_ZONE
+        aware_date = make_aware(date)
+        self.event = Event.objects.create(host=self.global_user1,
+            title="My Boring Event", context="Nothing.", date=aware_date,
+            location="Potsdam, NY")
+        self.event.participants.add = self.global_user2
+        self.event.save
+
+    #Checks to ensure that Event title max length is correct
+    def test_event_title_max_length(self):
+        event = self.event
+        max_length = event._meta.get_field('title').max_length
+        self.assertEquals(max_length, 50)
+
+    #Checks to ensure that Event title verbose name is correct
+    def test_event_title_verbose_name(self):
+        event = self.event
+        verbose_name = event._meta.get_field('title').verbose_name
+        self.assertEquals(verbose_name, "Title of Event")
+
+    #Checks to ensure that Event context max length is correct
+    def test_event_context_max_length(self):
+        event = self.event
+        max_length = event._meta.get_field('context').max_length
+        self.assertEquals(max_length, 250)
+
+    #Checks to ensure that Event context help text is correct
+    def test_event_context_help_text(self):
+        event = self.event
+        help_text = event._meta.get_field('context').help_text
+        self.assertEquals(help_text, "What is the event for?  What will happen/be accomplished?")
+
+    #Checks to ensure that Event date verbose name is correct
+    def test_event_date_max_length(self):
+        event = self.event
+        verbose_name = event._meta.get_field('date').verbose_name
+        self.assertEquals(verbose_name, "Date and Time of Event")
+
+    #Checks to ensure that Event location max length is correct
+    def test_event_location_max_length(self):
+        event = self.event
+        max_length = event._meta.get_field('location').max_length
+        self.assertEquals(max_length, 100)
+
+    #Checks to ensure that Event location verbose name is correct
+    def test_event_location_max_length(self):
+        event = self.event
+        verbose_name = event._meta.get_field('location').verbose_name
+        self.assertEquals(verbose_name, "Address where Event is Held")
+
+
+#Test for Invitation Class
 
 #Tests for Report Class
 

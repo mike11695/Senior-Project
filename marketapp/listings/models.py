@@ -222,8 +222,15 @@ class WishlistItem(models.Model):
 
 #Model for Event, when users want to organize an event with others
 #Fields needed: Host, participants, title, context, date, location
-"""class Event(models.Model):
+class Event(models.Model):
     #Fields for Event
+    host = models.ForeignKey(User, on_delete=models.CASCADE, related_name="host")
+    participants = models.ManyToManyField(User, related_name="participants")
+    title = models.TextField(max_length=50, verbose_name="Title of Event")
+    context = models.TextField(max_length=250,
+        help_text="What is the event for?  What will happen/be accomplished?")
+    date = models.DateTimeField(blank=False, verbose_name="Date and Time of Event")
+    location = models.TextField(max_length=100, verbose_name="Address where Event is Held")
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Event.
@@ -231,7 +238,7 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         #String for representing the Event object.
-        return f'{self.title}'"""
+        return f'{self.title}'
 
 #Model for Invitations, so hosts can invite participants to events
 #Fields needed: Sender, receipients, event, topic, context
