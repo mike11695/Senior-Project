@@ -29,6 +29,7 @@ class MyTestCase(TestCase):
         self.tag = Tag.objects.create(name="Test Tag")
         self.global_image.tags.add(self.tag)
         self.global_image.save
+        #self.global_item = Item.objects.create()
 
 #Tests for User class
 class UserModelTest(MyTestCase):
@@ -516,7 +517,7 @@ class WishlistModelTest(MyTestCase):
         self.assertEquals(help_text, "A brief description of your wishlist and what it contains.")
 
 #Tests for WishlistItem Class
-class WishlistItemModelTest(MyTestCase):
+"""class WishlistItemModelTest(MyTestCase):
     def setUp(self):
         #Set up wishlist item record for testing
         super(WishlistItemModelTest, self).setUp()
@@ -549,7 +550,7 @@ class WishlistItemModelTest(MyTestCase):
     def test_wishlist_item_description_help_text(self):
         wishlist_item = self.wishlist_item
         help_text = wishlist_item._meta.get_field('description').help_text
-        self.assertEquals(help_text, "A brief description of the item in the image(s).")
+        self.assertEquals(help_text, "A brief description of the item in the image(s).")"""
 
 #Tests for Event Class
 class EventModelTest(MyTestCase):
@@ -625,12 +626,17 @@ class EventModelTest(MyTestCase):
 #Tests for ImageReport subclass
 
 #Tests for Listing Class
-
-#Tests for OfferListing subclass
+"""class ListingsModelTest(MyTestCase):
+    def setUp(self):
+        #Set up records for OfferListing and AuctionListing for testing
+        #SearchListing tests will be added later
+        super(ListingsModelTest, self).setUp()
+        self.offerListing = OfferListing.objects.create()
+        self.auctionListing = AuctionListing.objects.create()
+        self.offerListing.items.add = self.global_item
+        self.offerListing.save"""
 
 #Tests for SearchListing subclass
-
-#Tests for AuctionListing subclass
 
 #Tests for Offer class
 

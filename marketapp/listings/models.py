@@ -60,7 +60,6 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(max_length=1000, blank=True, verbose_name="Biography",
         help_text="A biography for your profile so others can know you better.", default="None")
-    name = models.TextField(max_length=50, verbose_name="Full Name", default="None")
     country = models.TextField(max_length=50, default="None") #ideally should be obtained when the user shares ther location
     state = models.TextField(max_length=50, default="None") #ideally should be obtained when the user shares ther location
     city = models.TextField(max_length=50, default="None") #ideally should be obtained when the user shares ther location
@@ -201,24 +200,6 @@ class Wishlist(models.Model):
     def __str__(self):
         #String for representing the Wishlist object.
         return f'{self.title}'
-
-#Model for WishlistItem, an item found in wishlists (Should this be replaced by item class?)
-#Fields needed: Image, name, description
-class WishlistItem(models.Model):
-    #Fields for WishlistItem
-    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
-    images = models.ManyToManyField(Image)
-    name = models.TextField(max_length=50, verbose_name="Item Name")
-    description = models.TextField(max_length=250,
-        help_text="A brief description of the item in the image(s).")
-
-    def get_absolute_url(self):
-        #Returns the url to access a particular instance of WishlistItem.
-        return reverse('wishlistitem-detail', args=[str(self.id)])
-
-    def __str__(self):
-        #String for representing the WishlistItem object.
-        return f'{self.name}'
 
 #Model for Event, when users want to organize an event with others
 #Fields needed: Host, participants, title, context, date, location
@@ -394,11 +375,15 @@ class AuctionListing(Listing):
         #String for representing the Offer object.
         return f'"Offer by ", {self.something}'"""
 
-#Model for Items, which can be offered in an offerListing or
+#Model for Items, which can be listed in an offerListing, offered, or
 #searched for in a searchListing
-#Fields needed: Image, name
-"""class Item(models.Model):
+#Fields needed: Images, name, description
+class Item(models.Model):
     #Fields for Item
+    images = models.ManyToManyField(Image)
+    name = models.TextField(max_length=50, verbose_name="Item Name")
+    description = models.TextField(max_length=250,
+        help_text="A brief description of the item in the image(s).")
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Item.
@@ -406,7 +391,25 @@ class AuctionListing(Listing):
 
     def __str__(self):
         #String for representing the Item object.
-        return f'{self.name}'"""
+        return f'{self.name}'
+
+#Subclass for WishlistItem, an item found in wishlists
+#Fields needed: Wishlist
+class WishlistItem(Item):
+    #Fields for WishlistItem
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
+
+#Subclass for ListingItem, an item found in an listing
+#Fields needed: Wishlist
+class ListingItem(Item):
+    #Fields for WishlistItem
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
+
+#Subclass for OfferItem, an item found in an offer on an listing
+#Fields needed: Wishlist
+"""class OfferItem(Item):
+    #Fields for WishlistItem
+    listing = models.ForeignKey(Offer, on_delete=models.CASCADE)"""
 
 #Model for Favorites, so a user can save a listing and come back to it
 #Fields needed: Category, listing
