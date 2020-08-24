@@ -184,6 +184,24 @@ class Image(models.Model):
         #String for representing the Image object.
         return f'{self.name}'
 
+#Model for Items, which can be listed in an offerListing, offered, searched for
+#in a searchListing or added to a wishlist
+#Fields needed: Images, name, description
+class Item(models.Model):
+    #Fields for Item
+    images = models.ManyToManyField(Image)
+    name = models.TextField(max_length=50, verbose_name="Item Name")
+    description = models.TextField(max_length=250,
+        help_text="A brief description of the item in the image(s).")
+
+    def get_absolute_url(self):
+        #Returns the url to access a particular instance of Item.
+        return reverse('item-detail', args=[str(self.id)])
+
+    def __str__(self):
+        #String for representing the Item object.
+        return f'{self.name}'
+
 #Model for Wishlists, which a user can use to list items they want
 #Fields needed: Owner, title, description
 class Wishlist(models.Model):
@@ -192,6 +210,7 @@ class Wishlist(models.Model):
     title = models.TextField(max_length=50)
     description = models.TextField(max_length=250,
         help_text="A brief description of your wishlist and what it contains.")
+    items = models.ManyToManyField(Item)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Wishlist.
@@ -307,6 +326,7 @@ class Listing(models.Model):
     endTimeChoices = models.CharField(max_length=3, choices=END_TIME_CHOICES, default=ONEHOUR)
     endTime = models.DateTimeField(blank=True)
     listingEnded = models.BooleanField(default=False)
+    items = models.ManyToManyField(Item)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Listing.
@@ -374,42 +394,6 @@ class AuctionListing(Listing):
     def __str__(self):
         #String for representing the Offer object.
         return f'"Offer by ", {self.something}'"""
-
-#Model for Items, which can be listed in an offerListing, offered, or
-#searched for in a searchListing
-#Fields needed: Images, name, description
-class Item(models.Model):
-    #Fields for Item
-    images = models.ManyToManyField(Image)
-    name = models.TextField(max_length=50, verbose_name="Item Name")
-    description = models.TextField(max_length=250,
-        help_text="A brief description of the item in the image(s).")
-
-    def get_absolute_url(self):
-        #Returns the url to access a particular instance of Item.
-        return reverse('item-detail', args=[str(self.id)])
-
-    def __str__(self):
-        #String for representing the Item object.
-        return f'{self.name}'
-
-#Subclass for WishlistItem, an item found in wishlists
-#Fields needed: Wishlist
-class WishlistItem(Item):
-    #Fields for WishlistItem
-    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
-
-#Subclass for ListingItem, an item found in an listing
-#Fields needed: Wishlist
-class ListingItem(Item):
-    #Fields for WishlistItem
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
-
-#Subclass for OfferItem, an item found in an offer on an listing
-#Fields needed: Wishlist
-"""class OfferItem(Item):
-    #Fields for WishlistItem
-    listing = models.ForeignKey(Offer, on_delete=models.CASCADE)"""
 
 #Model for Favorites, so a user can save a listing and come back to it
 #Fields needed: Category, listing

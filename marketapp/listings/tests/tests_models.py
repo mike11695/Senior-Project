@@ -1,6 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Admin, Profile, Rating, Warning, Conversation,
-    Message, Image, Tag, Wishlist, WishlistItem, Event)
+    Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
+    Item)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import datetime
 from django.utils.timezone import make_aware
@@ -29,7 +30,7 @@ class MyTestCase(TestCase):
         self.tag = Tag.objects.create(name="Test Tag")
         self.global_image.tags.add(self.tag)
         self.global_image.save
-        #self.global_item = Item.objects.create()
+        #self.global_listing_item = ListingItem.objects.create(name="Global Item", )
 
 #Tests for User class
 class UserModelTest(MyTestCase):
