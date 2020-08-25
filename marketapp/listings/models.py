@@ -364,9 +364,8 @@ class AuctionListing(Listing):
         help_text="Money amount bidding should start at for auction.")
     minimumIncrement = models.DecimalField(max_digits=9, decimal_places=2,
         verbose_name="Minimum Increment",
-        help_text="Minimum increment bid that can be placed on the auction (maximum increment bid will be x3 this value).")
+        help_text="Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).")
     autobuy = models.DecimalField(default=None, max_digits=9, decimal_places=2,
-        verbose_name="Starting Bid",
         help_text="If a user bids the amount you set in this field, the auction will close and they will win the auction.")
 
 #Model for Bids, which is a money amount offered by a user on an auction

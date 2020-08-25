@@ -30,7 +30,10 @@ class MyTestCase(TestCase):
         self.tag = Tag.objects.create(name="Test Tag")
         self.global_image.tags.add(self.tag)
         self.global_image.save
-        #self.global_listing_item = ListingItem.objects.create(name="Global Item", )
+        self.global_item = Item.objects.create(name="Global Item",
+            description="A global item for testing")
+        self.global_item.images.add(self.global_image)
+        self.global_item.save
 
 #Tests for User class
 class UserModelTest(MyTestCase):
@@ -250,30 +253,6 @@ class ProfileModelTest(MyTestCase):
         profile = self.global_user1.profile
         help_text = profile._meta.get_field('bio').help_text
         self.assertEquals(help_text, "A biography for your profile so others can know you better.")
-
-    #Checks to ensure that name has a max length of 50
-    def test_name_max_length(self):
-        profile = self.global_user1.profile
-        max_length = profile._meta.get_field('name').max_length
-        self.assertEquals(max_length, 50)
-
-    #Checks to ensure that the name field verbose text is correct
-    def test_name_label(self):
-        profile = self.global_user1.profile
-        field_label = profile._meta.get_field('name').verbose_name
-        self.assertEquals(field_label, "Full Name")
-
-    #Checks to ensure that name has a max length of 50
-    def test_name_max_length(self):
-        profile = self.global_user1.profile
-        max_length = profile._meta.get_field('name').max_length
-        self.assertEquals(max_length, 50)
-
-    #Checks to ensure that the name field verbose text is correct
-    def test_name_label(self):
-        profile = self.global_user1.profile
-        field_label = profile._meta.get_field('name').verbose_name
-        self.assertEquals(field_label, "Full Name")
 
     #Checks to ensure that country has a max length of 50
     def test_country_length(self):
@@ -626,16 +605,245 @@ class EventModelTest(MyTestCase):
 
 #Tests for ImageReport subclass
 
+#Tests for Item class
+class ItemModelTest(MyTestCase):
+    #Checks to ensure that Item name max length is correct
+    def test_item_name_max_length(self):
+        item = self.global_item
+        max_length = item._meta.get_field('name').max_length
+        self.assertEquals(max_length, 50)
+
+    #Checks to ensure that Item name verbose name is correct
+    def test_item_name_label(self):
+        item = self.global_item
+        verbose_name = item._meta.get_field('name').verbose_name
+        self.assertEquals(verbose_name, "Item Name")
+
+    #Checks to ensure that Item description max length is correct
+    def test_item_description_max_length(self):
+        item = self.global_item
+        max_length = item._meta.get_field('description').max_length
+        self.assertEquals(max_length, 250)
+
+    #Checks to ensure that Item description help text is correct
+    def test_item_description_help_text(self):
+        item = self.global_item
+        help_text = item._meta.get_field('description').help_text
+        self.assertEquals(help_text, "A brief description of the item in the image(s).")
+
 #Tests for Listing Class
-"""class ListingsModelTest(MyTestCase):
+class ListingsModelTest(MyTestCase):
     def setUp(self):
         #Set up records for OfferListing and AuctionListing for testing
         #SearchListing tests will be added later
         super(ListingsModelTest, self).setUp()
-        self.offerListing = OfferListing.objects.create()
-        self.auctionListing = AuctionListing.objects.create()
+        date = datetime.today()
+        settings.TIME_ZONE
+        aware_date = make_aware(date)
+        self.offerListing = OfferListing.objects.create(owner=self.global_user1,
+            name="My Items For Offers", description="A few items up for offers",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
+            endTime=aware_date)
+        self.auctionListing = AuctionListing.objects.create(owner=self.global_user1,
+            name="My Items for Bids", description="A few items up for bids",
+            startingBid=5.00, minimumIncrement=1.00, autobuy=50.00,
+            endTime=aware_date)
         self.offerListing.items.add = self.global_item
-        self.offerListing.save"""
+        self.offerListing.save
+        self.auctionListing.items.add = self.global_item
+        self.auctionListing.save
+
+    #Checks to ensure that Listing name max length is correct
+    def test_listing_name_max_length(self):
+        listing = self.offerListing
+        max_length = listing._meta.get_field('name').max_length
+        self.assertEquals(max_length, 100)
+
+    #Checks to ensure that Listing name verbose name is correct
+    def test_listing_name_label(self):
+        listing = self.offerListing
+        verbose_name = listing._meta.get_field('name').verbose_name
+        self.assertEquals(verbose_name, "Listing Name")
+
+    #Checks to ensure that Listing description max length is correct
+    def test_listing_description_max_length(self):
+        listing = self.offerListing
+        max_length = listing._meta.get_field('description').max_length
+        self.assertEquals(max_length, 500)
+
+    #Checks to ensure that Listing description verbose name is correct
+    def test_listing_description_label(self):
+        listing = self.offerListing
+        verbose_name = listing._meta.get_field('description').verbose_name
+        self.assertEquals(verbose_name, "Listing Description")
+
+    #Checks to ensure that Listing description help text is correct
+    def test_listing_description_help_text(self):
+        listing = self.offerListing
+        help_text = listing._meta.get_field('description').help_text
+        self.assertEquals(help_text, "A short description of what the listing obtains.")
+
+    #Checks to ensure that Listing endTimeChoices max length is correct
+    def test_listing_end_time_max_length(self):
+        listing = self.offerListing
+        max_length = listing._meta.get_field('endTimeChoices').max_length
+        self.assertEquals(max_length, 3)
+
+    #Checks to ensure that Listing endTimeChoices default is correct
+    def test_listing_end_time_default(self):
+        listing = self.offerListing
+        default = listing._meta.get_field('endTimeChoices').default
+        self.assertEquals(default, '1h')
+
+    #Checks to ensure that Listing listingEnded default is correct
+    def test_listing_listing_ended_default(self):
+        listing = self.offerListing
+        default = listing._meta.get_field('listingEnded').default
+        self.assertEquals(default, False)
+
+    #Checks to ensure that OfferListing openToMoneyOffers default is correct
+    def test_offer_listing_open_default(self):
+        offer_listing = self.offerListing
+        default = offer_listing._meta.get_field('openToMoneyOffers').default
+        self.assertEquals(default, True)
+
+    #Checks to ensure that OfferListing openToMoneyOffers verbose name is correct
+    def test_offer_listing_open_label(self):
+        offer_listing = self.offerListing
+        verbose_name = offer_listing._meta.get_field('openToMoneyOffers').verbose_name
+        self.assertEquals(verbose_name, "Open to Money Offers?")
+
+    #Checks to ensure that OfferListing openToMoneyOffers help text is correct
+    def test_offer_listing_open_help_text(self):
+        offer_listing = self.offerListing
+        help_text = offer_listing._meta.get_field('openToMoneyOffers').help_text
+        self.assertEquals(help_text, "Leave this field unchecked if you're only interested in item offers.")
+
+    #Checks to ensure that OfferListing minRange max digits is correct
+    def test_offer_listing_min_range_digits(self):
+        offer_listing = self.offerListing
+        max_digits = offer_listing._meta.get_field('minRange').max_digits
+        self.assertEquals(max_digits, 9)
+
+    #Checks to ensure that OfferListing minRange decimal places is correct
+    def test_offer_listing_min_range_decimals(self):
+        offer_listing = self.offerListing
+        decimal_places = offer_listing._meta.get_field('minRange').decimal_places
+        self.assertEquals(decimal_places, 2)
+
+    #Checks to ensure that OfferListing minRange verbose name is correct
+    def test_offer_listing_min_range_verbose_name(self):
+        offer_listing = self.offerListing
+        verbose_name = offer_listing._meta.get_field('minRange').verbose_name
+        self.assertEquals(verbose_name, "Minimum Price Range")
+
+    #Checks to ensure that OfferListing minRange help text is correct
+    def test_offer_listing_min_range_help_text(self):
+        offer_listing = self.offerListing
+        help_text = offer_listing._meta.get_field('minRange').help_text
+        self.assertEquals(help_text, "Minimum money offers you'll consider.")
+
+    #Checks to ensure that OfferListing maxRange max digits is correct
+    def test_offer_listing_max_range_digits(self):
+        offer_listing = self.offerListing
+        max_digits = offer_listing._meta.get_field('maxRange').max_digits
+        self.assertEquals(max_digits, 9)
+
+    #Checks to ensure that OfferListing maxRange decimal places is correct
+    def test_offer_listing_max_range_decimals(self):
+        offer_listing = self.offerListing
+        decimal_places = offer_listing._meta.get_field('maxRange').decimal_places
+        self.assertEquals(decimal_places, 2)
+
+    #Checks to ensure that OfferListing maxRange verbose name is correct
+    def test_offer_listing_max_range_verbose_name(self):
+        offer_listing = self.offerListing
+        verbose_name = offer_listing._meta.get_field('maxRange').verbose_name
+        self.assertEquals(verbose_name, "Maximum Price Range")
+
+    #Checks to ensure that OfferListing maxRange help text is correct
+    def test_offer_listing_max_range_help_text(self):
+        offer_listing = self.offerListing
+        help_text = offer_listing._meta.get_field('maxRange').help_text
+        self.assertEquals(help_text, "Maximum money offers you'll consider (leave blank if you don't have a maximum).")
+
+    #Checks to ensure that OfferListing notes max length is correct
+    def test_offer_listing_notes_max_length(self):
+        offer_listing = self.offerListing
+        max_length = offer_listing._meta.get_field('notes').max_length
+        self.assertEquals(max_length, 500)
+
+    #Checks to ensure that OfferListing notes help text is correct
+    def test_offer_listing_notes_help_text(self):
+        offer_listing = self.offerListing
+        help_text = offer_listing._meta.get_field('notes').help_text
+        self.assertEquals(help_text, "Include here what offers you're seeking.")
+
+    #Checks to ensure that AuctionListing startingBid max digits is correct
+    def test_auction_listing_starting_bid_digits(self):
+        auction_listing = self.auctionListing
+        max_digits = auction_listing._meta.get_field('startingBid').max_digits
+        self.assertEquals(max_digits, 9)
+
+    #Checks to ensure that AuctionListing startingBid decimal places is correct
+    def test_auction_listing_starting_bid_decimals(self):
+        auction_listing = self.auctionListing
+        decimal_places = auction_listing._meta.get_field('startingBid').decimal_places
+        self.assertEquals(decimal_places, 2)
+
+    #Checks to ensure that AuctionListing startingBid verbose name is correct
+    def test_auction_listing_starting_bid_verbose_name(self):
+        auction_listing = self.auctionListing
+        verbose_name = auction_listing._meta.get_field('startingBid').verbose_name
+        self.assertEquals(verbose_name, "Starting Bid")
+
+    #Checks to ensure that AuctionListing startingBid help text is correct
+    def test_auction_listing_starting_bid_help_text(self):
+        auction_listing = self.auctionListing
+        help_text = auction_listing._meta.get_field('startingBid').help_text
+        self.assertEquals(help_text, "Money amount bidding should start at for auction.")
+
+    #Checks to ensure that AuctionListing minimumIncrement max digits is correct
+    def test_auction_listing_minimum_increment_digits(self):
+        auction_listing = self.auctionListing
+        max_digits = auction_listing._meta.get_field('minimumIncrement').max_digits
+        self.assertEquals(max_digits, 9)
+
+    #Checks to ensure that AuctionListing minimumIncrement decimal places is correct
+    def test_auction_listing_minimum_increment_decimals(self):
+        auction_listing = self.auctionListing
+        decimal_places = auction_listing._meta.get_field('minimumIncrement').decimal_places
+        self.assertEquals(decimal_places, 2)
+
+    #Checks to ensure that AuctionListing minimumIncrement verbose name is correct
+    def test_auction_listing_minimum_increment_verbose_name(self):
+        auction_listing = self.auctionListing
+        verbose_name = auction_listing._meta.get_field('minimumIncrement').verbose_name
+        self.assertEquals(verbose_name, "Minimum Increment")
+
+    #Checks to ensure that AuctionListing minimumIncrement help text is correct
+    def test_auction_listing_minimum_increment_help_text(self):
+        auction_listing = self.auctionListing
+        help_text = auction_listing._meta.get_field('minimumIncrement').help_text
+        self.assertEquals(help_text, "Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).")
+
+    #Checks to ensure that AuctionListing autobuy max digits is correct
+    def test_auction_listing_autobuy_digits(self):
+        auction_listing = self.auctionListing
+        max_digits = auction_listing._meta.get_field('autobuy').max_digits
+        self.assertEquals(max_digits, 9)
+
+    #Checks to ensure that AuctionListing autobuy decimal places is correct
+    def test_auction_listing_autobuy_decimals(self):
+        auction_listing = self.auctionListing
+        decimal_places = auction_listing._meta.get_field('autobuy').decimal_places
+        self.assertEquals(decimal_places, 2)
+
+    #Checks to ensure that AuctionListing autobuy help text is correct
+    def test_auction_listing_autobuy_help_text(self):
+        auction_listing = self.auctionListing
+        help_text = auction_listing._meta.get_field('autobuy').help_text
+        self.assertEquals(help_text, "If a user bids the amount you set in this field, the auction will close and they will win the auction.")
 
 #Tests for SearchListing subclass
 
