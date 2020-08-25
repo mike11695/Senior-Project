@@ -1,0 +1,42 @@
+.site-nav {
+    text-align: right;
+    top: 10px;
+    padding: 0;
+    list-style: none;
+}
+
+.site-nav-url {
+  display: inline-block;
+  background-color: #037bfc;
+  padding: 10px;
+  margin-left: -4px;
+  border-right: 1px solid white;
+}
+
+.site-nav-url:hover {
+  background-color: #255180;
+}
+
+.site-nav-url a {
+  color: white;
+}
+
+.site-nav-url a:hover {
+  text-decoration: none;
+}
+
+.site-nav-container {
+  border-bottom: 1px solid grey;
+  padding-bottom: 5px;
+  box-shadow: 0px 5px 5px 2.5px;
+}
+
+.header-title {
+  margin-top: 10px;
+  margin-left: -8px;
+}
+
+.page-content {
+  padding-top: 20px;
+  padding-left: 0px;
+}
