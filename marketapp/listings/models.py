@@ -33,28 +33,6 @@ class User(AbstractUser):
         verbose_name="Allow Users to Contact You Through Profile",
         help_text="Leave this field checked if you are interested in being contacted by users through your profile.  If unchecked, users will only be able to contact you after you accept their offer or bid or you contact them.")
 
-#Admin class that will be responsible for the site running smoothly
-#Admins will be in charge of different responsiblities
-class Admin(User):
-    #potential extra fields will be added here
-    superAdmin = models.BooleanField(default=False, verbose_name="Super Admin",
-        help_text="Admin that is able to set, remove and configure other Admin accounts.")
-    handleListings = models.BooleanField(default=False,
-        verbose_name="Can Handle Listings",
-        help_text="Admin is able to manage user listings.")
-    handleEvents = models.BooleanField(default=False,
-        verbose_name="Can Handle Events",
-        help_text="Admin is able to manage user events.")
-    handleWishlists = models.BooleanField(default=False,
-        verbose_name="Can Handle Wishlists",
-        help_text="Admin is able to manage user wishlists.")
-    handleImages = models.BooleanField(default=False,
-        verbose_name="Can Handle Images",
-        help_text="Admin is able to manage user images.")
-    handleRatings = models.BooleanField(default=False,
-        verbose_name="Can Handle Ratings",
-        help_text="Admin is able to manage user ratings.")
-
 #model for Portfolios, where users can learn about one another and leave feedback
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -108,7 +86,6 @@ class Rating(models.Model):
 #Fields needed: Admin, user, warningCount, reason, actionsTaken
 class Warning(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
-    admin = models.ForeignKey(Admin, on_delete=models.DO_NOTHING, related_name="admin")
     warningCount = models.IntegerField(verbose_name="Warning Count")
     reason = models.TextField(max_length=250, verbose_name="Reason for Warning",
         help_text="Submit reasoning for why you warned this user.")
@@ -174,7 +151,8 @@ class Image(models.Model):
     image = models.ImageField(upload_to="marketapp\listings\images")
     name = models.TextField(max_length=50, verbose_name="Name of Image")
     tags = models.ManyToManyField(Tag, verbose_name="Item Tags",
-        help_text="Qualities of the item in the photo, purpose and where one can find it can be used as tags.")
+        help_text="Qualities of the item in the photo, purpose and where one can find it can be used as tags.",
+        blank=True)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Image.
@@ -186,9 +164,10 @@ class Image(models.Model):
 
 #Model for Items, which can be listed in an offerListing, offered, searched for
 #in a searchListing or added to a wishlist
-#Fields needed: Images, name, description
+#Fields needed: User, images, name, description
 class Item(models.Model):
     #Fields for Item
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
     images = models.ManyToManyField(Image)
     name = models.TextField(max_length=50, verbose_name="Item Name")
     description = models.TextField(max_length=250,

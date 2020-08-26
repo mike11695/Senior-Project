@@ -1,11 +1,11 @@
 from django.contrib import admin
-from listings.models import (User, Admin, Profile, Rating, Warning, Conversation,
+from django.contrib.auth.models import AbstractUser, User
+from listings.models import (User, Profile, Rating, Warning, Conversation,
     Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
     Item)
 
 # Register your models here.
 #admin.site.register(User)
-#admin.site.register(Admin)
 admin.site.register(Profile)
 admin.site.register(Rating)
 admin.site.register(Warning)
@@ -23,16 +23,12 @@ admin.site.register(Item)
 # Define the user admin class
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name')
+    fields = ['username', 'password', ('is_superuser', 'is_staff'), 'groups',
+        'user_permissions', 'first_name', 'last_name', 'email', 'paypalEmail',
+        'invitesOpen', 'inquiriesOpen']
 
 # Register the user admin class with the associated model
 admin.site.register(User, UserAdmin)
-
-# Define the admin admin class
-class AdminAdmin(admin.ModelAdmin):
-    list_display = ['superAdmin']
-
-# Register the admin admin class with the associated model
-admin.site.register(Admin, AdminAdmin)
 
 # Define the Listing admin class
 class ListingAdmin(admin.ModelAdmin):

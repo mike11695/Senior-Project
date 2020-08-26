@@ -1,5 +1,5 @@
 from django.test import TestCase
-from listings.models import (User, Admin, Profile, Rating, Warning, Conversation,
+from listings.models import (User, Profile, Rating, Warning, Conversation,
     Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
     Item)
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -13,16 +13,10 @@ class MyTestCase(TestCase):
         user1 = User.objects.create(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True) #profile is created when the user is created
-        admin = Admin.objects.create(username="mike2", password="example",
-            email="example2@text.com", paypalEmail="example2@text.com",
-            superAdmin=True, handleListings=True,
-            handleEvents=True, handleWishlists=True, handleImages=True,
-            handleRatings=True)
         user2 = User.objects.create(username="mike3", password="example",
             email="example3@text.com", paypalEmail="example3@text.com",
             invitesOpen=True, inquiriesOpen=True)
         self.global_user1 = user1
-        self.global_admin = admin
         self.global_user2 = user2
         test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
         self.global_image = Image.objects.create(owner=self.global_user1,
@@ -121,117 +115,6 @@ class UserModelTest(MyTestCase):
         user = self.global_user1
         help_text = user._meta.get_field('inquiriesOpen').help_text
         self.assertEquals(help_text, 'Leave this field checked if you are interested in being contacted by users through your profile.  If unchecked, users will only be able to contact you after you accept their offer or bid or you contact them.')
-
-#Tests for Admin class
-class AdminModelTest(MyTestCase):
-
-    #Checks to ensure that superAdmin defaults to False
-    def test_super_admin_default(self):
-        admin = self.global_admin
-        default = admin._meta.get_field('superAdmin').default
-        self.assertEquals(default, False)
-
-    #Checks to ensure that the superAdmin field verbose text is correct
-    def test_super_admin_label(self):
-        admin = self.global_admin
-        field_label = admin._meta.get_field('superAdmin').verbose_name
-        self.assertEquals(field_label, 'Super Admin')
-
-    #Checks to ensure that the superAdmin field help text is correct
-    def test_super_admin_help_text(self):
-        admin = self.global_admin
-        help_text = admin._meta.get_field('superAdmin').help_text
-        self.assertEquals(help_text, 'Admin that is able to set, remove and configure other Admin accounts.')
-
-    #Checks to ensure that handleListings defaults to False
-    def test_handle_listings_default(self):
-        admin = self.global_admin
-        default = admin._meta.get_field('handleListings').default
-        self.assertEquals(default, False)
-
-    #Checks to ensure that the handleListings field verbose text is correct
-    def test_handle_listings_label(self):
-        admin = self.global_admin
-        field_label = admin._meta.get_field('handleListings').verbose_name
-        self.assertEquals(field_label, 'Can Handle Listings')
-
-    #Checks to ensure that the handleListings field help text is correct
-    def test_handle_listings_help_text(self):
-        admin = self.global_admin
-        help_text = admin._meta.get_field('handleListings').help_text
-        self.assertEquals(help_text, 'Admin is able to manage user listings.')
-
-    #Checks to ensure that handleEvents defaults to False
-    def test_handle_events_default(self):
-        admin = self.global_admin
-        default = admin._meta.get_field('handleEvents').default
-        self.assertEquals(default, False)
-
-    #Checks to ensure that the handleEvents field verbose text is correct
-    def test_handle_events_label(self):
-        admin = self.global_admin
-        field_label = admin._meta.get_field('handleEvents').verbose_name
-        self.assertEquals(field_label, 'Can Handle Events')
-
-    #Checks to ensure that the handleEvents field help text is correct
-    def test_handle_events_help_text(self):
-        admin = self.global_admin
-        help_text = admin._meta.get_field('handleEvents').help_text
-        self.assertEquals(help_text, 'Admin is able to manage user events.')
-
-    #Checks to ensure that handleWishlists defaults to False
-    def test_handle_wishlists_default(self):
-        admin = self.global_admin
-        default = admin._meta.get_field('handleWishlists').default
-        self.assertEquals(default, False)
-
-    #Checks to ensure that the handleWishlists field verbose text is correct
-    def test_handle_wishlists_label(self):
-        admin = self.global_admin
-        field_label = admin._meta.get_field('handleWishlists').verbose_name
-        self.assertEquals(field_label, 'Can Handle Wishlists')
-
-    #Checks to ensure that the handleWishlists field help text is correct
-    def test_handle_wishlists_help_text(self):
-        admin = self.global_admin
-        help_text = admin._meta.get_field('handleWishlists').help_text
-        self.assertEquals(help_text, 'Admin is able to manage user wishlists.')
-
-    #Checks to ensure that handleImages defaults to False
-    def test_handle_images_default(self):
-        admin = self.global_admin
-        default = admin._meta.get_field('handleImages').default
-        self.assertEquals(default, False)
-
-    #Checks to ensure that the handleImages field verbose text is correct
-    def test_handle_images_label(self):
-        admin = self.global_admin
-        field_label = admin._meta.get_field('handleImages').verbose_name
-        self.assertEquals(field_label, 'Can Handle Images')
-
-    #Checks to ensure that the handleWishlists field help text is correct
-    def test_handle_images_help_text(self):
-        admin = self.global_admin
-        help_text = admin._meta.get_field('handleImages').help_text
-        self.assertEquals(help_text, 'Admin is able to manage user images.')
-
-    #Checks to ensure that handleRatings defaults to False
-    def test_handle_ratings_default(self):
-        admin = self.global_admin
-        default = admin._meta.get_field('handleRatings').default
-        self.assertEquals(default, False)
-
-    #Checks to ensure that the handleImages field verbose text is correct
-    def test_handle_ratings_label(self):
-        admin = self.global_admin
-        field_label = admin._meta.get_field('handleRatings').verbose_name
-        self.assertEquals(field_label, 'Can Handle Ratings')
-
-    #Checks to ensure that the handleWishlists field help text is correct
-    def test_handle_ratings_help_text(self):
-        admin = self.global_admin
-        help_text = admin._meta.get_field('handleRatings').help_text
-        self.assertEquals(help_text, 'Admin is able to manage user ratings.')
 
 #Tests for Profile Class
 class ProfileModelTest(MyTestCase):
@@ -339,7 +222,7 @@ class WarningModelTest(MyTestCase):
     def setUp(self):
         #Set up warning record for testing
         super(WarningModelTest, self).setUp()
-        self.warning = Warning.objects.create(user=self.global_user1, admin=self.global_admin,
+        self.warning = Warning.objects.create(user=self.global_user1, 
             warningCount=1, reason="For testing", actionsTaken="None")
 
     #Checks to ensure that warningCount field verbose text is correct

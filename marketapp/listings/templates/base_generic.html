@@ -17,8 +17,20 @@
       </div>
         <ul class="col-md-8 site-nav">
           <li class="site-nav-url"><a href="{% url 'index' %}">Home</a></li>
-          <li class="site-nav-url"><a href="">Listings</a></li>
-          <li class="site-nav-url"><a href="">Add Listing</a></li>
+          {% if user.is_authenticated %}
+            <li class="site-nav-url"><a href="">Listings</a></li>
+            <div class="dropdown">
+              <div class="site-nav-url dropbtn">My Stuff</div>
+              <div class="dropdown-content mystuff-dropdown">
+                <a class="site-nav-url" href="#">Images</a>
+                <a class="site-nav-url" href="#">Items</a>
+                <a class="site-nav-url" href="#">Listings</a>
+              </div>
+            </div>
+            <li class="site-nav-url"><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
+          {% else %}
+            <li class="site-nav-url"><a href="{% url 'login'%}?next={{request.path}}">Sign Up/Login</a></li>
+          {% endif %}
         </ul>
     </div>
     <div class="col-lg-10 page-content">{% block content %}{% endblock %}</div>
