@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.urls import reverse
 
 # Create your models here.
 # Model template
@@ -147,7 +148,7 @@ class Tag(models.Model):
 #Fields needed: Owner, image, name, type
 class Image(models.Model):
     #Fields for Image
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     image = models.ImageField(upload_to="images")
     name = models.TextField(max_length=50, verbose_name="Name of Image")
     tags = models.ManyToManyField(Tag, verbose_name="Item Tags",

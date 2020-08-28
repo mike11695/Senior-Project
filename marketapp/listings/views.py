@@ -2,6 +2,8 @@ from django.contrib.auth import login, authenticate
 from django.shortcuts import render, redirect
 from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from listings.models import Image
 from listings.forms import SignUpForm, AddImageForm
@@ -27,51 +29,24 @@ def signup(request):
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
 
-class ImageListView(generic.ListView):
+class ImageListView(LoginRequiredMixin, generic.ListView):
     model = Image
     context_object_name = 'images'
-    template_name = 'images\images.html'
+    template_name = "images\images.html"
 
-class ImageCreate(CreateView):
+class ImageDetailView(LoginRequiredMixin, generic.DetailView):
     model = Image
-    fields = ['owner', 'image', 'name', 'tags']
-    template_name = 'images\add_image.html'
+    template_name = "images\image_detail.html"
 
-    def form_valid(self, form):
-        clean_image = form.cleaned_data.get('image')
-        if clean_image:
-            if clean_image._height > 2000 or clean_image._width > 2000:
-                raise ValidationError("Height or Width is larger than limit allowed.")
-            else:
-                form.instance.owner = self.request.user
-                return super(ImageCreate, self).form_valid(form)
-        else:
-            raise ValidationError("No image found")
-
+@login_required(login_url='/accounts/login/')
 def add_image(request):
     if request.method == 'POST':
         form = AddImageForm(request.POST, request.FILES)
         if form.is_valid():
-            clean_image = form.cleaned_data.get('image')
-            clean_name = form.cleaned_data.get('name')
-            clean_tags = form.cleaned_data.get('tags')
-            owner = request.user
-            obj = Image.objects.create(owner=owner, image=clean_image,
-                name=clean_name, tags=clean_tags)
+            created_image = form.save()
+            created_image.owner = request.user
+            created_image.save()
             return redirect('images')
-            """clean_image = form.cleaned_data.get('image')
-            if clean_image:
-                if clean_image._height > 2000 or clean_image._width > 2000:
-                    raise ValidationError("Height or Width is larger than limit allowed.")
-                else:
-                    clean_name = form.cleaned_data.get('name')
-                    clean_tags = form.cleaned_data.get('tags')
-                    owner = request.user
-                    obj = Image.objects.create(owner=owner, image=clean_image,
-                        name=clean_name, tags=clean_tags)
-                    return redirect('images')
-            else:
-                raise ValidationError("No image found")"""
     else:
         form = AddImageForm()
     return render(request, 'images/add_image.html', {'form': form})
