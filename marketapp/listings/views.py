@@ -48,11 +48,18 @@ class ImageCreate(CreateView):
         else:
             raise ValidationError("No image found")
 
-"""def add_image(request):
+def add_image(request):
     if request.method == 'POST':
         form = AddImageForm(request.POST, request.FILES)
         if form.is_valid():
             clean_image = form.cleaned_data.get('image')
+            clean_name = form.cleaned_data.get('name')
+            clean_tags = form.cleaned_data.get('tags')
+            owner = request.user
+            obj = Image.objects.create(owner=owner, image=clean_image,
+                name=clean_name, tags=clean_tags)
+            return redirect('images')
+            """clean_image = form.cleaned_data.get('image')
             if clean_image:
                 if clean_image._height > 2000 or clean_image._width > 2000:
                     raise ValidationError("Height or Width is larger than limit allowed.")
@@ -64,7 +71,7 @@ class ImageCreate(CreateView):
                         name=clean_name, tags=clean_tags)
                     return redirect('images')
             else:
-                raise ValidationError("No image found")
+                raise ValidationError("No image found")"""
     else:
         form = AddImageForm()
-    return render(request, 'images/add_image.html', {'form': form})"""
+    return render(request, 'images/add_image.html', {'form': form})

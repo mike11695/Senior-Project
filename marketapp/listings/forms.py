@@ -1,6 +1,9 @@
 from django import forms
+from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from listings.models import User, Image, Tag
+from django.core.files.images import get_image_dimensions
+from django.core.exceptions import ValidationError
 
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
@@ -13,11 +16,23 @@ class SignUpForm(UserCreationForm):
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'paypalEmail', 'password1', 'password2', )
 
-"""class AddImageForm(forms.Form):
-    image = forms.ImageField(required=True, help_text="Images must not be bigger than 2000x2000")
+class AddImageForm(ModelForm):
+    def clean_image(self):
+        clean_image = self.cleaned_data.get('image', False)
+
+        #check image size to ensure it meets the limit
+        if clean_image:
+            width, height = get_image_dimensions(clean_image)
+            if width > 1250 or height > 1250:
+                raise ValidationError("Height or Width is larger than limit allowed.")
+            return clean_image
+        else:
+            raise ValidationError("No image found")
+
     name = forms.CharField(max_length=50, required=True)
-    tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(), required=False)
 
     class Meta:
         model = Image
-        fields = ('owner', 'image', 'name', 'tags')"""
+        fields = ['image', 'name', 'tags']
+        exclude = ['owner']
+        help_texts = {'image': "Image must not be larger than 1250x1250."}
