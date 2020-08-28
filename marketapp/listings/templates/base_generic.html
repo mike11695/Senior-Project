@@ -22,7 +22,7 @@
             <div class="dropdown">
               <div class="site-nav-url dropbtn">My Stuff</div>
               <div class="dropdown-content mystuff-dropdown">
-                <a class="site-nav-url" href="#">Images</a>
+                <a class="site-nav-url" href="{% url 'images' %}">Images</a>
                 <a class="site-nav-url" href="#">Items</a>
                 <a class="site-nav-url" href="#">Listings</a>
               </div>
@@ -33,7 +33,7 @@
           {% endif %}
         </ul>
     </div>
-    <div class="col-lg-10 page-content">{% block content %}{% endblock %}</div>
+    <div class="col-lg-12 page-content">{% block content %}{% endblock %}</div>
   </div>
 </body>
 </html>

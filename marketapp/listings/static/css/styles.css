@@ -81,3 +81,18 @@
   background-color: blue !important;
   color: white !important;
 }
+
+.btn-green {
+  background-color: green !important;
+  color: white !important;
+}
+
+.add-image {
+  text-align: right;
+  display: inline-block;
+}
+
+.content-header-row {
+  margin-left: -33px !important;
+  margin-right: -50px !important;
+}

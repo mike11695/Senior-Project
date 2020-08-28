@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from listings.models import User
+from listings.models import User, Image, Tag
 
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
@@ -12,3 +12,12 @@ class SignUpForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'paypalEmail', 'password1', 'password2', )
+
+"""class AddImageForm(forms.Form):
+    image = forms.ImageField(required=True, help_text="Images must not be bigger than 2000x2000")
+    name = forms.CharField(max_length=50, required=True)
+    tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(), required=False)
+
+    class Meta:
+        model = Image
+        fields = ('owner', 'image', 'name', 'tags')"""

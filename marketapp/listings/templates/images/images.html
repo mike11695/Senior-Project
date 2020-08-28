@@ -1,0 +1,25 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid">
+    <div class="row content-header-row">
+      <div class="col-lg-4">
+        <h1>My Images</h1>
+      </div>
+      <div class="col-lg-8 add-image">
+        <a href="{% url 'images-add' %}"><div class="btn btn-green">Add Image</div></a>
+      </div>
+    </div>
+  </div>
+  {% if images %}
+  <ul>
+    {% for image in images %}
+      <li>
+        <a href="{{ image.get_absolute_url }}">{{ image.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    <p>You don't have any images uploaded yet.</p>
+  {% endif %}
+{% endblock %}
