@@ -1,0 +1,25 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid">
+    <div class="row content-header-row">
+      <div class="col-lg-4">
+        <h1>My Items</h1>
+      </div>
+      <div class="col-lg-8 add-button">
+        <a href="{% url 'items-add' %}"><div class="btn btn-green">Add Item</div></a>
+      </div>
+    </div>
+  </div>
+  {% if items %}
+  <ul>
+    {% for item in items %}
+      <li>
+        <a href="{{ item.get_absolute_url }}">{{ item.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    <p>You don't have any items yet.</p>
+  {% endif %}
+{% endblock %}

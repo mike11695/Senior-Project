@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
-from listings.models import User, Image, Tag
+from listings.models import User, Image, Tag, Item
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -36,3 +36,17 @@ class AddImageForm(ModelForm):
         fields = ['image', 'name', 'tags']
         exclude = ['owner']
         help_texts = {'image': "Image must not be larger than 1250x1250."}
+
+class AddItemForm(ModelForm):
+    images = forms.ModelMultipleChoiceField(queryset=None, help_text="An image is required.")
+
+    class Meta:
+        model = Item
+        fields = ['images', 'name', 'description']
+        exclude = ['owner']
+        help_texts = {'name': "Name for item is required."}
+
+    def __init__(self, *args, **kwargs):
+       self.user = kwargs.pop('user')
+       super(AddItemForm, self).__init__(*args, **kwargs)
+       self.fields['images'].queryset = Image.objects.filter(owner=self.user)

@@ -168,7 +168,7 @@ class Image(models.Model):
 #Fields needed: User, images, name, description
 class Item(models.Model):
     #Fields for Item
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     images = models.ManyToManyField(Image)
     name = models.TextField(max_length=50, verbose_name="Item Name")
     description = models.TextField(max_length=250,

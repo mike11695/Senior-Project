@@ -1,5 +1,5 @@
 from django.test import TestCase
-from listings.forms import SignUpForm, AddImageForm
+from listings.forms import SignUpForm, AddImageForm, AddItemForm
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag)
 
@@ -185,3 +185,87 @@ class AddImageFormTest(TestCase):
         data = {'name': name, 'tags': [str(tag1.id), str(tag2.id)]}
         form = AddImageForm(data, {'image': image})
         self.assertFalse(form.is_valid())
+
+class AddItemFormTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        image1 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        image2 = SimpleUploadedFile(name='art2.png', content=open('listings/imagetest/art2.png', 'rb').read(), content_type='image/png')
+        tag1 = Tag.objects.create(name="Test Tag")
+        tag2 = Tag.objects.create(name="Test Tag 2")
+        test_image1 = Image.objects.create(owner=user,
+            image=image1, name="Test Image 1")
+        test_image1.tags.add(tag1)
+        test_image1.tags.add(tag2)
+        test_image1.save
+        test_image2 = Image.objects.create(owner=user,
+            image=image2, name="Test Image 2")
+        test_image2.tags.add(tag1)
+        test_image2.save
+
+    #Test to ensure a user is able to upload an item providing all fields
+    def test_valid_item_upload(self):
+        user = User.objects.get(pk=1)
+        image1 = Image.objects.get(id=1)
+        image2 = Image.objects.get(id=2)
+        name = "My Item"
+        description = "An Item to test adding items."
+        data = {'name': name, 'description': description, 'images': [str(image1.id), str(image2.id)]}
+        form = AddItemForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to upload an item if name is missing
+    def test_invalid_item_name_missing(self):
+        user = User.objects.get(pk=1)
+        image1 = Image.objects.get(id=1)
+        image2 = Image.objects.get(id=2)
+        description = "An Item to test adding items."
+        data = {'description': description, 'images': [str(image1.id), str(image2.id)]}
+        form = AddItemForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to upload an item if name is too long
+    def test_invalid_item_upload_name_too_long(self):
+        user = User.objects.get(pk=1)
+        image1 = Image.objects.get(id=1)
+        image2 = Image.objects.get(id=2)
+        name = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        description = "An Item to test adding items."
+        data = {'name': name, 'description': description, 'images': [str(image1.id), str(image2.id)]}
+        form = AddItemForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to upload an item if description is too long
+    def test_invalid_item_upload_description_too_long(self):
+        user = User.objects.get(pk=1)
+        image1 = Image.objects.get(id=1)
+        image2 = Image.objects.get(id=2)
+        name = "My Item"
+        description = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        data = {'name': name, 'description': description, 'images': [str(image1.id), str(image2.id)]}
+        form = AddItemForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to upload an item if image is missing
+    def test_invalid_item_image_missing(self):
+        user = User.objects.get(pk=1)
+        name = "My Item"
+        description = "An Item to test adding items."
+        data = {'name': name, 'description': description}
+        form = AddItemForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that name field help text is correct
+    def test_item_upload_name_help_text(self):
+        user = User.objects.get(pk=1)
+        form = AddItemForm(user=user)
+        self.assertEqual(form.fields['name'].help_text, "Name for item is required.")
+
+    #Test to ensure that images field help text is correct
+    def test_item_upload_image_help_text(self):
+        user = User.objects.get(pk=1)
+        form = AddItemForm(user=user)
+        self.assertEqual(form.fields['images'].help_text, "An image is required.")

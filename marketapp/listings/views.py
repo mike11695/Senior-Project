@@ -5,8 +5,8 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from listings.models import Image
-from listings.forms import SignUpForm, AddImageForm
+from listings.models import Image, Item
+from listings.forms import SignUpForm, AddImageForm, AddItemForm
 
 # Create your views here.
 def index(request):
@@ -32,11 +32,11 @@ def signup(request):
 class ImageListView(LoginRequiredMixin, generic.ListView):
     model = Image
     context_object_name = 'images'
-    template_name = "images\images.html"
+    template_name = "images/images.html"
 
 class ImageDetailView(LoginRequiredMixin, generic.DetailView):
     model = Image
-    template_name = "images\image_detail.html"
+    template_name = "images/image_detail.html"
 
 @login_required(login_url='/accounts/login/')
 def add_image(request):
@@ -50,3 +50,25 @@ def add_image(request):
     else:
         form = AddImageForm()
     return render(request, 'images/add_image.html', {'form': form})
+
+class ItemListView(LoginRequiredMixin, generic.ListView):
+    model = Item
+    context_object_name = 'items'
+    template_name = "items/items.html"
+
+class ItemDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Item
+    template_name = "items/item_detail.html"
+
+@login_required(login_url='/accounts/login/')
+def add_item(request):
+    if request.method == 'POST':
+        form = AddItemForm(data=request.POST, user=request.user)
+        if form.is_valid():
+            created_item = form.save()
+            created_item.owner = request.user
+            created_item.save()
+            return redirect('items')
+    else:
+        form = AddItemForm(user=request.user)
+    return render(request, 'items/add_item.html', {'form': form})
