@@ -1,0 +1,40 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to Upload Images to Site</h1>
+    <p>In order to upload an image to the site that you can use for items, hover over
+      "My Stuff" in the top right navigation bar and in the dropdown select "Images".
+      On this page, you'll be able to see all the images you have uploaded so far.
+      In the top right below the navigation bar there will be a green button that
+      says "Add Image".  Clicking on this will take you the image upload form.</p>
+    <p>When uploading an image, you will need to provide at least an image and a
+      name for the image in order to upload it.  Descriptions and tags for images are optional
+      and not needed, but you may want to include a description as reference for yourself.
+      Select the tags you want for your image and people will be able to find your items
+      using these tags when thay are included in item creation.  Once an image is uploaded,
+      no other users will be able to see it until you include it in an item.</p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Images</h1>
+    <h3 class="faq-question">What kind of images can be uploaded?</h3>
+    <p>Any image that depicts an item that is appropriate for selling or trading can be uploaded.
+      Images that include inappropriate/illegal items, people without items, too blurry or are
+      undiscernible for what item you're claiming it to be will be deleted and possibly result
+      in your account being suspended depending on the severity of the offence.</p>
+    <h3 class="faq-question">What is the maximum size images can be?</h3>
+    <p>Images must be no larger than 1250x1250 pixels in size. If your image is larger, you
+        can use an image editing software such as MS Paint or Photoshop to resize it.</p>
+    <h3 class="faq-question">What are images used for?</h3>
+    <p>Images are used for creating items that you'll then be able to add to listings, auctions
+      and wishlists.  You should have images uploaded before creating an item, but you'll have
+      the option to create images when creating an item as well.</p>
+    <h3 class="faq-question">How many images can I upload?</h3>
+    <p>You are allowed to upload as many images as you want, but please remove images that
+      you no longer use after a while.</p>
+    <h3 class="faq-question">Can I reuse images for items?</h3>
+    <p>Yes, you can reuse images with items as long as they are relevant to the item being created.
+      Images will continue to exist after an item has been deleted as well.</p>
+  </div>
+{% endblock %}

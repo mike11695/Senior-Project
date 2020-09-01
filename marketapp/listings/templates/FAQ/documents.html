@@ -1,0 +1,11 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>FAQs</h1>
+  <p>FAQs and how-tos for all the features of the site are provided here.
+    Below is a list of all documentation currently provided.</p>
+  <ul>
+    <li><a href="{% url 'faq-images' %}">Images Documentation/FAQ</a></li>
+    <li><a href="{% url 'faq-items' %}">Items Documentation/FAQ</a></li>
+  </ul>
+{% endblock %}

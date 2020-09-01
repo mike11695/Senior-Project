@@ -27,6 +27,7 @@
                 <a class="site-nav-url" href="#">Listings</a>
               </div>
             </div>
+            <li class="site-nav-url"><a href="{% url 'faq' %}">FAQ</a></li>
             <li class="site-nav-url"><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
           {% else %}
             <li class="site-nav-url"><a href="{% url 'login'%}?next={{request.path}}">Sign Up/Login</a></li>

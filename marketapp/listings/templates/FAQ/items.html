@@ -1,0 +1,34 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+<div class="how-to-content col-md-10">
+  <h1>How to Create Items</h1>
+  <p>In order to create an item for listings, hover over "My Stuff" in the top right
+    navigation bar and in the dropdown select "Items". On this page, you'll be able
+    to see all the items you have created so far. In the top right below the navigation
+    bar there will be a green button that says "Add Item".  Clicking on this will take you
+    the image creation form.</p>
+  <p>When creating an item, there are some requirements to keep in mind.  First, an image
+    must have at least one image selected in order to create the item.  If you don't have
+    any images uploaded to the site yet, you'll be able to upload images through the item
+    creation form.  An item must also have a name in order to create it.  Descriptions are
+    optional and not needed, but can be useful for other users to know what the item is.
+    After creating your item, other users will not be able to see it until you add it to a
+    listing.</p>
+</div>
+<div class="faq-content col-md-10">
+  <h1>FAQs for Items</h1>
+  <h3 class="faq-question">How many images can be used for an item?</h3>
+  <p>You may use as many images as you want, but all of them must relate to the item you
+    are creating.  Items that contain images with no coherence will be deleted upon descretion.</p>
+  <h3 class="faq-question">How many items can I have?</h3>
+  <p>You may have as many items as you need, but please delete items that you no longer use over time.</p>
+  <h3 class="faq-question">What can I use items for?</h3>
+  <p>Items can be used for all kinds of listings (offers, auctions and search listings) as well as
+    in wishlists. They can also be used in offers on other users listings.</p>
+  <h3 class="faq-question">Can I reuse items?</h3>
+  <p>Yes, items can be used several times for each of the above instances.  Items you have made will
+    continue to exist even after the deletion of a listing, wishlist or offer.</p>
+</div>
+{% endblock %}

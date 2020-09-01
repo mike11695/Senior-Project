@@ -72,3 +72,18 @@ def add_item(request):
     else:
         form = AddItemForm(user=request.user)
     return render(request, 'items/add_item.html', {'form': form})
+
+@login_required(login_url='/accounts/login/')
+def faq(request):
+    # Render the HTML template faq/documents.html with the data in the context variable
+    return render(request, 'faq/documents.html')
+
+@login_required(login_url='/accounts/login/')
+def faq_images(request):
+    # Render the HTML template faq/images.html with the data in the context variable
+    return render(request, 'faq/images.html')
+
+@login_required(login_url='/accounts/login/')
+def faq_items(request):
+    # Render the HTML template faq/items.html with the data in the context variable
+    return render(request, 'faq/items.html')

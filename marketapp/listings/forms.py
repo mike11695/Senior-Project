@@ -39,12 +39,12 @@ class AddImageForm(ModelForm):
 
 class AddItemForm(ModelForm):
     images = forms.ModelMultipleChoiceField(queryset=None, help_text="An image is required.")
+    name = forms.CharField(max_length=50, required=True, help_text="Name for item is required.")
 
     class Meta:
         model = Item
         fields = ['images', 'name', 'description']
         exclude = ['owner']
-        help_texts = {'name': "Name for item is required."}
 
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
