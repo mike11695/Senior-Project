@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
-from listings.models import User, Image, Tag, Item
+from listings.models import User, Image, Tag, Item, Listing, OfferListing, AuctionListing
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -50,3 +50,18 @@ class AddItemForm(ModelForm):
        self.user = kwargs.pop('user')
        super(AddItemForm, self).__init__(*args, **kwargs)
        self.fields['images'].queryset = Image.objects.filter(owner=self.user)
+
+class CreateOfferListingForm(ModelForm):
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), help_text="An item is required.")
+    name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
+
+    class Meta:
+        model = OfferListing
+        fields = ['name', 'description', 'items', 'endTimeChoices', 'openToMoneyOffers',
+            'minRange', 'maxRange', 'notes']
+        exclude = ['owner', 'endTime', 'listingEnded']
+
+    def __init__(self, *args, **kwargs):
+       self.user = kwargs.pop('user')
+       super(CreateOfferListingForm, self).__init__(*args, **kwargs)
+       self.fields['items'].queryset = Item.objects.filter(owner=self.user)

@@ -13,4 +13,8 @@ urlpatterns = [
     path('items/', views.ItemListView.as_view(), name='items'),
     path('items/add', views.add_item, name='items-add'),
     path('items/<int:pk>', views.ItemDetailView.as_view(), name='item-detail'),
+    path('listings/', views.ListingListView.as_view(), name='listings'),
+    #path('listings/create-offer-listing', views.create_offer_listing, name='offer-listing-add'),
+    #path('listings/create-auction-listing', views.create_auction_listing, name='auction-listing-add'),
+    #path('listings/<int:pk>', views.ListingDetailView.as_view(), name='listing-detail'),
 ]

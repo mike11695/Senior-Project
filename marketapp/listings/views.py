@@ -5,7 +5,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from listings.models import Image, Item
+from listings.models import Image, Item, Listing
 from listings.forms import SignUpForm, AddImageForm, AddItemForm
 
 # Create your views here.
@@ -87,3 +87,8 @@ def faq_images(request):
 def faq_items(request):
     # Render the HTML template faq/items.html with the data in the context variable
     return render(request, 'faq/items.html')
+
+class ListingListView(LoginRequiredMixin, generic.ListView):
+    model = Listing
+    context_object_name = 'listings'
+    template_name = "listings/listings.html"

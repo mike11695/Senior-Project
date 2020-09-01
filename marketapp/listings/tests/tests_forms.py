@@ -1,9 +1,39 @@
 from django.test import TestCase
-from listings.forms import SignUpForm, AddImageForm, AddItemForm
+from listings.forms import SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm
 from django.core.files.uploadedfile import SimpleUploadedFile
-from listings.models import (User, Image, Tag)
+from listings.models import (User, Image, Tag, Item, Listing, OfferListing, AuctionListing)
 
 # Create your tests here.
+class MyTestCase(TestCase):
+    def setUp(self):
+        user1 = User.objects.create(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True) #profile is created when the user is created
+        user2 = User.objects.create(username="mike3", password="example",
+            email="example3@text.com", paypalEmail="example3@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        self.global_user1 = user1
+        self.global_user2 = user2
+        test_image1 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        self.global_image1 = Image.objects.create(owner=self.global_user1,
+            image=test_image1, name="Test Image")
+        self.tag = Tag.objects.create(name="Test Tag")
+        self.global_image1.tags.add(self.tag)
+        self.global_image1.save
+        test_image2 = SimpleUploadedFile(name='art2.png', content=open('listings/imagetest/art2.png', 'rb').read(), content_type='image/png')
+        self.global_image2 = Image.objects.create(owner=self.global_user1,
+            image=test_image2, name="Test Image 2")
+        self.global_image2.tags.add(self.tag)
+        self.global_image2.save
+        self.global_item1 = Item.objects.create(name="Global Item",
+            description="A global item for testing", owner=self.global_user1)
+        self.global_item1.images.add(self.global_image1)
+        self.global_item1.save
+        self.global_item2 = Item.objects.create(name="Global Item 2",
+            description="Another global item for testing", owner=self.global_user2)
+        self.global_item2.images.add(self.global_image2)
+        self.global_item2.save
+
 class SignUpFormTest(TestCase):
     #Test to ensure a user is able to sign up providing all fields
     def test_valid_signup(self):
@@ -189,8 +219,8 @@ class AddImageFormTest(TestCase):
 class AddItemFormTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        user = User.objects.create_user(username="mike", password="example",
-            email="example@text.com", paypalEmail="example@text.com",
+        user = User.objects.create_user(username="mikel", password="example",
+            email="examplel@text.com", paypalEmail="examplel@text.com",
             invitesOpen=True, inquiriesOpen=True)
         image1 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
         image2 = SimpleUploadedFile(name='art2.png', content=open('listings/imagetest/art2.png', 'rb').read(), content_type='image/png')
@@ -269,3 +299,115 @@ class AddItemFormTest(TestCase):
         user = User.objects.get(pk=1)
         form = AddItemForm(user=user)
         self.assertEqual(form.fields['images'].help_text, "An image is required.")
+
+class CreateOfferListingFormTest(MyTestCase):
+    #Test to ensure a user is able to create an offer listing providing all fields
+    def test_valid_offer_listing_creation(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 5.00
+        max_range = 10.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a listing using someone elses item
+    def test_invalid_offer_listing_creation_unowned_item(self):
+        user = self.global_user1
+        item2 = self.global_item2
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 5.00
+        max_range = 10.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item2.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a listing if name is missing
+    def test_invalid_offer_listing_creation_name_missing(self):
+        user = self.global_user1
+        item2 = self.global_item2
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 5.00
+        max_range = 10.00
+        notes = "Test goes here"
+        data = {'description': description, 'items': [str(item2.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a listing if name is too long
+    def test_invalid_offer_listing_creation_name_too_long(self):
+        user = self.global_user1
+        item2 = self.global_item2
+        name = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 5.00
+        max_range = 10.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item2.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a listing if item is missing
+    def test_invalid_offer_listing_creation_item_missing(self):
+        user = self.global_user1
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 5.00
+        max_range = 10.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'endTimeChoices': end_time_choice,
+            'openToMoneyOffers': open_to_money, 'minRange': min_range, 'maxRange': max_range,
+            'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a listing if end time choice is missing
+    def test_invalid_offer_listing_creation_endtime_choice_missing(self):
+        user = self.global_user1
+        item2 = self.global_item2
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        open_to_money = True
+        min_range = 5.00
+        max_range = 10.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item2.id)],
+            'openToMoneyOffers': open_to_money, 'minRange': min_range,
+            'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that name field help text is correct
+    def test_item_upload_name_help_text(self):
+        user = self.global_user1
+        form = CreateOfferListingForm(user=user)
+        self.assertEqual(form.fields['name'].help_text, "Name for listing is required.")
+
+    #Test to ensure that items field help text is correct
+    def test_item_upload_image_help_text(self):
+        user = self.global_user1
+        form = CreateOfferListingForm(user=user)
+        self.assertEqual(form.fields['items'].help_text, "An item is required.")
