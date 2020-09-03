@@ -5,8 +5,13 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from listings.models import Image, Item, Listing
-from listings.forms import SignUpForm, AddImageForm, AddItemForm
+from listings.models import Image, Item, Listing, OfferListing, AuctionListing
+from listings.forms import SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm
+
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.utils.timezone import make_aware
+from django.conf import settings
 
 # Create your views here.
 def index(request):
@@ -88,7 +93,46 @@ def faq_items(request):
     # Render the HTML template faq/items.html with the data in the context variable
     return render(request, 'faq/items.html')
 
-class ListingListView(LoginRequiredMixin, generic.ListView):
-    model = Listing
-    context_object_name = 'listings'
-    template_name = "listings/listings.html"
+class OfferListingListView(LoginRequiredMixin, generic.ListView):
+    model = OfferListing
+    context_object_name = 'offer-listings'
+    template_name = "listings/offer_listings.html"
+
+class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
+    model = OfferListing
+    context_object_name = 'offer-listing-detail'
+    template_name = "listings/offer_listing_detail.html"
+
+@login_required(login_url='/accounts/login/')
+def create_offer_listing(request):
+    if request.method == 'POST':
+        form = CreateOfferListingForm(data=request.POST, user=request.user)
+        if form.is_valid():
+            created_listing = form.save()
+
+            clean_choice = form.cleaned_data.get('endTimeChoices')
+            if clean_choice == '1h':
+                date = timezone.localtime(timezone.now()) + timedelta(hours=1)
+            elif clean_choice == '2h':
+                date = timezone.localtime(timezone.now()) + timedelta(hours=2)
+            elif clean_choice == '4h':
+                date = timezone.localtime(timezone.now()) + timedelta(hours=4)
+            elif clean_choice == '8h':
+                date = timezone.localtime(timezone.now()) + timedelta(hours=8)
+            elif clean_choice == '12h':
+                date = timezone.localtime(timezone.now()) + timedelta(hours=12)
+            elif clean_choice == '1d':
+                date = timezone.localtime(timezone.now()) + timedelta(days=1)
+            elif clean_choice == '3d':
+                date = timezone.localtime(timezone.now()) + timedelta(days=3)
+            else:
+                date = timezone.localtime(timezone.now()) + timedelta(days=7)
+
+            #date = timezone.localtime(timezone.now())
+            created_listing.endTime = date
+            created_listing.owner = request.user
+            created_listing.save()
+            return redirect('offer-listings')
+    else:
+        form = CreateOfferListingForm(user=request.user)
+    return render(request, 'listings/create_offer_listing.html', {'form': form})

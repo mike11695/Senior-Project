@@ -299,22 +299,14 @@ class Listing(models.Model):
         (THREEDAYS, 'Three Days'),
         (SEVENDAYS, 'Seven Days'),
     )
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     name = models.TextField(max_length=100, verbose_name="Listing Name")
     description = models.TextField(max_length=500, verbose_name="Listing Description",
             help_text="A short description of what the listing obtains.")
     endTimeChoices = models.CharField(max_length=3, choices=END_TIME_CHOICES, default=ONEHOUR)
-    endTime = models.DateTimeField(blank=True)
+    endTime = models.DateTimeField(blank=True, null=True)
     listingEnded = models.BooleanField(default=False)
     items = models.ManyToManyField(Item)
-
-    def get_absolute_url(self):
-        #Returns the url to access a particular instance of Listing.
-        return reverse('listing-detail', args=[str(self.id)])
-
-    def __str__(self):
-        #String for representing the Listing object.
-        return f'{self.name}'
 
 #Subclass for OfferListing, a listing that is interested in offers
 #Fields needed: openToMoneyOffers, minRange, maxRange, notes, items
@@ -329,6 +321,14 @@ class OfferListing(Listing):
         verbose_name="Maximum Price Range",
         help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).")
     notes = models.TextField(max_length=500, help_text="Include here what offers you're seeking.")
+
+    def get_absolute_url(self):
+        #Returns the url to access a particular instance of OfferListing.
+        return reverse('offer-listing-detail', args=[str(self.id)])
+
+    def __str__(self):
+        #String for representing the OfferListing object.
+        return f'{self.name}'
 
 #Subclass for SearchListing, a listing that is looking for item(s)
 #Fields needed: PriceOffer, itemsOffer, notes
@@ -347,6 +347,14 @@ class AuctionListing(Listing):
         help_text="Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).")
     autobuy = models.DecimalField(default=None, max_digits=9, decimal_places=2,
         help_text="If a user bids the amount you set in this field, the auction will close and they will win the auction.")
+
+    def get_absolute_url(self):
+        #Returns the url to access a particular instance of AuctionListing.
+        return reverse('auction-listing-detail', args=[str(self.id)])
+
+    def __str__(self):
+        #String for representing the AuctionListing object.
+        return f'{self.name}'
 
 #Model for Bids, which is a money amount offered by a user on an auction
 #Fields needed: AuctionListing, bidder, bidAmount, highestCurrentBid, winningBid
