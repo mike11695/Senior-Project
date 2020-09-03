@@ -314,10 +314,10 @@ class OfferListing(Listing):
     #Fields for OfferListing
     openToMoneyOffers = models.BooleanField(default=True, verbose_name="Open to Money Offers?",
         help_text="Leave this field unchecked if you're only interested in item offers.")
-    minRange = models.DecimalField(default=None, max_digits=9, decimal_places=2,
+    minRange = models.DecimalField(default=0.00, max_digits=9, decimal_places=2,
         verbose_name="Minimum Price Range",
         help_text="Minimum money offers you'll consider.")
-    maxRange = models.DecimalField(default=None, max_digits=9, decimal_places=2,
+    maxRange = models.DecimalField(default=0.00, max_digits=9, decimal_places=2,
         verbose_name="Maximum Price Range",
         help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).")
     notes = models.TextField(max_length=500, help_text="Include here what offers you're seeking.")

@@ -95,7 +95,7 @@ def faq_items(request):
 
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
     model = OfferListing
-    context_object_name = 'offer-listings'
+    context_object_name = 'offerlistings'
     template_name = "listings/offer_listings.html"
 
 class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):

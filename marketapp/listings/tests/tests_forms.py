@@ -318,6 +318,90 @@ class CreateOfferListingFormTest(MyTestCase):
         form = CreateOfferListingForm(data=data, user=user)
         self.assertTrue(form.is_valid())
 
+    #Test to ensure a user is able to create an offer listing if maxRange is missing
+    def test_valid_offer_listing_maxRange_missing(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 15.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer listing if minRange > maxRange and maxRange !=0
+    def test_invalid_offer_listing_minRange_greater(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 15.00
+        max_range = 10.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is able to create an offer listing if minRange > maxRange and maxRange == 0
+    def test_invalid_offer_listing_minRange_greater_zero(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 15.00
+        max_range = 0.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer listing if minRange = maxRange=
+    def test_invalid_offer_listing_minRange_maxRange_equal(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = 15.00
+        max_range = 15.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer listing if minRange & maxRange are negative
+    def test_invalid_offer_listing_minRange_maxRange_negative(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Offer Listing"
+        description = "Please offer anything I'm poor."
+        end_time_choice = '1h'
+        open_to_money = True
+        min_range = -15.00
+        max_range = -15.00
+        notes = "Test goes here"
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
+            'minRange': min_range, 'maxRange': max_range, 'notes': notes}
+        form = CreateOfferListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
     #Test to ensure a user is not able to create a listing using someone elses item
     def test_invalid_offer_listing_creation_unowned_item(self):
         user = self.global_user1

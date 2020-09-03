@@ -1,5 +1,25 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h1>Hi</h1>
+  <div class="container-fluid">
+    <div class="row content-header-row">
+      <div class="col-lg-4">
+        <h1>My Offer Listings</h1>
+      </div>
+      <div class="col-lg-8 add-button">
+        <a href="{% url 'create-offer-listing' %}"><div class="btn btn-green">Add Offer Listing</div></a>
+      </div>
+    </div>
+  </div>
+  {% if offerlistings %}
+  <ul>
+    {% for listing in offerlistings %}
+      <li>
+        <a href="{{ listing.get_absolute_url }}">{{ listing.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    <p>You don't have any offer listings yet.</p>
+  {% endif %}
 {% endblock %}

@@ -18,19 +18,31 @@
         <ul class="col-md-8 site-nav">
           <li class="site-nav-url"><a href="{% url 'index' %}">Home</a></li>
           {% if user.is_authenticated %}
-            <li class="site-nav-url"><a href="">Listings</a></li>
             <div class="dropdown">
-              <div class="site-nav-url dropbtn">My Stuff</div>
-              <div class="dropdown-content mystuff-dropdown">
-                <a class="site-nav-url" href="{% url 'images' %}">Images</a>
-                <a class="site-nav-url" href="{% url 'items' %}">Items</a>
-                <a class="site-nav-url" href="#">Listings</a>
+              <div class="site-nav-url dropbtn" style="margin-left: -4px;">All Listings</div>
+              <div class="dropdown-content mystuff-dropdown-all-listings">
+                <a class="site-nav-url" style="margin-left: -4px;" href="#">Offers</a>
+                <a class="site-nav-url" style="margin-left: -4px;" href="#">Auctions</a>
               </div>
             </div>
-            <li class="site-nav-url"><a href="{% url 'faq' %}">FAQ</a></li>
-            <li class="site-nav-url"><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
+            <div class="dropdown">
+              <div class="site-nav-url dropbtn" style="margin-left: -3px;">My Stuff</div>
+              <div class="dropdown-content mystuff-dropdown">
+                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'images' %}">Images</a>
+                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'items' %}">Items</a>
+              </div>
+            </div>
+            <div class="dropdown">
+              <div class="site-nav-url dropbtn" style="margin-left: -4px;">My Listings</div>
+              <div class="dropdown-content mystuff-dropdown-listing">
+                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'offer-listings' %}">Offers</a>
+                <a class="site-nav-url" style="margin-left: -4px;" href="#">Auctions</a>
+              </div>
+            </div>
+            <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'faq' %}">FAQ</a></li>
+            <li class="site-nav-url" style="margin-left: -4px;"><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
           {% else %}
-            <li class="site-nav-url"><a href="{% url 'login'%}?next={{request.path}}">Sign Up/Login</a></li>
+            <li class="site-nav-url" style="margin-left: -4px;"><a href="{% url 'login'%}?next={{request.path}}">Sign Up/Login</a></li>
           {% endif %}
         </ul>
     </div>

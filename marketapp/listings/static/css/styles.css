@@ -9,8 +9,6 @@
   display: inline-block;
   background-color: #037bfc;
   padding: 10px;
-  margin-left: -4px;
-  border-right: 1px solid white;
 }
 
 .site-nav-url:hover {
@@ -44,8 +42,7 @@
 .dropdown {
   position: relative;
   display: inline-block;
-  margin-left: 0px;
-  margin-right: -1px;
+  color: white;
 }
 
 .dropdown-content {
@@ -65,16 +62,20 @@
   display: block;
 }
 
-.dropdown {
-  color: white;
-}
-
 .dropdown a {
   color: white;
 }
 
 .mystuff-dropdown a {
-  width: 80px;
+  width: 79px;
+}
+
+.mystuff-dropdown-listing a {
+  width: 99px;
+}
+
+.mystuff-dropdown-all-listings a {
+  width: 95px;
 }
 
 .btn-blue {
