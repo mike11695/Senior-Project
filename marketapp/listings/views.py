@@ -128,6 +128,18 @@ def create_offer_listing(request):
             else:
                 date = timezone.localtime(timezone.now()) + timedelta(days=7)
 
+            clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
+
+            if clean_openToMoneyOffers == True:
+                clean_maxRange = form.cleaned_data.get('maxRange')
+                if clean_maxRange:
+                    created_listing.maxRange = clean_maxRange
+                else:
+                    created_listing.maxRange = 0.00
+            else:
+                created_listing.minRange = 0.00
+                created_listing.maxRange = 0.00
+
             #date = timezone.localtime(timezone.now())
             created_listing.endTime = date
             created_listing.owner = request.user
@@ -136,3 +148,13 @@ def create_offer_listing(request):
     else:
         form = CreateOfferListingForm(user=request.user)
     return render(request, 'listings/create_offer_listing.html', {'form': form})
+
+class AuctionListingListView(LoginRequiredMixin, generic.ListView):
+    model = AuctionListing
+    context_object_name = 'auctionlistings'
+    template_name = "listings/auction_listings.html"
+
+class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
+    model = AuctionListing
+    context_object_name = 'auction-listing-detail'
+    template_name = "listings/auction_listing_detail.html"

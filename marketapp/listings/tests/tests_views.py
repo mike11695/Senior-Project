@@ -425,6 +425,8 @@ class CreateOfferListingViewTest(TestCase):
         self.assertEqual(post_response.status_code, 302)
         new_offer_listing = OfferListing.objects.get(id=4)
         self.assertEqual(new_offer_listing.owner, post_response.wsgi_request.user)
+        self.assertEqual(new_offer_listing.minRange, 5.00)
+        self.assertEqual(new_offer_listing.maxRange, 10.00)
 
     #Test to ensure that an offer listing created to end in 1 hour has correct end time
     def test_offer_listing_is_created_correct_1h(self):
@@ -577,3 +579,98 @@ class CreateOfferListingViewTest(TestCase):
         new_offer_listing_endtime = new_offer_listing.endTime
         new_offer_listing_endtime = new_offer_listing_endtime.astimezone(to_tz)
         self.assertEqual(new_offer_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that an offer listing has minRange and maxRange set to 0.00 if no money is wanted
+    def test_offer_listing_ranges_set_to_0(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-offer-listing'),
+            data={'name': "My Offer Listing", 'description': "Just a test listing",
+                'endTimeChoices': "1h", 'items': [str(self.item.id)],
+                'openToMoneyOffers': False, 'minRange': 5.00, 'maxRange': 10.00,
+                'notes': "Just offer anything"})
+        self.assertEqual(post_response.status_code, 302)
+        new_offer_listing = OfferListing.objects.last()
+        self.assertEqual(new_offer_listing.minRange, 0.00)
+        self.assertEqual(new_offer_listing.maxRange, 0.00)
+
+    #Test to ensure that maxRange is set to 0.00 if t was left blank and listing is open to money offers
+    def test_offer_listing_ranges_set_to_0(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-offer-listing'),
+            data={'name': "My Offer Listing", 'description': "Just a test listing",
+                'endTimeChoices': "1h", 'items': [str(self.item.id)],
+                'openToMoneyOffers': True, 'minRange': 5.00, 'notes': "Just offer anything"})
+        self.assertEqual(post_response.status_code, 302)
+        new_offer_listing = OfferListing.objects.last()
+        self.assertEqual(new_offer_listing.minRange, 5.00)
+        self.assertEqual(new_offer_listing.maxRange, 0.00)
+
+class AuctionListingsViewTest(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+    #Test to ensure that a user must be logged in to view listings
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('auction-listings'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('auction-listings'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('auction-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/auction_listings.html')
+
+class AuctionListingDetailViewTest(MyTestCase):
+    def setUp(self):
+        super(AuctionListingDetailViewTest, self).setUp()
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        date = datetime.today()
+        settings.TIME_ZONE
+        aware_date = make_aware(date)
+        self.auctionListing = AuctionListing.objects.create(owner=user,
+            name="My Items For Offers", description="A few items up for offers",
+            startingBid=5.00, minimumIncrement=2.50, autobuy=50.00, endTime=aware_date)
+        self.auctionListing.items.add = self.global_item1
+        self.auctionListing.save
+
+    #Test to ensure that a user must be logged in to view listings
+    def test_redirect_if_not_logged_in(self):
+        listing = self.auctionListing
+        response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/16')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.auctionListing
+        response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.auctionListing
+        response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/auction_listing_detail.html')

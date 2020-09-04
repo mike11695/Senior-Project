@@ -61,10 +61,6 @@ class CreateOfferListingForm(ModelForm):
         #check image size to ensure it meets the limit
         if clean_openToMoneyOffers == True:
             #Check to see that minRange exists
-            """if clean_minRange:
-                return
-            else:
-                raise ValidationError("You must have at least a minimum range if open to money offers.")"""
             if clean_minRange:
                 if clean_maxRange:
                     print("Max Range: ", clean_maxRange)
@@ -86,9 +82,6 @@ class CreateOfferListingForm(ModelForm):
             else:
                 raise ValidationError("You must have at least a minimum range if open to money offers.")
 
-
-    name = forms.CharField(max_length=50, required=True)
-
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), help_text="An item is required.")
     name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
     minRange = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
@@ -105,4 +98,51 @@ class CreateOfferListingForm(ModelForm):
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
        super(CreateOfferListingForm, self).__init__(*args, **kwargs)
+       self.fields['items'].queryset = Item.objects.filter(owner=self.user)
+
+class CreateAuctionListingForm(ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        clean_starting_bid = cleaned_data.get('startingBid')
+        clean_minimum_increment = cleaned_data.get('minimumIncrement')
+        clean_autobuy = cleaned_data.get('autobuy')
+
+        if clean_starting_bid:
+            if clean_starting_bid < 0.01:
+                raise ValidationError("Starting bid must be at least $0.01.")
+
+        if clean_minimum_increment:
+            if clean_minimum_increment < 0.01:
+                raise ValidationError("Minimum increment must be at least $0.01.")
+            if clean_starting_bid:
+                if clean_minimum_increment > clean_starting_bid:
+                    raise ValidationError("Minimum increment must not be greater than starting bid.")
+
+        if clean_autobuy:
+            if clean_autobuy < 0.01:
+                raise ValidationError("Autobuy must be at least $0.01.")
+            if clean_starting_bid:
+                if clean_autobuy <= clean_starting_bid:
+                    raise ValidationError("Autobuy must be greater than the starting bid.")
+
+        return
+
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), help_text="An item is required.")
+    name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
+    startingBid = forms.DecimalField(max_digits=9, decimal_places=2, required=True,
+        help_text="Money amount bidding should start at for auction.")
+    minimumIncrement = forms.DecimalField(max_digits=9, decimal_places=2, required=True,
+        help_text="Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).")
+    autobuy = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
+        help_text="A bid greater than the starting bid that will automatically win the auction if placed. (Leave blank if not interested in having an autobuy price)")
+
+    class Meta:
+        model = AuctionListing
+        fields = ['name', 'description', 'items', 'endTimeChoices', 'startingBid',
+            'minimumIncrement', 'autobuy']
+        exclude = ['owner', 'endTime', 'listingEnded']
+
+    def __init__(self, *args, **kwargs):
+       self.user = kwargs.pop('user')
+       super(CreateAuctionListingForm, self).__init__(*args, **kwargs)
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)

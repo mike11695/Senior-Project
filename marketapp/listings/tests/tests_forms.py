@@ -1,5 +1,6 @@
 from django.test import TestCase
-from listings.forms import SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm
+from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
+    CreateAuctionListingForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing, AuctionListing)
 
@@ -485,13 +486,273 @@ class CreateOfferListingFormTest(MyTestCase):
         self.assertFalse(form.is_valid())
 
     #Test to ensure that name field help text is correct
-    def test_item_upload_name_help_text(self):
+    def test_offer_listing_name_help_text(self):
         user = self.global_user1
         form = CreateOfferListingForm(user=user)
         self.assertEqual(form.fields['name'].help_text, "Name for listing is required.")
 
     #Test to ensure that items field help text is correct
-    def test_item_upload_image_help_text(self):
+    def test_offer_listing_image_help_text(self):
         user = self.global_user1
         form = CreateOfferListingForm(user=user)
         self.assertEqual(form.fields['items'].help_text, "An item is required.")
+
+    #Test to ensure that minRange field help text is correct
+    def test_offer_listing_min_range_help_text(self):
+        user = self.global_user1
+        form = CreateOfferListingForm(user=user)
+        self.assertEqual(form.fields['minRange'].help_text, "Minimum money offers you'll consider.")
+
+    #Test to ensure that maxRange field help text is correct
+    def test_offer_listing_max_range_help_text(self):
+        user = self.global_user1
+        form = CreateOfferListingForm(user=user)
+        self.assertEqual(form.fields['maxRange'].help_text, "Maximum money offers you'll consider (leave blank if you don't have a maximum).")
+
+class CreateAuctionListingFormTest(MyTestCase):
+    #Test to ensure a user is able to create an auction listing providing all fields
+    def test_valid_auction_listing_creation(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if name is too long
+    def test_invalid_auction_listing_name_too_long(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if name is missing
+    def test_invalid_auction_listing_name_missing(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        autobuy = 5.00
+        data = {'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if description is missing
+    def test_invalid_auction_listing_description_missing(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        autobuy = 5.00
+        data = {'name': name, 'items': [str(item1.id)], 'endTimeChoices': end_time_choice,
+            'startingBid': starting_bid, 'minimumIncrement': minimum_increment,
+            'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if item is missing
+    def test_invalid_auction_listing_item_missing(self):
+        user = self.global_user1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'endTimeChoices': end_time_choice,
+            'startingBid': starting_bid, 'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if item is not owned by current user
+    def test_invalid_auction_listing_item_not_owned(self):
+        user = self.global_user1
+        item2 = self.global_item2
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'items': [str(item2.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if starting bid is missing
+    def test_invalid_auction_listing_start_bid_missing(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        minimum_increment = 0.25
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'minimumIncrement': minimum_increment,
+            'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if starting bid is less than 0.01
+    def test_invalid_auction_listing_low_starting_bid(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = -1.00
+        minimum_increment = 0.25
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if minimum increment is missing
+    def test_invalid_auction_listing_minimum_increment_missing(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if minimum increment is negative
+    def test_invalid_auction_listing_negative_minimum_increment(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = -0.25
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if minimum increment is greater than starting bid
+    def test_invalid_auction_listing_greater_minimum_increment(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = -1.00
+        minimum_increment = 1.25
+        autobuy = 5.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is able to create an auction listing if autobuy is missing
+    def test_valid_auction_listing_missing_autobuy(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if autobuy is equal to or less than starting bid
+    def test_invalid_auction_listing_autobuy_equals_or_less_start_bid(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        autobuy = 1.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an auction listing if autobuy is negative
+    def test_invalid_auction_listing_negative_autobuy(self):
+        user = self.global_user1
+        item1 = self.global_item1
+        name = "My Auction Listing"
+        description = "Just a test auction please ignore."
+        end_time_choice = '1h'
+        starting_bid = 1.00
+        minimum_increment = 0.25
+        autobuy = -5.00
+        data = {'name': name, 'description': description, 'items': [str(item1.id)],
+            'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
+            'minimumIncrement': minimum_increment, 'autobuy': autobuy}
+        form = CreateAuctionListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that name field help text is correct
+    def test_auction_listing_name_help_text(self):
+        user = self.global_user1
+        form = CreateAuctionListingForm(user=user)
+        self.assertEqual(form.fields['name'].help_text, "Name for listing is required.")
+
+    #Test to ensure that items field help text is correct
+    def test_auction_listing_image_help_text(self):
+        user = self.global_user1
+        form = CreateAuctionListingForm(user=user)
+        self.assertEqual(form.fields['items'].help_text, "An item is required.")
+
+    #Test to ensure that startingBid field help text is correct
+    def test_auction_listing_start_bid_help_text(self):
+        user = self.global_user1
+        form = CreateAuctionListingForm(user=user)
+        self.assertEqual(form.fields['startingBid'].help_text, "Money amount bidding should start at for auction.")
+
+    #Test to ensure that minimumIncrement field help text is correct
+    def test_auction_listing_start_bid_help_text(self):
+        user = self.global_user1
+        form = CreateAuctionListingForm(user=user)
+        self.assertEqual(form.fields['minimumIncrement'].help_text, "Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).")
+
+    #Test to ensure that autobuy field help text is correct
+    def test_auction_listing_autobuy_help_text(self):
+        user = self.global_user1
+        form = CreateAuctionListingForm(user=user)
+        self.assertEqual(form.fields['autobuy'].help_text, "A bid greater than the starting bid that will automatically win the auction if placed. (Leave blank if not interested in having an autobuy price)")
