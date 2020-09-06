@@ -46,6 +46,7 @@ class AddItemForm(ModelForm):
         fields = ['images', 'name', 'description']
         exclude = ['owner']
 
+    #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
        super(AddItemForm, self).__init__(*args, **kwargs)
@@ -95,6 +96,7 @@ class CreateOfferListingForm(ModelForm):
             'minRange', 'maxRange', 'notes']
         exclude = ['owner', 'endTime', 'listingEnded']
 
+    #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
        super(CreateOfferListingForm, self).__init__(*args, **kwargs)
@@ -107,21 +109,26 @@ class CreateAuctionListingForm(ModelForm):
         clean_minimum_increment = cleaned_data.get('minimumIncrement')
         clean_autobuy = cleaned_data.get('autobuy')
 
+        #Checks to ensure that starting bid must be at least 0.01
         if clean_starting_bid:
             if clean_starting_bid < 0.01:
                 raise ValidationError("Starting bid must be at least $0.01.")
 
         if clean_minimum_increment:
+            #Checks to ensure that minimum increment must be at least 0.01
             if clean_minimum_increment < 0.01:
                 raise ValidationError("Minimum increment must be at least $0.01.")
+            #Checks to ensure that minimum increment is not greater than the starting bid
             if clean_starting_bid:
                 if clean_minimum_increment > clean_starting_bid:
                     raise ValidationError("Minimum increment must not be greater than starting bid.")
 
         if clean_autobuy:
+            #Checks to ensure that autobuy must be at least 0.01
             if clean_autobuy < 0.01:
                 raise ValidationError("Autobuy must be at least $0.01.")
             if clean_starting_bid:
+                #Checks to ensure that autobuy is not less than or equal to the starting bid
                 if clean_autobuy <= clean_starting_bid:
                     raise ValidationError("Autobuy must be greater than the starting bid.")
 
@@ -142,6 +149,7 @@ class CreateAuctionListingForm(ModelForm):
             'minimumIncrement', 'autobuy']
         exclude = ['owner', 'endTime', 'listingEnded']
 
+    #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
        super(CreateAuctionListingForm, self).__init__(*args, **kwargs)

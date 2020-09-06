@@ -314,10 +314,10 @@ class OfferListing(Listing):
     #Fields for OfferListing
     openToMoneyOffers = models.BooleanField(default=True, verbose_name="Open to Money Offers?",
         help_text="Leave this field unchecked if you're only interested in item offers.")
-    minRange = models.DecimalField(default=0.00, max_digits=9, decimal_places=2,
+    minRange = models.DecimalField(default=0.00, max_digits=9, decimal_places=2, null = True,
         verbose_name="Minimum Price Range",
         help_text="Minimum money offers you'll consider.")
-    maxRange = models.DecimalField(default=0.00, max_digits=9, decimal_places=2,
+    maxRange = models.DecimalField(default=0.00, max_digits=9, decimal_places=2, null = True,
         verbose_name="Maximum Price Range",
         help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).")
     notes = models.TextField(max_length=500, help_text="Include here what offers you're seeking.")
@@ -345,7 +345,7 @@ class AuctionListing(Listing):
     minimumIncrement = models.DecimalField(max_digits=9, decimal_places=2,
         verbose_name="Minimum Increment",
         help_text="Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).")
-    autobuy = models.DecimalField(default=None, max_digits=9, decimal_places=2,
+    autobuy = models.DecimalField(default=None, max_digits=9, decimal_places=2, null=True,
         help_text="If a user bids the amount you set in this field, the auction will close and they will win the auction.")
 
     def get_absolute_url(self):

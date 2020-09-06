@@ -6,7 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing
-from listings.forms import SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm
+from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
+    CreateAuctionListingForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -110,37 +111,51 @@ def create_offer_listing(request):
         if form.is_valid():
             created_listing = form.save()
 
+            #Get the end time choice from form and set end time accordingly
             clean_choice = form.cleaned_data.get('endTimeChoices')
             if clean_choice == '1h':
+                #Set end time to 1 hour from current time if choice was 1h
                 date = timezone.localtime(timezone.now()) + timedelta(hours=1)
             elif clean_choice == '2h':
+                #Set end time to 2 hours from current time if choice was 2h
                 date = timezone.localtime(timezone.now()) + timedelta(hours=2)
             elif clean_choice == '4h':
+                #Set end time to 4 hours from current time if choice was 4h
                 date = timezone.localtime(timezone.now()) + timedelta(hours=4)
             elif clean_choice == '8h':
+                #Set end time to 8 hours from current time if choice was 8h
                 date = timezone.localtime(timezone.now()) + timedelta(hours=8)
             elif clean_choice == '12h':
+                #Set end time to 12 hours from current time if choice was 12h
                 date = timezone.localtime(timezone.now()) + timedelta(hours=12)
             elif clean_choice == '1d':
+                #Set end time to 1 day from current time if choice was 1d
                 date = timezone.localtime(timezone.now()) + timedelta(days=1)
             elif clean_choice == '3d':
+                #Set end time to 3 days from current time if choice was 3ds
                 date = timezone.localtime(timezone.now()) + timedelta(days=3)
             else:
+                #Set end time to 7 days from current time
                 date = timezone.localtime(timezone.now()) + timedelta(days=7)
 
+            #Get openToMoneyOffers value from form
             clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
 
+            #Check to see if option was checked or not
             if clean_openToMoneyOffers == True:
+                #If true, check if the user added a maxRange to form
                 clean_maxRange = form.cleaned_data.get('maxRange')
                 if clean_maxRange:
+                    #If so, keep the value the same
                     created_listing.maxRange = clean_maxRange
                 else:
+                    #If not, set it to 0.00
                     created_listing.maxRange = 0.00
             else:
+                #If not checked, set ranges to 0.00
                 created_listing.minRange = 0.00
                 created_listing.maxRange = 0.00
 
-            #date = timezone.localtime(timezone.now())
             created_listing.endTime = date
             created_listing.owner = request.user
             created_listing.save()
@@ -158,3 +173,56 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = AuctionListing
     context_object_name = 'auction-listing-detail'
     template_name = "listings/auction_listing_detail.html"
+
+@login_required(login_url='/accounts/login/')
+def create_auction_listing(request):
+    if request.method == 'POST':
+        form = CreateAuctionListingForm(data=request.POST, user=request.user)
+        if form.is_valid():
+            created_listing = form.save()
+
+            #Get the end time choice from form and set end time accordingly
+            clean_choice = form.cleaned_data.get('endTimeChoices')
+            if clean_choice == '1h':
+                #Set end time to 1 hour from current time if choice was 1h
+                date = timezone.localtime(timezone.now()) + timedelta(hours=1)
+            elif clean_choice == '2h':
+                #Set end time to 2 hours from current time if choice was 2h
+                date = timezone.localtime(timezone.now()) + timedelta(hours=2)
+            elif clean_choice == '4h':
+                #Set end time to 4 hours from current time if choice was 4h
+                date = timezone.localtime(timezone.now()) + timedelta(hours=4)
+            elif clean_choice == '8h':
+                #Set end time to 8 hours from current time if choice was 8h
+                date = timezone.localtime(timezone.now()) + timedelta(hours=8)
+            elif clean_choice == '12h':
+                #Set end time to 12 hours from current time if choice was 12h
+                date = timezone.localtime(timezone.now()) + timedelta(hours=12)
+            elif clean_choice == '1d':
+                #Set end time to 1 day from current time if choice was 1d
+                date = timezone.localtime(timezone.now()) + timedelta(days=1)
+            elif clean_choice == '3d':
+                #Set end time to 3 days from current time if choice was 3ds
+                date = timezone.localtime(timezone.now()) + timedelta(days=3)
+            else:
+                #Set end time to 7 days from current time
+                date = timezone.localtime(timezone.now()) + timedelta(days=7)
+
+            #Get autobuy value from the form
+            clean_autobuy = form.cleaned_data.get('autobuy')
+
+            #Check to see if user filled in autobuy field
+            if clean_autobuy:
+                #If filled in, keep the original value
+                created_listing.autobuy = clean_autobuy
+            else:
+                #If not filled in, set it to 0.00
+                created_listing.autobuy = 0.00
+
+            created_listing.endTime = date
+            created_listing.owner = request.user
+            created_listing.save()
+            return redirect('auction-listings')
+    else:
+        form = CreateAuctionListingForm(user=request.user)
+    return render(request, 'listings/create_auction_listing.html', {'form': form})

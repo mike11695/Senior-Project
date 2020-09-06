@@ -391,7 +391,7 @@ class CreateOfferListingViewTest(TestCase):
         self.item.images.add(image)
         self.item.save
 
-    #Test to ensure that a user must be logged in to upload image
+    #Test to ensure that a user must be logged in to create offer listing
     def test_redirect_if_not_logged_in(self):
         response = self.client.get(reverse('create-offer-listing'))
         self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/create-offer-listing')
@@ -674,3 +674,204 @@ class AuctionListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/auction_listing_detail.html')
+
+class CreateAuctionListingViewTest(TestCase):
+    def setUp(self):
+        super(CreateAuctionListingViewTest, self).setUp()
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        image = Image.objects.create(owner=user,  image=test_image, name="Test Image")
+        tag = Tag.objects.create(name="Test Tag")
+        image.tags.add(tag)
+        image.save
+        self.item = Item.objects.create(name="Global Item",
+            description="A global item for testing", owner=user)
+        self.item.images.add(image)
+        self.item.save
+
+    #Test to ensure that a user must be logged in to create auction listing
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('create-auction-listing'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/create-auction-listing')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-auction-listing'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-auction-listing'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/create_auction_listing.html')
+
+    #Test to ensure a user is able to create an auction listing and have it relate to them
+    def test_auction_listing_is_created(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "1h", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        self.assertEqual(new_auction_listing.owner, post_response.wsgi_request.user)
+        self.assertEqual(new_auction_listing.autobuy, 50.00)
+
+    #Test to ensure autobuy is set to 0.00 if left blank and auction listing is created successfully
+    def test_auction_listing_autobuy_set_to_0_if_blank(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "1h", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        self.assertEqual(new_auction_listing.autobuy, 0.00)
+
+    #Test to ensure that an auction listing created to end in 1 hour has correct end time
+    def test_auction_listing_1h_end_time(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "1h", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=1)
+        to_tz = timezone.get_default_timezone()
+        new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
+        self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that an auction listing created to end in 2 hours has correct end time
+    def test_auction_listing_2h_end_time(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "2h", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=2)
+        to_tz = timezone.get_default_timezone()
+        new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
+        self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that an auction listing created to end in 4 hours has correct end time
+    def test_auction_listing_4h_end_time(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "4h", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=4)
+        to_tz = timezone.get_default_timezone()
+        new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
+        self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that an auction listing created to end in 8 hours has correct end time
+    def test_auction_listing_8h_end_time(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "8h", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=8)
+        to_tz = timezone.get_default_timezone()
+        new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
+        self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that an auction listing created to end in 12 hours has correct end time
+    def test_auction_listing_12h_end_time(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "12h", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=12)
+        to_tz = timezone.get_default_timezone()
+        new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
+        self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that an auction listing created to end in 1 day has correct end time
+    def test_auction_listing_1d_end_time(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "1d", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(days=1)
+        to_tz = timezone.get_default_timezone()
+        new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
+        self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that an auction listing created to end in 3 days has correct end time
+    def test_auction_listing_3d_end_time(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "3d", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(days=3)
+        to_tz = timezone.get_default_timezone()
+        new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
+        self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that an auction listing created to end in 7 days has correct end time
+    def test_auction_listing_7d_end_time(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-auction-listing'),
+            data={'name': "My Auction Listing", 'description': "TEST AUCTION",
+                'endTimeChoices': "7d", 'items': [str(self.item.id)],
+                'startingBid': 5.00, 'minimumIncrement': 1.00, 'autobuy': 50.00})
+        self.assertEqual(post_response.status_code, 302)
+        new_auction_listing = AuctionListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(days=7)
+        to_tz = timezone.get_default_timezone()
+        new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
+        self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
