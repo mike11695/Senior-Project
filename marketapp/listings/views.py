@@ -94,6 +94,11 @@ def faq_items(request):
     # Render the HTML template faq/items.html with the data in the context variable
     return render(request, 'faq/items.html')
 
+@login_required(login_url='/accounts/login/')
+def faq_listings(request):
+    # Render the HTML template faq/listings.html with the data in the context variable
+    return render(request, 'faq/listings.html')
+
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
     model = OfferListing
     context_object_name = 'offerlistings'

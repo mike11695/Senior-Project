@@ -1,0 +1,69 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+<div class="how-to-content col-md-10">
+  <h1>How to Create an Offer Listing</h1>
+  <p>In order to create listing that accepts offers, hover over "My Listings" in the top right
+    navigation bar and in the dropdown select "Offers".  On this page, you will see all
+    of your current active listings that are open to offers.  Below the navigation bar
+    you'll see a button that says "Add Offer Listing".  Clicking on the button wll take
+    you to the form to create a listing for offers.</p>
+  <p>When creating an offer listing, you will only be able to receive offers from other
+    users that consist of other items or money offers you you select the option to receive
+    them.  Users can also offer a combination of items and money if the option is selected.
+    If you rather auction off an item instead of receiving offers, creating an auction listing
+    is allowed.  You will have to review these offers after you receive them and will have the
+    option to accept or decline them.  You do not have to make a decision right away however,
+    but you will need to accept an offer before the listing ends.  Once you accept an offer,
+    the listing will be closed and you will need to communicate with the other user on how
+    you'll be exchanging goods.  A receipt will also be made for the transaction for your
+    convienence.</p>
+  <h1>How to Create an Auction Listing</h1>
+  <p>In order to create an listing to auction items, hover over "My Listings" in the top right
+    navigation bar and in the dropdown select "Auctions".  On this page, you will see all
+    of your current active listings that are accepting bids.  Below the navigation bar
+    you'll see a button that says "Add Auction Listing".  Clicking on the button wll take
+    you to the form to create a listing for bids.</p>
+  <p>When creating an auction listing, users will be able to bid on your items up until
+    the auction ends.  Once the auction ends, the user who placed the highest bid will win
+    the auction.  However, you have the option to add an autobuy price to your auction.  If
+    a user places a bid for this amount, they will auctomatically win and the auction will close.
+    Once an auction closes and their has been at least one bid on the auction, a receipt will
+    be generated for your convenience. You will then have to communicate with the winner on how
+    you will exchange your items for money.  If an auction closes without any bids, you can relist
+    it as well as edit any of the attributes, such as starting bid and autobuy price.  Auctions once
+    created cannot be edited or deleted, so please check all the information for your auction before
+    finalizing the creation.</p>
+</div>
+<div class="faq-content col-md-10">
+  <h1>FAQs for All Listings</h1>
+  <h3 class="faq-question">How many items can be included in my listing?</h3>
+  <p>You can include as many items as you want, but each item can only be included once.  If
+    you have multiples of an item, be sure include it in the notes (only for offer listings) or
+    create an item that shows all of them together.</p>
+  <h3 class="faq-question">How long can a listing last?</h3>
+  <p>A listing can be active for as short as an hour and as long as 7 days.  Once this time period
+    is reached, the listing will end and will no longer appear for other users.  You can relist a
+    listing after it has ended, but for auction listings you may only relist them if no bids had been
+    made.  For offer listings, make sure to accept an offer if you have one you like before it ends,
+    otherwise you will not be able to accept any offers once it has ended.</p>
+  <h1>FAQs for Offer Listings</h1>
+  <h3 class="faq-question">Do I have to accept money offers for my listing?</h3>
+  <p>No you do not.  When creating a listing for offers, if you are not interested in money, leave
+    the "Open to Money Offers" option unchecked.  You can then leave the minimum and maximum range fields
+    blank.</p>
+  <h3 class="faq-question">What are the lowest and highest ranges I can have?</h3>
+  <p>If the "Open to Money Offers" option has been checked, the mimimum range you can have is $0.01
+    while the maximum range you can have is $9,999,999.99.</p>
+  <h1>FAQs for Auction Listings</h1>
+  <h3 class="faq-question">What are the minimum and maximum values for a starting bid?</h3>
+  <p>The mimimum value for a starting bid you can have is $0.01, while the maximum value you can have
+    is $9,999,999.99.</p>
+  <h3 class="faq-question">How large can the minimum increment be?</h3>
+  <p>The mimimum increment bid value must be at least $0.01, and it cannot be greater than your starting
+    bid.</p>
+  <h3 class="faq-question">How large can my autobuy price be?</h3>
+  <p>The autobuy price must be greater than your starting bid, and can be up to $9,999,999.99.</p>
+</div>
+{% endblock %}

@@ -310,6 +310,32 @@ class FAQItemsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/items.html')
 
+class FAQListingsViewTest(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+    #Test to ensure that a user must be logged in to view FAQ
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('faq-listings'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/FAQ/listings')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-listings'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'faq/listings.html')
+
 class OfferListingsViewTest(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="mike", password="example",
