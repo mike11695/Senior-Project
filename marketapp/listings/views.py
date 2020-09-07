@@ -40,9 +40,20 @@ class ImageListView(LoginRequiredMixin, generic.ListView):
     context_object_name = 'images'
     template_name = "images/images.html"
 
+    #Filters the list of images to only show those that belong to the current logged in user
+    def get_queryset(self):
+        return Image.objects.filter(owner=self.request.user)
+
 class ImageDetailView(LoginRequiredMixin, generic.DetailView):
     model = Image
     template_name = "images/image_detail.html"
+
+    #Checks to ensure that only the user that created the image can view the detail view
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner != self.request.user:
+            return redirect('index')
+        return super(ImageDetailView, self).dispatch(request, *args, **kwargs)
 
 @login_required(login_url='/accounts/login/')
 def add_image(request):
@@ -62,9 +73,20 @@ class ItemListView(LoginRequiredMixin, generic.ListView):
     context_object_name = 'items'
     template_name = "items/items.html"
 
+    #Filters the list of items to only show those that belong to the current logged in user
+    def get_queryset(self):
+        return Item.objects.filter(owner=self.request.user)
+
 class ItemDetailView(LoginRequiredMixin, generic.DetailView):
     model = Item
     template_name = "items/item_detail.html"
+
+    #Checks to ensure that only the user that created the image can view the detail view
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner != self.request.user:
+            return redirect('index')
+        return super(ItemDetailView, self).dispatch(request, *args, **kwargs)
 
 @login_required(login_url='/accounts/login/')
 def add_item(request):
@@ -103,6 +125,10 @@ class OfferListingListView(LoginRequiredMixin, generic.ListView):
     model = OfferListing
     context_object_name = 'offerlistings'
     template_name = "listings/offer_listings.html"
+
+    #Filters the list of offer listings to only show those that belong to the current logged in user
+    def get_queryset(self):
+        return OfferListing.objects.filter(owner=self.request.user)
 
 class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = OfferListing
@@ -173,6 +199,10 @@ class AuctionListingListView(LoginRequiredMixin, generic.ListView):
     model = AuctionListing
     context_object_name = 'auctionlistings'
     template_name = "listings/auction_listings.html"
+
+    #Filters the list of offer listings to only show those that belong to the current logged in user
+    def get_queryset(self):
+        return AuctionListing.objects.filter(owner=self.request.user)
 
 class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = AuctionListing

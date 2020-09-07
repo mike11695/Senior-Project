@@ -42,9 +42,29 @@ class MyTestCase(TestCase):
 
 class ImagesViewTest(TestCase):
     def setUp(self):
-        user = User.objects.create_user(username="mike", password="example",
+        user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
+        user2 = User.objects.create_user(username="mikey", password="example",
+            email="example1@text.com", paypalEmail="example1@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        number_of_images_user1 = 5
+        number_of_images_user2 = 2
+        tag = Tag.objects.create(name="Test Tag")
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+
+        for num in range(number_of_images_user1):
+            image = Image.objects.create(owner=user1, image=test_image,
+                name='Test Image #{0}'.format(num))
+            image.tags.add(tag)
+            image.save
+
+        for num in range(number_of_images_user2):
+            image = Image.objects.create(owner=user2, image=test_image,
+                name='Test Image #{0}'.format(num))
+            image.tags.add(tag)
+            image.save
 
     #Test to ensure that a user must be logged in to upload image
     def test_redirect_if_not_logged_in(self):
@@ -65,6 +85,68 @@ class ImagesViewTest(TestCase):
         response = self.client.get(reverse('images'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'images/images.html')
+
+    #Test to ensure that the user only sees images they've uploaded for user1
+    def test_list_only_current_users_images_user1(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('images'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['images']) == 5)
+
+    #Test to ensure that the user only sees images they've uploaded for user2
+    def test_list_only_current_users_images_user2(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('images'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['images']) == 2)
+
+class ImageDetailViewTest(TestCase):
+    def setUp(self):
+        super(ImageDetailViewTest, self).setUp()
+        user1 = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        user2 = User.objects.create_user(username="mikey", password="example",
+            email="example2@text.com", paypalEmail="example2@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        tag = Tag.objects.create(name="Test Tag")
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        self.image = Image.objects.create(owner=user1, image=test_image, name='Test Image')
+        self.image.tags.add(tag)
+        self.image.save
+
+    #Test to ensure that a user must be logged in to view images
+    def test_redirect_if_not_logged_in(self):
+        image = self.image
+        response = self.client.get(reverse('image-detail', args=[str(image.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        image = self.image
+        response = self.client.get(reverse('image-detail', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if they are not the user that owns the image
+    def test_redirect_if_logged_in_but_incorrect_user(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        image = self.image
+        response = self.client.get(reverse('image-detail', args=[str(image.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        image = self.image
+        response = self.client.get(reverse('image-detail', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'images/image_detail.html')
 
 class AddImageViewTest(TestCase):
     def setUp(self):
@@ -105,7 +187,7 @@ class AddImageViewTest(TestCase):
         post_response = self.client.post(reverse('images-add'),
             data={'image': image, 'name': name, 'tags': [str(tag1.id), str(tag2.id)]})
         self.assertEqual(post_response.status_code, 302)
-        new_image = Image.objects.get(id=1)
+        new_image = Image.objects.last()
         self.assertEqual(new_image.owner, post_response.wsgi_request.user)
 
     #Test to ensure user is redirected to image gallery if form was valid
@@ -125,9 +207,35 @@ class AddImageViewTest(TestCase):
 
 class ItemsViewTest(TestCase):
     def setUp(self):
-        user = User.objects.create_user(username="mike", password="example",
+        user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
+        user2 = User.objects.create_user(username="mikey", password="example",
+            email="example1@text.com", paypalEmail="example1@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        number_of_items_user1 = 3
+        number_of_items_user2 = 6
+        tag = Tag.objects.create(name="Test Tag")
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        image1 = Image.objects.create(owner=user1, image=test_image, name='Test Image')
+        image1.tags.add(tag)
+        image1.save
+        image2 = Image.objects.create(owner=user2, image=test_image, name='Test Image')
+        image2.tags.add(tag)
+        image2.save
+
+        for num in range(number_of_items_user1):
+            item = Item.objects.create(name='Item #{0}'.format(num),
+                description="Just an item", owner=user1)
+            item.images.add(image1)
+            item.save
+
+        for num in range(number_of_items_user2):
+            item = Item.objects.create(name='Item #{0}'.format(num),
+                description="Just an item", owner=user2)
+            item.images.add(image2)
+            item.save
 
     #Test to ensure that a user must be logged in to upload image
     def test_redirect_if_not_logged_in(self):
@@ -148,6 +256,69 @@ class ItemsViewTest(TestCase):
         response = self.client.get(reverse('items'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'items/items.html')
+
+    #Test to ensure that the user only sees items they've uploaded for user1
+    def test_list_only_current_users_items_user1(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('items'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['items']) == 3)
+
+    #Test to ensure that the user only sees items they've uploaded for user2
+    def test_list_only_current_users_items_user2(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('items'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['items']) == 6)
+
+class ItemDetailViewTest(TestCase):
+    def setUp(self):
+        super(ItemDetailViewTest, self).setUp()
+        user1 = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        user2 = User.objects.create_user(username="mikey", password="example",
+            email="example2@text.com", paypalEmail="example2@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        tag = Tag.objects.create(name="Test Tag")
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        image = Image.objects.create(owner=user1, image=test_image, name='Test Image')
+        self.item = Item.objects.create(name='Test Item', description="Just an item", owner=user1)
+        self.item.images.add(image)
+        self.item.save
+
+    #Test to ensure that a user must be logged in to view items
+    def test_redirect_if_not_logged_in(self):
+        item = self.item
+        response = self.client.get(reverse('item-detail', args=[str(item.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        item = self.item
+        response = self.client.get(reverse('item-detail', args=[str(item.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if they are not the user that owns the item
+    def test_redirect_if_logged_in_but_incorrect_user(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        item = self.item
+        response = self.client.get(reverse('item-detail', args=[str(item.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        item = self.item
+        response = self.client.get(reverse('item-detail', args=[str(item.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'items/item_detail.html')
 
 class AddItemViewTest(TestCase):
     def setUp(self):
@@ -201,7 +372,7 @@ class AddItemViewTest(TestCase):
             data={'name': "My Image", 'description': "A test image",
                 'images': [str(test_image1.id), str(test_image2.id)]})
         self.assertEqual(post_response.status_code, 302)
-        new_item = Item.objects.get(id=1)
+        new_item = Item.objects.last()
         self.assertEqual(new_item.owner, post_response.wsgi_request.user)
 
     #Test to ensure user is redirected to image gallery if form was valid
@@ -338,9 +509,49 @@ class FAQListingsViewTest(TestCase):
 
 class OfferListingsViewTest(TestCase):
     def setUp(self):
-        user = User.objects.create_user(username="mike", password="example",
+        user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
+        user2 = User.objects.create_user(username="mikey", password="example",
+            email="example1@text.com", paypalEmail="example1@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        number_of_listings_user1 = 4
+        number_of_listings_user2 = 5
+        tag = Tag.objects.create(name="Test Tag")
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        image1 = Image.objects.create(owner=user1, image=test_image, name='Test Image')
+        image1.tags.add(tag)
+        image1.save
+        image2 = Image.objects.create(owner=user2, image=test_image, name='Test Image')
+        image2.tags.add(tag)
+        image2.save
+        item1 = Item.objects.create(name='Test Item', description="Just an item", owner=user1)
+        item1.images.add(image1)
+        item1.save
+        item2 = Item.objects.create(name='Test Item', description="Just an item", owner=user2)
+        item2.images.add(image2)
+        item2.save
+
+        date = datetime.today()
+        settings.TIME_ZONE
+        aware_date = make_aware(date)
+
+        for num in range(number_of_listings_user1):
+            listing = OfferListing.objects.create(owner=user1,
+                name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
+                openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
+                endTime=aware_date)
+            listing.items.add(item1)
+            listing.save
+
+        for num in range(number_of_listings_user2):
+            listing = OfferListing.objects.create(owner=user2,
+                name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
+                openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
+                endTime=aware_date)
+            listing.items.add(item2)
+            listing.save
 
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
@@ -362,6 +573,22 @@ class OfferListingsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_listings.html')
 
+    #Test to ensure that the user only sees listings they've uploaded for user1
+    def test_list_only_current_users_listings_user1(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('offer-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['offerlistings']) == 4)
+
+    #Test to ensure that the user only sees listings they've uploaded for user2
+    def test_list_only_current_users_listings_user2(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('offer-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['offerlistings']) == 5)
+
 class OfferListingDetailViewTest(MyTestCase):
     def setUp(self):
         super(OfferListingDetailViewTest, self).setUp()
@@ -382,7 +609,7 @@ class OfferListingDetailViewTest(MyTestCase):
     def test_redirect_if_not_logged_in(self):
         listing = self.offerListing
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
-        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/3')
+        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/{0}'.format(listing.id))
 
     #Test to ensure user is not redirected if logged in
     def test_no_redirect_if_logged_in(self):
@@ -449,7 +676,7 @@ class CreateOfferListingViewTest(TestCase):
                 'openToMoneyOffers': True, 'minRange': 5.00, 'maxRange': 10.00,
                 'notes': "Just offer anything"})
         self.assertEqual(post_response.status_code, 302)
-        new_offer_listing = OfferListing.objects.get(id=4)
+        new_offer_listing = OfferListing.objects.last()
         self.assertEqual(new_offer_listing.owner, post_response.wsgi_request.user)
         self.assertEqual(new_offer_listing.minRange, 5.00)
         self.assertEqual(new_offer_listing.maxRange, 10.00)
@@ -639,9 +866,47 @@ class CreateOfferListingViewTest(TestCase):
 
 class AuctionListingsViewTest(TestCase):
     def setUp(self):
-        user = User.objects.create_user(username="mike", password="example",
+        user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
+        user2 = User.objects.create_user(username="mikey", password="example",
+            email="example1@text.com", paypalEmail="example1@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        number_of_listings_user1 = 9
+        number_of_listings_user2 = 2
+        tag = Tag.objects.create(name="Test Tag")
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        image1 = Image.objects.create(owner=user1, image=test_image, name='Test Image')
+        image1.tags.add(tag)
+        image1.save
+        image2 = Image.objects.create(owner=user2, image=test_image, name='Test Image')
+        image2.tags.add(tag)
+        image2.save
+        item1 = Item.objects.create(name='Test Item', description="Just an item", owner=user1)
+        item1.images.add(image1)
+        item1.save
+        item2 = Item.objects.create(name='Test Item', description="Just an item", owner=user2)
+        item2.images.add(image2)
+        item2.save
+
+        date = datetime.today()
+        settings.TIME_ZONE
+        aware_date = make_aware(date)
+
+        for num in range(number_of_listings_user1):
+            listing = AuctionListing.objects.create(owner=user1,
+                name="Test Auction", description="Just a test auction",
+                startingBid=5.00, minimumIncrement=2.50, autobuy=50.00, endTime=aware_date)
+            listing.items.add(item1)
+            listing.save
+
+        for num in range(number_of_listings_user2):
+            listing = AuctionListing.objects.create(owner=user2,
+                name="Test Auction", description="Just a test auction",
+                startingBid=5.00, minimumIncrement=2.50, autobuy=50.00, endTime=aware_date)
+            listing.items.add(item2)
+            listing.save
 
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
@@ -663,6 +928,22 @@ class AuctionListingsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/auction_listings.html')
 
+    #Test to ensure that the user only sees listings they've uploaded for user1
+    def test_list_only_current_users_listings_user1(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('auction-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['auctionlistings']) == 9)
+
+    #Test to ensure that the user only sees listings they've uploaded for user2
+    def test_list_only_current_users_listings_user2(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('auction-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['auctionlistings']) == 2)
+
 class AuctionListingDetailViewTest(MyTestCase):
     def setUp(self):
         super(AuctionListingDetailViewTest, self).setUp()
@@ -673,7 +954,7 @@ class AuctionListingDetailViewTest(MyTestCase):
         settings.TIME_ZONE
         aware_date = make_aware(date)
         self.auctionListing = AuctionListing.objects.create(owner=user,
-            name="My Items For Offers", description="A few items up for offers",
+            name="My Items For Auction", description="A few items up for bids",
             startingBid=5.00, minimumIncrement=2.50, autobuy=50.00, endTime=aware_date)
         self.auctionListing.items.add = self.global_item1
         self.auctionListing.save
@@ -682,7 +963,7 @@ class AuctionListingDetailViewTest(MyTestCase):
     def test_redirect_if_not_logged_in(self):
         listing = self.auctionListing
         response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
-        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/16')
+        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/{0}'.format(listing.id))
 
     #Test to ensure user is not redirected if logged in
     def test_no_redirect_if_logged_in(self):
