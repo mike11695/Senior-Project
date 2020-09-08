@@ -15,7 +15,12 @@
   <ul>
     {% for listing in offerlistings %}
       <li>
-        <a href="{{ listing.get_absolute_url }}">{{ listing.name }}</a>
+        <a href="{{ listing.get_absolute_url }}">{{ listing.name }}</a> |
+        {% if listing.listingEnded %}
+          <a href="#">RELIST</a>
+        {% else %}
+          <a href="{% url 'update-offer-listing' pk=listing.pk %}">EDIT</a>
+        {% endif %}
       </li>
     {% endfor %}
   </ul>

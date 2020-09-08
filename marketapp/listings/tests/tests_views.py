@@ -13,7 +13,7 @@ from django.conf import settings
 class MyTestCase(TestCase):
     def setUp(self):
         user1 = User.objects.create(username="mike2", password="example",
-            email="example2@text.com", paypalEmail="example2@text.com",
+            email="example4@text.com", paypalEmail="example4@text.com",
             invitesOpen=True, inquiriesOpen=True) #profile is created when the user is created
         user2 = User.objects.create(username="mike3", password="example",
             email="example3@text.com", paypalEmail="example3@text.com",
@@ -39,9 +39,14 @@ class MyTestCase(TestCase):
             description="Another global item for testing", owner=self.global_user2)
         self.global_item2.images.add(self.global_image2)
         self.global_item2.save
+        self.global_test_image1 = test_image1
+        self.global_test_image2 = test_image2
+        self.global_user1 = user1
+        self.global_user2 = user2
 
-class ImagesViewTest(TestCase):
+class ImagesViewTest(MyTestCase):
     def setUp(self):
+        super(ImagesViewTest, self).setUp()
         user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
@@ -52,7 +57,7 @@ class ImagesViewTest(TestCase):
         number_of_images_user1 = 5
         number_of_images_user2 = 2
         tag = Tag.objects.create(name="Test Tag")
-        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        test_image = self.global_test_image1
 
         for num in range(number_of_images_user1):
             image = Image.objects.create(owner=user1, image=test_image,
@@ -102,7 +107,7 @@ class ImagesViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['images']) == 2)
 
-class ImageDetailViewTest(TestCase):
+class ImageDetailViewTest(MyTestCase):
     def setUp(self):
         super(ImageDetailViewTest, self).setUp()
         user1 = User.objects.create_user(username="mike", password="example",
@@ -112,7 +117,7 @@ class ImageDetailViewTest(TestCase):
             email="example2@text.com", paypalEmail="example2@text.com",
             invitesOpen=True, inquiriesOpen=True)
         tag = Tag.objects.create(name="Test Tag")
-        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        test_image = self.global_test_image1
         self.image = Image.objects.create(owner=user1, image=test_image, name='Test Image')
         self.image.tags.add(tag)
         self.image.save
@@ -148,11 +153,13 @@ class ImageDetailViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'images/image_detail.html')
 
-class AddImageViewTest(TestCase):
+class AddImageViewTest(MyTestCase):
     def setUp(self):
+        super(AddImageViewTest, self).setUp()
         user = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
+        self.test_image = self.global_test_image1
 
     #Test to ensure that a user must be logged in to upload image
     def test_redirect_if_not_logged_in(self):
@@ -205,8 +212,9 @@ class AddImageViewTest(TestCase):
         self.assertEqual(post_response.status_code, 302)
         self.assertRedirects(post_response, '/listings/images/')
 
-class ItemsViewTest(TestCase):
+class ItemsViewTest(MyTestCase):
     def setUp(self):
+        super(ItemsViewTest, self).setUp()
         user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
@@ -217,7 +225,7 @@ class ItemsViewTest(TestCase):
         number_of_items_user1 = 3
         number_of_items_user2 = 6
         tag = Tag.objects.create(name="Test Tag")
-        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        test_image = self.global_test_image1
         image1 = Image.objects.create(owner=user1, image=test_image, name='Test Image')
         image1.tags.add(tag)
         image1.save
@@ -273,7 +281,7 @@ class ItemsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['items']) == 6)
 
-class ItemDetailViewTest(TestCase):
+class ItemDetailViewTest(MyTestCase):
     def setUp(self):
         super(ItemDetailViewTest, self).setUp()
         user1 = User.objects.create_user(username="mike", password="example",
@@ -283,7 +291,7 @@ class ItemDetailViewTest(TestCase):
             email="example2@text.com", paypalEmail="example2@text.com",
             invitesOpen=True, inquiriesOpen=True)
         tag = Tag.objects.create(name="Test Tag")
-        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        test_image = self.global_test_image1
         image = Image.objects.create(owner=user1, image=test_image, name='Test Image')
         self.item = Item.objects.create(name='Test Item', description="Just an item", owner=user1)
         self.item.images.add(image)
@@ -320,11 +328,14 @@ class ItemDetailViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'items/item_detail.html')
 
-class AddItemViewTest(TestCase):
+class AddItemViewTest(MyTestCase):
     def setUp(self):
+        super(AddItemViewTest, self).setUp()
         user = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
+        self.test_image1 = self.global_test_image1
+        self.test_image2 = self.global_test_image2
 
     #Test to ensure that a user must be logged in to upload image
     def test_redirect_if_not_logged_in(self):
@@ -355,22 +366,22 @@ class AddItemViewTest(TestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('images-add'))
         self.assertEqual(response.status_code, 200)
-        image1 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
-        image2 = SimpleUploadedFile(name='art2.png', content=open('listings/imagetest/art2.png', 'rb').read(), content_type='image/png')
+        image1 = self.test_image1
+        image2 = self.test_image2
         tag1 = Tag.objects.create(name="Test Tag")
         tag2 = Tag.objects.create(name="Test Tag 2")
-        test_image1 = Image.objects.create(owner=user,
+        my_test_image1 = Image.objects.create(owner=user,
             image=image1, name="Test Image 1")
-        test_image1.tags.add(tag1)
-        test_image1.tags.add(tag2)
-        test_image1.save
-        test_image2 = Image.objects.create(owner=user,
+        my_test_image1.tags.add(tag1)
+        my_test_image1.tags.add(tag2)
+        my_test_image1.save
+        my_test_image2 = Image.objects.create(owner=user,
             image=image2, name="Test Image 2")
-        test_image2.tags.add(tag1)
-        test_image2.save
+        my_test_image2.tags.add(tag1)
+        my_test_image2.save
         post_response = self.client.post(reverse('items-add'),
             data={'name': "My Image", 'description': "A test image",
-                'images': [str(test_image1.id), str(test_image2.id)]})
+                'images': [str(my_test_image1.id), str(my_test_image2.id)]})
         self.assertEqual(post_response.status_code, 302)
         new_item = Item.objects.last()
         self.assertEqual(new_item.owner, post_response.wsgi_request.user)
@@ -384,22 +395,22 @@ class AddItemViewTest(TestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('images-add'))
         self.assertEqual(response.status_code, 200)
-        image1 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
-        image2 = SimpleUploadedFile(name='art2.png', content=open('listings/imagetest/art2.png', 'rb').read(), content_type='image/png')
+        image1 = self.test_image1
+        image2 = self.test_image2
         tag1 = Tag.objects.create(name="Test Tag")
         tag2 = Tag.objects.create(name="Test Tag 2")
-        test_image1 = Image.objects.create(owner=user,
+        my_test_image1 = Image.objects.create(owner=user,
             image=image1, name="Test Image 1")
-        test_image1.tags.add(tag1)
-        test_image1.tags.add(tag2)
-        test_image1.save
-        test_image2 = Image.objects.create(owner=user,
+        my_test_image1.tags.add(tag1)
+        my_test_image1.tags.add(tag2)
+        my_test_image1.save
+        my_test_image2 = Image.objects.create(owner=user,
             image=image2, name="Test Image 2")
-        test_image2.tags.add(tag1)
-        test_image2.save
+        my_test_image2.tags.add(tag1)
+        my_test_image2.save
         post_response = self.client.post(reverse('items-add'),
             data={'name': "My Image", 'description': "A test image",
-                'images': [str(test_image1.id), str(test_image2.id)]})
+                'images': [str(my_test_image1.id), str(my_test_image2.id)]})
         self.assertEqual(post_response.status_code, 302)
         self.assertRedirects(post_response, '/listings/items/')
 
@@ -507,8 +518,9 @@ class FAQListingsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/listings.html')
 
-class OfferListingsViewTest(TestCase):
+class OfferListingsViewTest(MyTestCase):
     def setUp(self):
+        super(OfferListingsViewTest, self).setUp()
         user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
@@ -519,7 +531,7 @@ class OfferListingsViewTest(TestCase):
         number_of_listings_user1 = 4
         number_of_listings_user2 = 5
         tag = Tag.objects.create(name="Test Tag")
-        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        test_image = self.global_test_image1
         image1 = Image.objects.create(owner=user1, image=test_image, name='Test Image')
         image1.tags.add(tag)
         image1.save
@@ -628,13 +640,13 @@ class OfferListingDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_listing_detail.html')
 
-class CreateOfferListingViewTest(TestCase):
+class CreateOfferListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateOfferListingViewTest, self).setUp()
         user = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
-        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        test_image = self.global_test_image1
         image = Image.objects.create(owner=user,  image=test_image, name="Test Image")
         tag = Tag.objects.create(name="Test Tag")
         image.tags.add(tag)
@@ -864,8 +876,86 @@ class CreateOfferListingViewTest(TestCase):
         self.assertEqual(new_offer_listing.minRange, 5.00)
         self.assertEqual(new_offer_listing.maxRange, 0.00)
 
-class AuctionListingsViewTest(TestCase):
+class EditOfferListingViewTest(MyTestCase):
     def setUp(self):
+        super(EditOfferListingViewTest, self).setUp()
+        user1 = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        user2 = User.objects.create_user(username="mikey", password="example",
+            email="example1@text.com", paypalEmail="example1@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        tag = Tag.objects.create(name="Test Tag")
+        test_image = self.global_test_image1
+
+        image1 = Image.objects.create(owner=user1, image=test_image, name='Test Image')
+        image1.tags.add(tag)
+        image1.save
+        self.item1 = Item.objects.create(name='Test Item', description="Just an item", owner=user1)
+        self.item1.images.add(image1)
+        self.item1.save
+
+        date = datetime.today()
+        settings.TIME_ZONE
+        aware_date = make_aware(date)
+
+        self.offerListing = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=aware_date)
+        self.offerListing.items.add(self.item1)
+        self.offerListing.save
+
+    #Test to ensure that a user must be logged in to view the listing
+    def test_redirect_if_not_logged_in(self):
+        listing = self.offerListing
+        response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/{0}/update'.format(listing.id))
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/update_offer_listing.html')
+
+    #Test to ensure user is redirected if they are not the user that owns the listing
+    def test_redirect_if_logged_in_but_incorrect_user(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that updating the listing works
+    def test_succesful_listing_update(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('update-offer-listing', args=[str(listing.id)]),
+            data={'name': "Test Offer Listing Edit", 'description': "Just a test listing",
+                'items': [str(self.item1.id)], 'openToMoneyOffers': False, 'notes': "Just offer anything"})
+        self.assertEqual(post_response.status_code, 302)
+        edited_listing = OfferListing.objects.get(id=listing.id)
+        self.assertEqual(edited_listing.name, 'Test Offer Listing Edit')
+        self.assertEqual(edited_listing.minRange, 0.00)
+        self.assertEqual(edited_listing.maxRange, 0.00)
+
+class AuctionListingsViewTest(MyTestCase):
+    def setUp(self):
+        super(AuctionListingsViewTest, self).setUp()
         user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
@@ -876,7 +966,7 @@ class AuctionListingsViewTest(TestCase):
         number_of_listings_user1 = 9
         number_of_listings_user2 = 2
         tag = Tag.objects.create(name="Test Tag")
-        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        test_image = self.global_test_image1
         image1 = Image.objects.create(owner=user1, image=test_image, name='Test Image')
         image1.tags.add(tag)
         image1.save
@@ -982,13 +1072,13 @@ class AuctionListingDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/auction_listing_detail.html')
 
-class CreateAuctionListingViewTest(TestCase):
+class CreateAuctionListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateAuctionListingViewTest, self).setUp()
         user = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
-        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        test_image = self.global_test_image1
         image = Image.objects.create(owner=user,  image=test_image, name="Test Image")
         tag = Tag.objects.create(name="Test Tag")
         image.tags.add(tag)

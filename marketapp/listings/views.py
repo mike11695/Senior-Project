@@ -7,12 +7,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing
 from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
-    CreateAuctionListingForm)
+    CreateAuctionListingForm, UpdateOfferListingForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.utils.timezone import make_aware
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 def index(request):
@@ -194,6 +195,42 @@ def create_offer_listing(request):
     else:
         form = CreateOfferListingForm(user=request.user)
     return render(request, 'listings/create_offer_listing.html', {'form': form})
+
+@login_required(login_url='/accounts/login/')
+def update_offer_listing(request, pk):
+    current_listing = get_object_or_404(OfferListing, pk=pk)
+
+    if request.user == current_listing.owner:
+        if request.method == 'POST':
+            form = UpdateOfferListingForm(data=request.POST, user=request.user, instance=current_listing)
+            if form.is_valid():
+                current_listing = form.save(commit=False)
+
+                #Get openToMoneyOffers value from form
+                clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
+
+                #Check to see if option was checked or not
+                if clean_openToMoneyOffers == True:
+                    #If true, check if the user added a maxRange to form
+                    clean_maxRange = form.cleaned_data.get('maxRange')
+                    if clean_maxRange:
+                        #If so, keep the value the same
+                        current_listing.maxRange = clean_maxRange
+                    else:
+                        #If not, set it to 0.00
+                        current_listing.maxRange = 0.00
+                else:
+                    #If not checked, set ranges to 0.00
+                    current_listing.minRange = 0.00
+                    current_listing.maxRange = 0.00
+
+                current_listing.save()
+                return redirect('offer-listing-detail', pk=current_listing.pk)
+        else:
+            form = UpdateOfferListingForm(user=request.user, instance=current_listing)
+        return render(request, 'listings/update_offer_listing.html', {'form': form})
+    else:
+        return redirect('index')
 
 class AuctionListingListView(LoginRequiredMixin, generic.ListView):
     model = AuctionListing

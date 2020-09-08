@@ -370,9 +370,15 @@ class AuctionListing(Listing):
         return f'{self.id}'"""
 
 #Model for Offers, which are items offered on an OfferListing (should this contain Item field?)
-#Fields needed: OfferListing, offerUser, items, amount
-"""class Offer(models.Model):
+#Fields needed: OfferListing, owner, items, amount
+class Offer(models.Model):
     #Fields for Offer
+    offerListing = models.ForeignKey(OfferListing, on_delete=models.CASCADE, null=True, related_name="offerlisting")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="owner")
+    items = models.ManyToManyField(Item, help_text="Items you'd like to offer on listing (do not select anything if you do not wanna offer items).")
+    amount = models.DecimalField(max_digits=9, decimal_places=2,
+        verbose_name="Cash Offer",
+        help_text="Amount of cash you'd like to offer on listing (leave blank if you do not want to offer cash).")
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Offer.
@@ -380,7 +386,7 @@ class AuctionListing(Listing):
 
     def __str__(self):
         #String for representing the Offer object.
-        return f'"Offer by ", {self.something}'"""
+        return f'"Offer by ", {self.owner}'
 
 #Model for Favorites, so a user can save a listing and come back to it
 #Fields needed: Category, listing

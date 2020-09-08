@@ -102,6 +102,57 @@ class CreateOfferListingForm(ModelForm):
        super(CreateOfferListingForm, self).__init__(*args, **kwargs)
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
 
+#This class is pretty much the same as CreateOfferListingForm, except it removes endTimeChoices
+#from the form so the user can't just edit their listing to always be active
+class UpdateOfferListingForm(ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        clean_openToMoneyOffers = cleaned_data.get('openToMoneyOffers')
+        clean_minRange = cleaned_data.get('minRange')
+        clean_maxRange = cleaned_data.get('maxRange')
+
+        #check image size to ensure it meets the limit
+        if clean_openToMoneyOffers == True:
+            #Check to see that minRange exists
+            if clean_minRange:
+                if clean_maxRange:
+                    print("Max Range: ", clean_maxRange)
+                    #Check to see that minRange is less than maxRange if not 0
+                    if clean_minRange > clean_maxRange and clean_maxRange != 0.00:
+                        raise ValidationError("Minimum range cannot be less that maximum range.")
+                    #Check to see that minRange is not equal to maxRange
+                    elif clean_minRange == clean_maxRange:
+                        raise ValidationError("Minimum and maximum ranges must be different.")
+                    #Check to see that ranges are not negative
+                    elif clean_minRange < 0.00 or clean_maxRange < 0.00:
+                        raise ValidationError("Minimum and maximum ranges must be a positive value.")
+                    else:
+                        return
+                elif clean_minRange < 0.00:
+                    raise ValidationError("Minimum range must be a positive value.")
+                else:
+                    return
+            else:
+                raise ValidationError("You must have at least a minimum range if open to money offers.")
+
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), help_text="An item is required.")
+    name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
+    minRange = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
+        help_text="Minimum money offers you'll consider.")
+    maxRange = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
+        help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).")
+
+    class Meta:
+        model = OfferListing
+        fields = ['name', 'description', 'items', 'openToMoneyOffers', 'minRange', 'maxRange', 'notes']
+        exclude = ['owner', 'endTime', 'endTimeChoices', 'listingEnded']
+
+    #Initializes the items dropdown with items that only relate to the current user
+    def __init__(self, *args, **kwargs):
+       self.user = kwargs.pop('user')
+       super(UpdateOfferListingForm, self).__init__(*args, **kwargs)
+       self.fields['items'].queryset = Item.objects.filter(owner=self.user)
+
 class CreateAuctionListingForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()

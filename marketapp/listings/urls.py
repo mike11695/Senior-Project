@@ -17,6 +17,7 @@ urlpatterns = [
     path('offer-listings/', views.OfferListingListView.as_view(), name='offer-listings'),
     path('offer-listings/create-offer-listing', views.create_offer_listing, name='create-offer-listing'),
     path('offer-listings/<int:pk>', views.OfferListingDetailView.as_view(), name='offer-listing-detail'),
+    path('offer-listings/<int:pk>/update', views.update_offer_listing, name='update-offer-listing'),
     path('auction-listings/', views.AuctionListingListView.as_view(), name='auction-listings'),
     path('auction-listings/create-auction-listing', views.create_auction_listing, name='create-auction-listing'),
     path('auction-listings/<int:pk>', views.AuctionListingDetailView.as_view(), name='auction-listing-detail'),
