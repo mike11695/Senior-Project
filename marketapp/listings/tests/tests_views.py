@@ -1,5 +1,6 @@
 from django.test import TestCase
-from listings.models import (User, Image, Tag, Item, Listing, OfferListing, AuctionListing)
+from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
+    AuctionListing, Offer)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -12,14 +13,17 @@ from django.conf import settings
 # Create your tests here.
 class MyTestCase(TestCase):
     def setUp(self):
-        user1 = User.objects.create(username="mike2", password="example",
+        #Create global users for testing
+        user1 = User.objects.create_user(username="mike2", password="example",
             email="example4@text.com", paypalEmail="example4@text.com",
             invitesOpen=True, inquiriesOpen=True) #profile is created when the user is created
-        user2 = User.objects.create(username="mike3", password="example",
+        user2 = User.objects.create_user(username="mike3", password="example",
             email="example3@text.com", paypalEmail="example3@text.com",
             invitesOpen=True, inquiriesOpen=True)
         self.global_user1 = user1
         self.global_user2 = user2
+
+        #Greate global images and a tag for testing
         test_image1 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
         self.global_image1 = Image.objects.create(owner=self.global_user1,
             image=test_image1, name="Test Image")
@@ -31,6 +35,8 @@ class MyTestCase(TestCase):
             image=test_image2, name="Test Image 2")
         self.global_image2.tags.add(self.tag)
         self.global_image2.save
+
+        #Create a global item for each user for testing
         self.global_item1 = Item.objects.create(name="Global Item",
             description="A global item for testing", owner=self.global_user1)
         self.global_item1.images.add(self.global_image1)
@@ -41,8 +47,25 @@ class MyTestCase(TestCase):
         self.global_item2.save
         self.global_test_image1 = test_image1
         self.global_test_image2 = test_image2
-        self.global_user1 = user1
-        self.global_user2 = user2
+
+        #Get the current date and time for testing
+        date = datetime.today()
+        settings.TIME_ZONE
+        aware_date = make_aware(date)
+
+        #Create a global offer listing that is active
+        self.global_offer_listing1 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=aware_date)
+        self.global_offer_listing1.items.add(self.global_item1)
+        self.global_offer_listing1.save
+
+        #Create a global offer listing that is not active
+        self.global_offer_listing2 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=aware_date, listingEnded=True)
+        self.global_offer_listing2.items.add(self.global_item1)
+        self.global_offer_listing2.save
 
 class ImagesViewTest(MyTestCase):
     def setUp(self):
@@ -1272,3 +1295,78 @@ class CreateAuctionListingViewTest(MyTestCase):
         to_tz = timezone.get_default_timezone()
         new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
         self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
+
+class CreateOfferViewTest(MyTestCase):
+    def setUp(self):
+        super(CreateOfferViewTest, self).setUp()
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        self.active_listing = self.global_offer_listing1
+        self.inactive_listing = self.global_offer_listing2
+
+    #Test to ensure that a user must be logged in to create offer
+    def test_redirect_if_not_logged_in(self):
+        listing = self.active_listing
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/{0}/offer'.format(listing.id))
+
+    #Test to ensure a user is redirected if they own the listing
+    def test_redirect_if_logged_in_but_owns_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.active_listing
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/create_offer.html')
+
+    #Test to ensure a user is able to create an offer and have it relate to them
+    def test_succesful_offer_creation_related_to_user(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-offer', args=[str(listing.id)]),
+            data={'items': [str(self.global_item2.id)], 'amount': 7.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_offer = Offer.objects.last()
+        self.assertEqual(created_offer.owner, post_response.wsgi_request.user)
+
+    #Test to ensure a user is able to create an offer and have it relate to the appropriate listing
+    def test_succesful_offer_creation_related_to_listing(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-offer', args=[str(listing.id)]),
+            data={'items': [str(self.global_item2.id)], 'amount': 7.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_offer = Offer.objects.last()
+        self.assertEqual(created_offer.offerListing, listing)
+
+    #Test to ensure a user is redirected if a listing has ended
+    def test_redirect_if_listing_ended(self):
+        listing = self.inactive_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')

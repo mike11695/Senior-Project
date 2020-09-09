@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing
 from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
-    CreateAuctionListingForm, UpdateOfferListingForm)
+    CreateAuctionListingForm, UpdateOfferListingForm, CreateOfferForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -22,6 +22,7 @@ def index(request):
     # Render the HTML template index.html with the data in the context variable
     return render(request, 'index.html')
 
+#Form view for users to sign up to the site
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -36,6 +37,7 @@ def signup(request):
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
 
+#View for a user to see a list of their images
 class ImageListView(LoginRequiredMixin, generic.ListView):
     model = Image
     context_object_name = 'images'
@@ -45,6 +47,7 @@ class ImageListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return Image.objects.filter(owner=self.request.user)
 
+#Detail view of a image only the owner can see
 class ImageDetailView(LoginRequiredMixin, generic.DetailView):
     model = Image
     template_name = "images/image_detail.html"
@@ -56,6 +59,7 @@ class ImageDetailView(LoginRequiredMixin, generic.DetailView):
             return redirect('index')
         return super(ImageDetailView, self).dispatch(request, *args, **kwargs)
 
+#Form view to upload an image to the site
 @login_required(login_url='/accounts/login/')
 def add_image(request):
     if request.method == 'POST':
@@ -69,6 +73,7 @@ def add_image(request):
         form = AddImageForm()
     return render(request, 'images/add_image.html', {'form': form})
 
+#View for a user to see a list of items they created
 class ItemListView(LoginRequiredMixin, generic.ListView):
     model = Item
     context_object_name = 'items'
@@ -78,6 +83,7 @@ class ItemListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return Item.objects.filter(owner=self.request.user)
 
+#Detail view for an item only the owner can see
 class ItemDetailView(LoginRequiredMixin, generic.DetailView):
     model = Item
     template_name = "items/item_detail.html"
@@ -89,6 +95,7 @@ class ItemDetailView(LoginRequiredMixin, generic.DetailView):
             return redirect('index')
         return super(ItemDetailView, self).dispatch(request, *args, **kwargs)
 
+#Form view to create an item for listings, offers and wish lists
 @login_required(login_url='/accounts/login/')
 def add_item(request):
     if request.method == 'POST':
@@ -102,26 +109,32 @@ def add_item(request):
         form = AddItemForm(user=request.user)
     return render(request, 'items/add_item.html', {'form': form})
 
+#Index page for FAQs
 @login_required(login_url='/accounts/login/')
 def faq(request):
     # Render the HTML template faq/documents.html with the data in the context variable
     return render(request, 'faq/documents.html')
 
+#FAQ page for images
 @login_required(login_url='/accounts/login/')
 def faq_images(request):
     # Render the HTML template faq/images.html with the data in the context variable
     return render(request, 'faq/images.html')
 
+#FAQ page for items
 @login_required(login_url='/accounts/login/')
 def faq_items(request):
     # Render the HTML template faq/items.html with the data in the context variable
     return render(request, 'faq/items.html')
 
+#FAQ page for listings
 @login_required(login_url='/accounts/login/')
 def faq_listings(request):
     # Render the HTML template faq/listings.html with the data in the context variable
     return render(request, 'faq/listings.html')
 
+#List view for a user to see all of the offer listings they have active (Need to change this
+#once listings are able to end)
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
     model = OfferListing
     context_object_name = 'offerlistings'
@@ -131,11 +144,13 @@ class OfferListingListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return OfferListing.objects.filter(owner=self.request.user)
 
+#Detailed view for all users to see a offer listing (need to add offers for the owner to see later)
 class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = OfferListing
     context_object_name = 'offer-listing-detail'
     template_name = "listings/offer_listing_detail.html"
 
+#Form view to create an offer listing
 @login_required(login_url='/accounts/login/')
 def create_offer_listing(request):
     if request.method == 'POST':
@@ -196,6 +211,7 @@ def create_offer_listing(request):
         form = CreateOfferListingForm(user=request.user)
     return render(request, 'listings/create_offer_listing.html', {'form': form})
 
+#Form view for editing an offer listing without changing the end time
 @login_required(login_url='/accounts/login/')
 def update_offer_listing(request, pk):
     current_listing = get_object_or_404(OfferListing, pk=pk)
@@ -232,6 +248,8 @@ def update_offer_listing(request, pk):
     else:
         return redirect('index')
 
+#Form for a user to view all of their active auctions (need to come back to this
+#once listings are able to end)
 class AuctionListingListView(LoginRequiredMixin, generic.ListView):
     model = AuctionListing
     context_object_name = 'auctionlistings'
@@ -241,11 +259,13 @@ class AuctionListingListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return AuctionListing.objects.filter(owner=self.request.user)
 
+#Detailed view for all users to see an auction
 class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = AuctionListing
     context_object_name = 'auction-listing-detail'
     template_name = "listings/auction_listing_detail.html"
 
+#Form view for creating an auction listing
 @login_required(login_url='/accounts/login/')
 def create_auction_listing(request):
     if request.method == 'POST':
@@ -298,3 +318,25 @@ def create_auction_listing(request):
     else:
         form = CreateAuctionListingForm(user=request.user)
     return render(request, 'listings/create_auction_listing.html', {'form': form})
+
+#Form view for creating an offer for an offer listing
+@login_required(login_url='/accounts/login/')
+def create_offer(request, pk):
+    current_listing = get_object_or_404(OfferListing, pk=pk)
+
+    if current_listing.listingEnded:
+        return redirect('index')
+    else:
+        if request.user != current_listing.owner:
+            if request.method == 'POST':
+                form = CreateOfferForm(data=request.POST, user=request.user, instance=current_listing, initial={'offerListing': current_listing})
+                if form.is_valid():
+                    created_offer = form.save()
+                    created_offer.owner = request.user
+                    created_offer.save()
+                    return redirect('offer-listing-detail', pk=current_listing.pk)
+            else:
+                form = CreateOfferForm(user=request.user, instance=current_listing, initial={'offerListing': current_listing})
+            return render(request, 'listings/create_offer.html', {'form': form})
+        else:
+            return redirect('index')

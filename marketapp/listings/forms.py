@@ -212,31 +212,35 @@ class CreateOfferForm(ModelForm):
         clean_amount = cleaned_data.get('amount')
         clean_listing = cleaned_data.get('offerListing')
 
-        if clean_amount:
-            if clean_listing.openToMoneyOffers:
-                if (clean_amount < clean_listing.minRange) and clean_amount != 0.00:
-                    #Check to see that the amount offered is not less than the listing's minimum range
-                    raise ValidationError("Amount offered is less than the minimum range of ${0}".format(clean_listing.minRange))
-                elif clean_amount > clean_listing.maxRange:
-                    #Check to see that the amount offered is not more than the listing's maximum range
-                    raise ValidationError("Amount offered is more than the maximum range of ${0}".format(clean_listing.maxRange))
-            else:
-                raise ValidationError("Listing is not accepting money offers.")
+        if clean_listing.listingEnded:
+            raise ValidationError("Listing has ended, no offers can be made.")
         else:
-            clean_items = cleaned_data.get('items')
-            if clean_items:
-                pass
+            if clean_amount:
+                if clean_listing.openToMoneyOffers:
+                    if (clean_amount < clean_listing.minRange) and clean_amount != 0.00:
+                        #Check to see that the amount offered is not less than the listing's minimum range
+                        raise ValidationError("Amount offered is less than the minimum range of ${0}".format(clean_listing.minRange))
+                    elif clean_amount > clean_listing.maxRange:
+                        #Check to see that the amount offered is not more than the listing's maximum range
+                        raise ValidationError("Amount offered is more than the maximum range of ${0}".format(clean_listing.maxRange))
+                else:
+                    raise ValidationError("Listing is not accepting money offers.")
             else:
-                raise ValidationError("An item must be offered.")
+                clean_items = cleaned_data.get('items')
+                if clean_items:
+                    pass
+                else:
+                    raise ValidationError("An item must be offered.")
 
         return
 
+    offerListing = forms.ModelChoiceField(queryset=OfferListing.objects.all(), required=False,
+        disabled=True)
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
         help_text="Items are not required for an offer if user is open to money offers.",
         required=False)
     amount = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Amount of cash you'd like to offer on listing (Leave blank or enter 0.00 if you do not want to offer cash).")
-    offerListing = forms.ModelChoiceField(queryset=OfferListing.objects.all(), required=False)
 
     class Meta:
         model = Offer
@@ -246,14 +250,12 @@ class CreateOfferForm(ModelForm):
     #Also gets the listing person is offering on
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
-       listing = kwargs.pop('listing')
+       listing = kwargs.pop('instance')
        self.listing = OfferListing.objects.get(id=listing.id)
-       print(self.listing)
        super(CreateOfferForm, self).__init__(*args, **kwargs)
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
        if self.listing.openToMoneyOffers:
            self.fields['amount'].initial = 0.00
        else:
            self.fields['amount'].widget = forms.HiddenInput()
-       self.fields['offerListing'].initial = self.listing
-       self.fields['offerListing'].widget = forms.HiddenInput()
+       #self.fields['offerListing'].initial = self.listing
