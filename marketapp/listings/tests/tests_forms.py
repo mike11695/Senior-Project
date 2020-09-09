@@ -1,6 +1,6 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
-    CreateAuctionListingForm)
+    CreateAuctionListingForm, CreateOfferForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing, AuctionListing)
 
@@ -756,3 +756,101 @@ class CreateAuctionListingFormTest(MyTestCase):
         user = self.global_user1
         form = CreateAuctionListingForm(user=user)
         self.assertEqual(form.fields['autobuy'].help_text, "A bid greater than the starting bid that will automatically win the auction if placed. (Leave blank if not interested in having an autobuy price)")
+
+class CreateOfferFormTest(MyTestCase):
+    def setUp(self):
+        super(CreateOfferFormTest, self).setUp()
+        user1 = self.global_user1
+        user2 = self.global_user2
+
+        self.offer_listing1 = OfferListing.objects.create(owner=user1, name="Test Listing",
+            description="Just a test", openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer.")
+        self.offer_listing1.items.add(self.global_item1)
+        self.offer_listing1.save
+
+        self.offer_listing2 = OfferListing.objects.create(owner=user1, name="Test Listing 2",
+            description="Just a test", openToMoneyOffers=False, minRange=0.00, maxRange=0.00,
+            notes="Just offer.")
+        self.offer_listing2.items.add(self.global_item1)
+        self.offer_listing2.save
+
+    #Test to ensure a user is able to create an offer for a listing open to money providing all fields
+    def test_valid_offer_creation_open_to_money(self):
+        user = self.global_user2
+        listing = self.offer_listing1
+        amount = 5.00
+        data = {'items': [str(self.global_item2.id)], 'amount': amount, 'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is able to create an offer for a listing open to money without an item
+    def test_valid_offer_creation_open_to_money_no_item(self):
+        user = self.global_user2
+        listing = self.offer_listing1
+        amount = 5.00
+        data = {'amount': amount, 'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is able to create an offer for a listing open to money without offering money
+    def test_valid_offer_creation_open_to_money_no_money(self):
+        user = self.global_user2
+        listing = self.offer_listing1
+        amount = 5.00
+        data = {'items': [str(self.global_item2.id)], 'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer for a listing open to money offering below minimum
+    def test_invalid_offer_creation_open_to_money_below_min(self):
+        user = self.global_user2
+        listing = self.offer_listing1
+        amount = 4.00
+        data = {'items': [str(self.global_item2.id)], 'amount': amount, 'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer for a listing open to money offering above maximum
+    def test_invalid_offer_creation_open_to_money_above_max(self):
+        user = self.global_user2
+        listing = self.offer_listing1
+        amount = 11.00
+        data = {'items': [str(self.global_item2.id)], 'amount': amount, 'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer for a listing open to money without an item or cash
+    def test_invalid_offer_creation_open_to_money_nothing_offer(self):
+        user = self.global_user2
+        listing = self.offer_listing1
+        data = {'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer for a listing not open to money offering cash
+    def test_invalid_offer_creation_not_open_to_money_offering_cash(self):
+        user = self.global_user2
+        listing = self.offer_listing2
+        amount = 5.00
+        data = {'items': [str(self.global_item2.id)], 'amount': amount, 'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer for a listing open to money without an item
+    def test_invalid_offer_creation_not_open_to_money_nothing_offered(self):
+        user = self.global_user2
+        listing = self.offer_listing2
+        amount = 5.00
+        data = {'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an offer for a listing using an item they dont own
+    def test_invalid_offer_creation_item_not_owned(self):
+        user = self.global_user2
+        listing = self.offer_listing1
+        amount = 5.00
+        data = {'items': [str(self.global_item1.id)], 'amount': amount, 'offerListing': listing}
+        form = CreateOfferForm(data=data, user=user, listing=listing)
+        self.assertFalse(form.is_valid())
