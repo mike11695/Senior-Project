@@ -93,13 +93,6 @@ class ItemDetailView(LoginRequiredMixin, generic.DetailView):
     model = Item
     template_name = "items/item_detail.html"
 
-    #Checks to ensure that only the user that created the image can view the detail view
-    def dispatch(self, request, *args, **kwargs):
-        obj = self.get_object()
-        if obj.owner != self.request.user:
-            return redirect('index')
-        return super(ItemDetailView, self).dispatch(request, *args, **kwargs)
-
 #Form view to create an item for listings, offers and wish lists
 @login_required(login_url='/accounts/login/')
 def add_item(request):

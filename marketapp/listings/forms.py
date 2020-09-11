@@ -235,7 +235,7 @@ class CreateOfferForm(ModelForm):
         return
 
     offerListing = forms.ModelChoiceField(queryset=OfferListing.objects.all(), required=False,
-        disabled=True)
+        disabled=True, label="Offer Listing")
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
         help_text="Items are not required for an offer if user is open to money offers.",
         required=False)

@@ -334,14 +334,6 @@ class ItemDetailViewTest(MyTestCase):
         response = self.client.get(reverse('item-detail', args=[str(item.id)]))
         self.assertEqual(response.status_code, 200)
 
-    #Test to ensure user is redirected if they are not the user that owns the item
-    def test_redirect_if_logged_in_but_incorrect_user(self):
-        login = self.client.login(username='mikey', password='example')
-        self.assertTrue(login)
-        item = self.item
-        response = self.client.get(reverse('item-detail', args=[str(item.id)]))
-        self.assertRedirects(response, '/listings/')
-
     #Test to ensure right template is used/exists
     def test_correct_template_used(self):
         login = self.client.login(username='mike', password='example')

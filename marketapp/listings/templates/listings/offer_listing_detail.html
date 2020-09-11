@@ -1,27 +1,59 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h2 class="listing-header">{{ offerlisting.name }}</h2>
-  <div class="listing-item-container">
+  <div class="col-lg-10 center-block listing-header">
+    <h2>{{ offerlisting.name }}</h2>
+    <h6>Owner: {{ offerlisting.owner }}</h6>
+    {% if offerlisting.listingEnded %}
+      <h6 class="expired-listing">Ended: {{ offerlisting.endTime }}</h6>
+    {% else %}
+      <h6>Ends: {{ offerlisting.endTime }}</h6>
+    {% endif %}
+  </div>
+  <div class="listing-item-container col-lg-10 center-block">
+    <div class="listing-item-container-header"><h4>This listing contains:</h4></div>
     {% if offerlisting.items %}
       {% if offerlisting.items.all.count > 1 %}
         {% for item in offerlisting.items.all %}
-          <div class="item-count">{{ forloop.counter }}</div>
-          <div class="item-name">{{ item.name }}</div>
+          <a href="{{ item.get_absolute_url }}">
+            <div class="item-display multiple-items">
+              <div class="item-count">{{ forloop.counter }}</div>
+              {% if item.images %}
+                {% with item.images.all|first as image %}
+                  <div class="item-image"><img src="{{ image.image.url }}" style="width: 150px; height: 150px;"></img></div>
+                {% endwith %}
+              {% endif %}
+              <div class="item-name">{{ item.name }}</div>
+            </div>
+          </a>
         {% endfor %}
       {% else %}
         {% with offerlisting.items.all.all|first as item %}
-          <div class="item-display">
-            {% if item.images %}
-              {% with item.images.all|first as image %}
-                <div class="item-image"><img src="{{ image.image.url }}" style="width: 200px; height: 200px;"></img></div>
-              {% endwith %}
-            {% endif %}
-            <div class="item-name"><h5>{{ item.name }}</h5></div>
-            <div class="item-description">{{ item.description }}</div>
-          </div>
+          <a href="{{ item.get_absolute_url }}">
+            <div class="item-display">
+              {% if item.images %}
+                {% with item.images.all|first as image %}
+                  <div class="item-image"><img src="{{ image.image.url }}" style="width: 150px; height: 150px;"></img></div>
+                {% endwith %}
+              {% endif %}
+              <div class="item-name"><h5>{{ item.name }}</h5></div>
+            </div>
+          </a>
         {% endwith %}
       {% endif %}
     {% endif %}
   </div>
+  <div class="listing-details">
+    {% if offerlisting.openToMoneyOffers %}
+      <div class="detail">Minimum Amount Sought: <b>${{ offerlisting.minRange }}</b></div>
+      <div class="detail">Maximum Amount Sought: <b>${{ offerlisting.maxRange }}</b></div>
+    {% endif %}
+  </div>
+  {% if offerlisting.listingEnded != True %}
+    {% if request.user != offerlisting.owner %}
+      <a href="{% url 'create-offer' pk=offerlisting.pk %}">
+        <div class="btn btn-blue listing-btn center-block">Make an Offer</div>
+      </a>
+    {% endif %}
+  {% endif %}
 {% endblock %}

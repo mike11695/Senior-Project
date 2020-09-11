@@ -4,6 +4,12 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
 
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.utils.timezone import make_aware
+from django.conf import settings
+from django.shortcuts import get_object_or_404
+
 # Create your models here.
 # Model template
 """
@@ -305,8 +311,11 @@ class Listing(models.Model):
             help_text="A short description of what the listing obtains.")
     endTimeChoices = models.CharField(max_length=3, choices=END_TIME_CHOICES, default=ONEHOUR)
     endTime = models.DateTimeField(blank=True, null=True)
-    listingEnded = models.BooleanField(default=False)
     items = models.ManyToManyField(Item)
+
+    @property
+    def listingEnded(self):
+        return timezone.localtime(timezone.now()) > self.endTime
 
 #Subclass for OfferListing, a listing that is interested in offers
 #Fields needed: openToMoneyOffers, minRange, maxRange, notes, items
