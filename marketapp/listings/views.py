@@ -66,6 +66,11 @@ def add_image(request):
         form = AddImageForm(request.POST, request.FILES)
         if form.is_valid():
             created_image = form.save()
+
+            clean_tags = form.cleaned_data.get('tags')
+            for tag in clean_tags:
+                created_image.tags.add(tag)
+
             created_image.owner = request.user
             created_image.save()
             return redirect('images')
@@ -102,6 +107,11 @@ def add_item(request):
         form = AddItemForm(data=request.POST, user=request.user)
         if form.is_valid():
             created_item = form.save()
+
+            clean_images = form.cleaned_data.get('images')
+            for image in clean_images:
+                created_item.images.add(image)
+
             created_item.owner = request.user
             created_item.save()
             return redirect('items')
@@ -147,7 +157,7 @@ class OfferListingListView(LoginRequiredMixin, generic.ListView):
 #Detailed view for all users to see a offer listing (need to add offers for the owner to see later)
 class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = OfferListing
-    context_object_name = 'offer-listing-detail'
+    context_object_name = 'offerlisting'
     template_name = "listings/offer_listing_detail.html"
 
 #Form view to create an offer listing
@@ -205,6 +215,11 @@ def create_offer_listing(request):
 
             created_listing.endTime = date
             created_listing.owner = request.user
+
+            clean_items = form.cleaned_data.get('items')
+            for item in clean_items:
+                created_listing.items.add(item)
+
             created_listing.save()
             return redirect('offer-listings')
     else:
@@ -239,6 +254,12 @@ def update_offer_listing(request, pk):
                     #If not checked, set ranges to 0.00
                     current_listing.minRange = 0.00
                     current_listing.maxRange = 0.00
+
+                current_listing.items.clear()
+
+                clean_items = form.cleaned_data.get('items')
+                for item in clean_items:
+                    current_listing.items.add(item)
 
                 current_listing.save()
                 return redirect('offer-listing-detail', pk=current_listing.pk)

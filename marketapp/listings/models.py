@@ -357,9 +357,15 @@ class AuctionListing(Listing):
         return f'{self.name}'
 
 #Model for Bids, which is a money amount offered by a user on an auction
-#Fields needed: AuctionListing, bidder, bidAmount, highestCurrentBid, winningBid
-"""class Bid(models.Model):
+#Fields needed: AuctionListing, bidder, amount, winningBid
+class Bid(models.Model):
     #Fields for Bid
+    auctionListing = models.ForeignKey(AuctionListing, on_delete=models.CASCADE, null=True, related_name="auctionlisting")
+    bidder = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="bidder")
+    amount = models.DecimalField(max_digits=9, decimal_places=2,
+        verbose_name="Bid Amount",
+        help_text="Amount of cash you'd like to bid on listing (Cannot be more than 3x the minimum bid value).")
+    winningBid = models.BooleanField(default=False)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Bid.
@@ -367,7 +373,7 @@ class AuctionListing(Listing):
 
     def __str__(self):
         #String for representing the Bid object.
-        return f'{self.id}'"""
+        return f'{self.id}'
 
 #Model for Offers, which are items offered on an OfferListing (should this contain Item field?)
 #Fields needed: OfferListing, owner, items, amount

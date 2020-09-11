@@ -97,3 +97,30 @@
   margin-left: -33px !important;
   margin-right: -50px !important;
 }
+
+.listing-header {
+  text-align: center;
+}
+
+.listing-item-container {
+  text-align: center;
+}
+
+.item-display {
+  background-color: #bacad9;
+  display: inline-block;
+  color: black;
+  padding: 10px;
+  border-radius: 20px;
+  width: 300px;
+}
+
+.item-image {
+  text-align: center;
+}
+
+.item-name {
+  text-align: center;
+  font-style: italic;
+  font-weight: bold;
+}

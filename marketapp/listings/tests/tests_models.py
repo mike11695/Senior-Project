@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Profile, Rating, Warning, Conversation,
     Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
-    Item, Offer)
+    Item, Offer, Bid)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import datetime
 from django.utils.timezone import make_aware
@@ -28,15 +28,24 @@ class MyTestCase(TestCase):
             description="A global item for testing")
         self.global_item.images.add(self.global_image)
         self.global_item.save
+
         date = datetime.today()
         settings.TIME_ZONE
         aware_date = make_aware(date)
+
         self.global_offer_listing = OfferListing.objects.create(owner=user1,
             name="My Items For Offers", description="A few items up for offers",
             openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
             endTime=aware_date)
         self.global_offer_listing.items.add = self.global_item
         self.global_offer_listing.save
+
+        self.global_auction_listing = AuctionListing.objects.create(owner=user1,
+            name="My Test Auction", description="Just a test auction please ignore.",
+            startingBid = 5.00, minimumIncrement = 0.25, autobuy = 25.00,
+            endTime=aware_date)
+        self.global_auction_listing.items.add = self.global_item
+        self.global_auction_listing.save
 
 #Tests for User class
 class UserModelTest(MyTestCase):
@@ -774,8 +783,38 @@ class OfferModelTest(MyTestCase):
         decimal_places = offer._meta.get_field('amount').decimal_places
         self.assertEqual(decimal_places, 2)
 
-
 #Tests for Bid class
+class BidModelTest(MyTestCase):
+    def setUp(self):
+        #Set up records for Offer for testing
+        super(BidModelTest, self).setUp()
+        self.bid = Bid.objects.create(auctionListing=self.global_auction_listing,
+            bidder=self.global_user2, amount=5.00, winningBid=False)
+
+    #Checks to ensure that Auction amount field help text is correct
+    def test_bid_amount_help_text(self):
+        bid = self.bid
+        help_text = bid._meta.get_field('amount').help_text
+        self.assertEqual(help_text, "Amount of cash you'd like to bid on listing (Cannot be more than 3x the minimum bid value).")
+
+    #Checks to ensure that Auction amount field max digits is correct
+    def test_bid_amount_max_digits(self):
+        bid = self.bid
+        max_digits = bid._meta.get_field('amount').max_digits
+        self.assertEqual(max_digits, 9)
+
+    #Checks to ensure that Auction amount field decimal places is correct
+    def test_bid_amount_decimal_places(self):
+        bid = self.bid
+        decimal_places = bid._meta.get_field('amount').decimal_places
+        self.assertEqual(decimal_places, 2)
+
+    #Checks to ensure that Auction winningBid field defaults to false
+    #Checks to ensure that Auction amount field decimal places is correct
+    def test_bid_winning_bid_default(self):
+        bid = self.bid
+        default = bid._meta.get_field('winningBid').default
+        self.assertEqual(default, False)
 
 #Tests for Favorites class
 
