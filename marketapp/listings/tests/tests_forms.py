@@ -1,8 +1,14 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
-    CreateAuctionListingForm, CreateOfferForm)
+    CreateAuctionListingForm, CreateOfferForm, CreateBidForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
-from listings.models import (User, Image, Tag, Item, Listing, OfferListing, AuctionListing)
+from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
+    AuctionListing, Offer, Bid)
+
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.utils.timezone import make_aware
+from django.conf import settings
 
 # Create your tests here.
 class MyTestCase(TestCase):
@@ -763,21 +769,27 @@ class CreateOfferFormTest(MyTestCase):
         user1 = self.global_user1
         user2 = self.global_user2
 
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #An active listing that is open to money offers
         self.offer_listing1 = OfferListing.objects.create(owner=user1, name="Test Listing",
             description="Just a test", openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
-            notes="Just offer.")
+            notes="Just offer.", endTime=date_active)
         self.offer_listing1.items.add(self.global_item1)
         self.offer_listing1.save
 
+        #An active listing that is not open to money offers
         self.offer_listing2 = OfferListing.objects.create(owner=user1, name="Test Listing 2",
             description="Just a test", openToMoneyOffers=False, minRange=0.00, maxRange=0.00,
-            notes="Just offer.")
+            notes="Just offer.", endTime=date_active)
         self.offer_listing2.items.add(self.global_item1)
         self.offer_listing2.save
 
+        #An inactive listing that has ended
         self.offer_listing3 = OfferListing.objects.create(owner=user1, name="Ended Listing",
             description="This has ended", openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
-            notes="Just offer.", listingEnded=True)
+            notes="Just offer.", endTime=date_ended)
         self.offer_listing3.items.add(self.global_item1)
         self.offer_listing3.save
 
@@ -869,3 +881,156 @@ class CreateOfferFormTest(MyTestCase):
         data = {'items': [str(self.global_item2.id)], 'amount': amount}
         form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
+
+class CreateBidFormTest(MyTestCase):
+    def setUp(self):
+        super(CreateBidFormTest, self).setUp()
+        user1 = self.global_user1
+        user2 = self.global_user2
+        user3 = User.objects.create(username="mikey", password="example",
+            email="example4@text.com", paypalEmail="example4@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #An active auction listing with no bids currently
+        self.auction_listing1 = AuctionListing.objects.create(owner=user1, name="Test Auction",
+            description="Just a test", startingBid=1.00, minimumIncrement=0.25, autobuy=5.00,
+            endTime=date_active)
+        self.auction_listing1.items.add(self.global_item1)
+        self.auction_listing1.save
+
+        #An active auction listing that has at least one bid
+        self.auction_listing2 = AuctionListing.objects.create(owner=user1, name="Test Auction",
+            description="Just a test", startingBid=1.00, minimumIncrement=0.25, autobuy=5.00,
+            endTime=date_active)
+        self.auction_listing2.items.add(self.global_item1)
+        self.auction_listing2.save
+        self.bid1 = Bid.objects.create(auctionListing=self.auction_listing2, bidder=user3,
+            amount=1.00, winningBid=False)
+
+        #An active auction listing that has a current bid from the user bidding
+        self.auction_listing3 = AuctionListing.objects.create(owner=user1, name="Test Auction",
+            description="Just a test", startingBid=1.00, minimumIncrement=0.25, autobuy=5.00,
+            endTime=date_active)
+        self.auction_listing3.items.add(self.global_item1)
+        self.auction_listing3.save
+        self.bid2 = Bid.objects.create(auctionListing=self.auction_listing3, bidder=user2,
+            amount=1.00, winningBid=False)
+
+        #An inactive auction listing that has ended
+        self.auction_listing4 = AuctionListing.objects.create(owner=user1, name="Test Auction",
+            description="Just a test", startingBid=1.00, minimumIncrement=0.25, autobuy=5.00,
+            endTime=date_ended)
+        self.auction_listing4.items.add(self.global_item1)
+        self.auction_listing4.save
+
+        #An active auction listing that has at least one bid greater than starting bid
+        self.auction_listing5 = AuctionListing.objects.create(owner=user1, name="Test Auction",
+            description="Just a test", startingBid=1.00, minimumIncrement=0.25, autobuy=5.00,
+            endTime=date_active)
+        self.auction_listing5.items.add(self.global_item1)
+        self.auction_listing5.save
+        self.bid3 = Bid.objects.create(auctionListing=self.auction_listing5, bidder=user3,
+            amount=1.50, winningBid=False)
+
+    #Test to ensure a user is able to create an bid for a listing that's active
+    def test_valid_bid_creation_active_auction(self):
+        user = self.global_user2
+        listing = self.auction_listing1
+        amount = 1.00
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create an bid without an amount
+    def test_invalid_bid_creation_active_auction_no_amount(self):
+        user = self.global_user2
+        listing = self.auction_listing1
+        amount = 1.00
+        data = {}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an bid for a listing that's inactive
+    def test_invalid_bid_creation_inactive_auction(self):
+        user = self.global_user2
+        listing = self.auction_listing4
+        amount = 1.00
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to bid starting bid on an auction that has a starting bid already
+    def test_invalid_bid_creation_same_as_starting_bid(self):
+        user = self.global_user2
+        listing = self.auction_listing2
+        amount = 1.00
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to bid below the starting bid
+    def test_invalid_bid_creation_active_auction_bid_lower_than_starting_bid(self):
+        user = self.global_user2
+        listing = self.auction_listing1
+        amount = 0.75
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to bid below the minimum increment
+    def test_invalid_bid_creation_active_auction_bid_lower_than_minimum_increment(self):
+        user = self.global_user2
+        listing = self.auction_listing1
+        amount = 1.15
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to bid below the current bid
+    def test_invalid_bid_creation_active_auction_bid_lower_than_current_bid(self):
+        user = self.global_user2
+        listing = self.auction_listing5
+        amount = 1.25
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to bid more than 3x the minimum increment
+    def test_invalid_bid_creation_active_auction_bid_greater_than_x3(self):
+        user = self.global_user2
+        listing = self.auction_listing1
+        amount = 2.00
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to bid when they have the current highest bid already
+    def test_invalid_bid_creation_active_auction_already_current_highest_bid(self):
+        user = self.global_user2
+        listing = self.auction_listing3
+        amount = 1.25
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is able to bid the autobuy amount
+    def test_valid_bid_creation_autobuy_bid(self):
+        user = self.global_user2
+        listing = self.auction_listing1
+        amount = 5.00
+        data = {'amount': amount}
+        form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
+            'bidder': user})
+        self.assertTrue(form.is_valid())

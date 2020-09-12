@@ -1,9 +1,15 @@
 from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
-from listings.models import User, Image, Tag, Item, Listing, OfferListing, AuctionListing, Offer
+from listings.models import User, Image, Tag, Item, Listing, OfferListing, AuctionListing, Offer, Bid
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
+
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.utils.timezone import make_aware
+from django.conf import settings
+from django.shortcuts import get_object_or_404
 
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
@@ -212,7 +218,7 @@ class CreateOfferForm(ModelForm):
         clean_amount = cleaned_data.get('amount')
         clean_listing = cleaned_data.get('offerListing')
 
-        if clean_listing.listingEnded:
+        if timezone.localtime(timezone.now()) > clean_listing.endTime:
             raise ValidationError("Listing has ended, no offers can be made.")
         else:
             if clean_amount:
@@ -259,3 +265,86 @@ class CreateOfferForm(ModelForm):
        else:
            self.fields['amount'].widget = forms.HiddenInput()
        #self.fields['offerListing'].initial = self.listing
+
+class CreateBidForm(ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        clean_amount = cleaned_data.get('amount')
+        clean_listing = cleaned_data.get('auctionListing')
+        clean_bidder = cleaned_data.get('bidder')
+
+        if timezone.localtime(timezone.now()) > clean_listing.endTime:
+            raise ValidationError("Auction has ended, no bids can be placed.")
+        else:
+            if clean_amount:
+                bids = Bid.objects.filter(auctionListing=clean_listing)
+                if bids:
+                    #Auction has at least one bid
+                    if bids.count() == 1:
+                        current_bid = bids.first()
+                    else:
+                        current_bid = bids.last()
+
+                    if clean_amount == current_bid.amount and current_bid.amount == clean_listing.startingBid:
+                        #Amount bid is same as starting and current bid
+                        raise ValidationError("Starting bid has already been placed.")
+                    elif clean_amount <= current_bid.amount:
+                        #Amount bid is less than or equal to the current bid
+                        lowest_bid = clean_listing.startingBid + clean_listing.minimumIncrement
+                        raise ValidationError("Lowest bid that can be placed is ${0}".format(lowest_bid))
+                    elif current_bid.bidder == clean_bidder:
+                        #User already has the current bid
+                        raise ValidationError("You already have the current bid.")
+                    elif clean_amount > (clean_listing.startingBid + (clean_listing.minimumIncrement * 3)) and clean_amount != clean_listing.autobuy:
+                        #Amount bid is greater than the maximum that can be bid
+                        highest_bid = clean_listing.startingBid + (clean_listing.minimumIncrement * 3)
+                        raise ValidationError("Maximum bid that can be placed is ${0}".format(highest_bid))
+                    elif clean_amount < (current_bid + clean_listing.minimumIncrement):
+                        #Amount bid is less than the minimum bid that can currently be bid
+                        minimal_bid = current_bid + clean_listing.minimumIncrement
+                        raise ValidationError("Minimum bid that can be placed is ${0}".format(minimal_bid))
+                else:
+                    #There are no bids currently
+                    if clean_amount < clean_listing.startingBid:
+                        #Amount bid is less than the starting bid
+                        raise ValidationError("Bid must be equal to or greater than the starting bid.")
+                    elif clean_amount > (clean_listing.startingBid + (clean_listing.minimumIncrement * 3)) and clean_amount != clean_listing.autobuy:
+                        #Amount bid is greater than the maximum that can be bid
+                        highest_bid = clean_listing.startingBid + (clean_listing.minimumIncrement * 3)
+                        raise ValidationError("Maximum bid that can be placed is ${0}".format(highest_bid))
+                    elif clean_amount < (clean_listing.startingBid + clean_listing.minimumIncrement) and clean_amount != clean_listing.startingBid:
+                        #Amount bid is less than the minimum bid that can currently be bid
+                        minimal_bid = clean_listing.startingBid + clean_listing.minimumIncrement
+                        raise ValidationError("Minimum bid that can be placed is ${0}".format(minimal_bid))
+            else:
+                #No bid was included
+                raise ValidationError("An amount must be included in bid.")
+
+        return
+
+    auctionListing = forms.ModelChoiceField(queryset=AuctionListing.objects.all(), required=False,
+        disabled=True, label="Auction Listing")
+    bidder = forms.ModelChoiceField(queryset=User.objects.all(), required=False,
+        disabled=True, label="Bidder")
+
+    class Meta:
+        model = Bid
+        fields = ['amount']
+        exclude = ['winningBid']
+
+    #Initializes the bid field with the current minimal increment bid
+    def __init__(self, *args, **kwargs):
+        listing = kwargs.pop('instance')
+        self.listing = AuctionListing.objects.get(id=listing.id)
+        self.bids = Bid.objects.filter(auctionListing=self.listing)
+        super(CreateBidForm, self).__init__(*args, **kwargs)
+
+        if self.bids:
+            if self.bids.count() > 1:
+                current_bid = self.bids.last()
+                self.fields['amount'].initial = current_bid.amount + self.listing.minimumIncrement
+            elif self.bids.count() == 1:
+                current_bid = self.bids.first()
+                self.fields['amount'].initial = current_bid.amount + self.listing.minimumIncrement
+        else:
+            self.fields['amount'].initial = self.listing.startingBid
