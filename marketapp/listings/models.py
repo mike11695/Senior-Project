@@ -374,7 +374,7 @@ class Bid(models.Model):
     amount = models.DecimalField(max_digits=9, decimal_places=2,
         verbose_name="Bid Amount",
         help_text="Amount of cash you'd like to bid on listing (Cannot be more than 3x the minimum bid value).")
-    winningBid = models.BooleanField(default=False)
+    winningBid = models.BooleanField(default=False) #May need to make this a property
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Bid.

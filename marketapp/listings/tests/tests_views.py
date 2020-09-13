@@ -1,6 +1,6 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer)
+    AuctionListing, Offer, Bid)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -48,24 +48,37 @@ class MyTestCase(TestCase):
         self.global_test_image1 = test_image1
         self.global_test_image2 = test_image2
 
-        #Get the current date and time for testing
-        date = datetime.today()
-        settings.TIME_ZONE
-        aware_date = make_aware(date)
+        #Get the current date and time for testing and create active and inactive endtimes
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
 
         #Create a global offer listing that is active
         self.global_offer_listing1 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
-            maxRange=10.00, notes="Just offer", endTime=aware_date)
+            maxRange=10.00, notes="Just offer", endTime=date_active)
         self.global_offer_listing1.items.add(self.global_item1)
         self.global_offer_listing1.save
 
         #Create a global offer listing that is not active
         self.global_offer_listing2 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
-            maxRange=10.00, notes="Just offer", endTime=aware_date, listingEnded=True)
+            maxRange=10.00, notes="Just offer", endTime=date_ended)
         self.global_offer_listing2.items.add(self.global_item1)
         self.global_offer_listing2.save
+
+        #Create a global auction listing that is active
+        self.global_auction_listing1 = AuctionListing.objects.create(owner=user1, name='Test Auction Listing',
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            endTime=date_active)
+        self.global_auction_listing1.items.add(self.global_item1)
+        self.global_auction_listing1.save
+
+        #Create a global auction listing that is inactive
+        self.global_auction_listing2 = AuctionListing.objects.create(owner=user1, name='Test Auction Listing',
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            endTime=date_ended)
+        self.global_auction_listing2.items.add(self.global_item1)
+        self.global_auction_listing2.save
 
 class ImagesViewTest(MyTestCase):
     def setUp(self):
@@ -324,7 +337,7 @@ class ItemDetailViewTest(MyTestCase):
     def test_redirect_if_not_logged_in(self):
         item = self.item
         response = self.client.get(reverse('item-detail', args=[str(item.id)]))
-        self.assertRedirects(response, '/listings/')
+        self.assertRedirects(response, '/accounts/login/?next=/listings/items/{0}'.format(item.id))
 
     #Test to ensure user is not redirected if logged in
     def test_no_redirect_if_logged_in(self):
@@ -1362,3 +1375,79 @@ class CreateOfferViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
+
+class CreateBidViewTest(MyTestCase):
+    def setUp(self):
+        super(CreateBidViewTest, self).setUp()
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        self.active_listing = self.global_auction_listing1
+        self.inactive_listing = self.global_auction_listing2
+
+    #Test to ensure that a user must be logged in to create a bid
+    def test_redirect_if_not_logged_in(self):
+        listing = self.active_listing
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/{0}/bid'.format(listing.id))
+
+    #Test to ensure a user is redirected if they own the listing
+    def test_redirect_if_logged_in_but_owns_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.active_listing
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/create_bid.html')
+
+    #Test to ensure that a user is redirected if the listing has ended
+    def test_redirect_if_listing_ended(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_listing
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that a bid is created succesfully and relates to the current user
+    def test_successful_bid_creation_related_to_user(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
+            data={'amount': 5.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_bid = Bid.objects.last()
+        self.assertEqual(created_bid.amount, 5.00)
+        self.assertEqual(created_bid.bidder, post_response.wsgi_request.user)
+
+    #Test to ensure that a bid is created succesfully and relates to the current listing
+    def test_successful_bid_creation_related_to_listing(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
+            data={'amount': 5.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_bid = Bid.objects.last()
+        self.assertEqual(created_bid.auctionListing, listing)

@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing
 from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
-    CreateAuctionListingForm, UpdateOfferListingForm, CreateOfferForm)
+    CreateAuctionListingForm, UpdateOfferListingForm, CreateOfferForm, CreateBidForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -222,6 +222,7 @@ def create_offer_listing(request):
 #Form view for editing an offer listing without changing the end time
 @login_required(login_url='/accounts/login/')
 def update_offer_listing(request, pk):
+    #Get the listing offer to be updated
     current_listing = get_object_or_404(OfferListing, pk=pk)
 
     if request.user == current_listing.owner:
@@ -248,8 +249,10 @@ def update_offer_listing(request, pk):
                     current_listing.minRange = 0.00
                     current_listing.maxRange = 0.00
 
+                #Clear the current items from the listing
                 current_listing.items.clear()
 
+                #Add the newly added items to the listing
                 clean_items = form.cleaned_data.get('items')
                 for item in clean_items:
                     current_listing.items.add(item)
@@ -336,21 +339,59 @@ def create_auction_listing(request):
 #Form view for creating an offer for an offer listing
 @login_required(login_url='/accounts/login/')
 def create_offer(request, pk):
+    #Get the listing object the offer is being created for
     current_listing = get_object_or_404(OfferListing, pk=pk)
 
+    #Check to ensure listing is still active
     if current_listing.listingEnded:
         return redirect('index')
     else:
+        #Check to ensure the listing owner cant create an offer for their own listing
         if request.user != current_listing.owner:
             if request.method == 'POST':
                 form = CreateOfferForm(data=request.POST, user=request.user, instance=current_listing, initial={'offerListing': current_listing})
                 if form.is_valid():
                     created_offer = form.save()
+
+                    #Add the items submitted to the offer
+                    clean_items = form.cleaned_data.get('items')
+                    for item in clean_items:
+                        created_offer.items.add(item)
+
                     created_offer.owner = request.user
                     created_offer.save()
                     return redirect('offer-listing-detail', pk=current_listing.pk)
             else:
                 form = CreateOfferForm(user=request.user, instance=current_listing, initial={'offerListing': current_listing})
             return render(request, 'listings/create_offer.html', {'form': form})
+        else:
+            return redirect('index')
+
+#Form view for creating an bid for an auction listing
+@login_required(login_url='/accounts/login/')
+def create_bid(request, pk):
+    #Get the listing object the bid is being created for
+    current_listing = get_object_or_404(AuctionListing, pk=pk)
+
+    #Check to make sure listing is still active
+    if current_listing.listingEnded:
+        return redirect('index')
+    else:
+        #Check to ensure that the auction owner cannot bid on their own auction
+        if request.user != current_listing.owner:
+            if request.method == 'POST':
+                form = CreateBidForm(data=request.POST, instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
+                if form.is_valid():
+                    created_bid = form.save()
+
+                    #Set the bidder and auctionListing fields (not sure why they aren't saving with the form...)
+                    created_bid.bidder = request.user
+                    created_bid.auctionListing = current_listing
+
+                    created_bid.save()
+                    return redirect('auction-listing-detail', pk=current_listing.pk)
+            else:
+                form = CreateBidForm(instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
+            return render(request, 'listings/create_bid.html', {'form': form})
         else:
             return redirect('index')
