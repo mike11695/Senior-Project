@@ -645,6 +645,15 @@ class OfferListingDetailViewTest(MyTestCase):
         self.offerListing.items.add = self.global_item1
         self.offerListing.save
 
+        #create some offers for the listing
+        number_of_offers = 5
+
+        for offer in range(number_of_offers):
+            new_offer = Offer.objects.create(offerListing=self.offerListing, owner=self.global_user2,
+                amount=7.00)
+            new_offer.items.add(self.global_item2)
+            new_offer.save
+
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
         listing = self.offerListing
@@ -667,6 +676,24 @@ class OfferListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_listing_detail.html')
+
+    #Test that the owner can see all offers on the listing
+    def test_owner_can_see_offers(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['offers']) == 5)
+
+    #Test that a user that does not own the listing cannot see offers
+    def test_not_owner_can_not_see_offers(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['offers'] == None)
 
 class CreateOfferListingViewTest(MyTestCase):
     def setUp(self):

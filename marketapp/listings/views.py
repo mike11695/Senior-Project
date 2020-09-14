@@ -5,7 +5,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from listings.models import Image, Item, Listing, OfferListing, AuctionListing
+from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid
 from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
     CreateAuctionListingForm, UpdateOfferListingForm, CreateOfferForm, CreateBidForm)
 
@@ -152,6 +152,16 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = OfferListing
     context_object_name = 'offerlisting'
     template_name = "listings/offer_listing_detail.html"
+
+    #Receive the offers made on the listing for the owner to view
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+        if obj.owner == self.request.user:
+            context['offers'] = Offer.objects.filter(offerListing=obj)
+        else:
+            context['offers'] = None
+        return context
 
 #Form view to create an offer listing
 @login_required(login_url='/accounts/login/')

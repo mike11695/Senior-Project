@@ -43,17 +43,46 @@
       {% endif %}
     {% endif %}
   </div>
-  <div class="listing-details">
-    {% if offerlisting.openToMoneyOffers %}
-      <div class="detail">Minimum Amount Sought: <b>${{ offerlisting.minRange }}</b></div>
-      <div class="detail">Maximum Amount Sought: <b>${{ offerlisting.maxRange }}</b></div>
-    {% endif %}
-  </div>
   {% if offerlisting.listingEnded != True %}
     {% if request.user != offerlisting.owner %}
+      <div class="listing-details">
+        {% if offerlisting.openToMoneyOffers %}
+          <div class="detail">Minimum Amount Sought: <b>${{ offerlisting.minRange }}</b></div>
+          <div class="detail">Maximum Amount Sought: <b>${{ offerlisting.maxRange }}</b></div>
+        {% endif %}
+      </div>
       <a href="{% url 'create-offer' pk=offerlisting.pk %}">
         <div class="btn btn-blue listing-btn center-block">Make an Offer</div>
       </a>
+    {% endif %}
+  {% endif %}
+  {% if request.user == offerlisting.owner %}
+    {% if offers %}
+      <h2 class="col-lg-10 center-block">Your Offers</h2>
+      <div class="all-offers-container col-lg-10 center-block">
+        {% for offer in offers %}
+          <div class="offer-container">
+            <div class="offer-header">
+              <a href=""><h5 style="display: inline-block;">Offer from {{ offer.owner }}:</h5></a>
+              <a class="btn btn-blue accept-button" href="">Accept</a>
+              {% if offer.amount > 0.00 %}
+                <div class="amount-offer">Amount Offered: ${{ offer.amount }}</div>
+              {% endif %}
+              {% if offer.items %}
+                <div class="offer-items">
+                  {% for item in offer.items.all %}
+                    {% if item.images %}
+                      {% with item.images.all|first as image %}
+                        <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="offer-image"></img></a>
+                      {% endwith %}
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
   {% endif %}
 {% endblock %}

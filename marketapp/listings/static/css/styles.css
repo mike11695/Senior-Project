@@ -168,3 +168,53 @@
 .expired-listing {
   color: red;
 }
+
+.all-offers-container {
+  margin-top: 15px;
+  margin-bottom: 25px;
+}
+
+.offer-container {
+  margin-bottom: 15px;
+  border-radius: 20px;
+  border: 1px solid grey;
+  height: auto;
+  width: 600px;
+  padding: 15px;
+  color: black;
+}
+
+.offer-container:nth-child(even) {
+  background: #CCC
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+.amount-offer {
+  margin-left: 0px;
+  font-size: 14px;
+  margin-top: -5px;
+}
+
+.accept-button {
+  float: right;
+  display: inline-block;
+  width: 75px;
+  height: 25px;
+  font-size: 14px;
+  padding: 0px 5px 0px 5px;
+}
+
+.offer-items {
+  margin-top: 5px;
+}
+
+.offer-image {
+  width: 75px;
+  height: 75px;
+  border-radius: 15px;
+  border: 1px solid grey;
+  margin-right: 5px;
+}

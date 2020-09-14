@@ -263,7 +263,8 @@ class CreateOfferForm(ModelForm):
        if self.listing.openToMoneyOffers:
            self.fields['amount'].initial = 0.00
        else:
-           self.fields['amount'].widget = forms.HiddenInput()
+           self.fields['amount'].initial = 0.00
+           self.fields['amount'].widget.attrs['readonly'] = True
        #self.fields['offerListing'].initial = self.listing
 
 class CreateBidForm(ModelForm):
