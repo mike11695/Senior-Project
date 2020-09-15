@@ -1,29 +1,96 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <div class="container-fluid">
-    <div class="row content-header-row">
-      <div class="col-lg-4">
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
         <h1>My Offer Listings</h1>
       </div>
-      <div class="col-lg-8 add-button">
+      <div class="add-button">
         <a href="{% url 'create-offer-listing' %}"><div class="btn btn-green">Add Offer Listing</div></a>
       </div>
     </div>
   </div>
   {% if offerlistings %}
-  <ul>
-    {% for listing in offerlistings %}
-      <li>
-        <a href="{{ listing.get_absolute_url }}">{{ listing.name }}</a> |
+    <div class="center-block col-lg-10">
+      {% for listing in offerlistings %}
         {% if listing.listingEnded %}
-          <a href="#">RELIST</a>
+          <div class="listing-object-inactive">
+            {% with listing.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <a href="{{ listing.get_absolute_url }}"><h4 style="display: inline-block">{{ listing.name }}</h4></a>
+                {% if listing.openToMoneyOffers %}
+                  <div class="listing-prices">
+                    {% if listing.maxRange > 0.00 %}
+                      Price Range: ${{ listing.minRange }} - ${{ listing.maxRange }}
+                    {% else %}
+                      Minimum Price: ${{ listing.minRange }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="listing-desc">
+                {{ listing.description }}
+              </div>
+            </div>
+            <a href=""><div class="btn btn-blue edit-btn">RELIST</div></a>
+          </div>
         {% else %}
-          <a href="{% url 'update-offer-listing' pk=listing.pk %}">EDIT</a>
+          <div class="listing-object-active">
+            {% with listing.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <a href="{{ listing.get_absolute_url }}"><h4 style="display: inline-block">{{ listing.name }}</h4></a>
+                  ({{ listing.offer_count }} Offers)
+                {% if listing.openToMoneyOffers %}
+                  <div class="listing-prices">
+                    {% if listing.maxRange > 0.00 %}
+                      Price Range: ${{ listing.minRange }} - ${{ listing.maxRange }}
+                    {% else %}
+                      Minimum Price: ${{ listing.minRange }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </div>
+              <div class="listing-desc">
+                {{ listing.description }}
+              </div>
+            </div>
+            <a href="{% url 'update-offer-listing' pk=listing.pk %}"><div class="btn btn-blue edit-btn">EDIT</div></a>
+          </div>
         {% endif %}
-      </li>
-    {% endfor %}
-  </ul>
+      {% endfor %}
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+    </div>
   {% else %}
     <p>You don't have any offer listings yet.</p>
   {% endif %}

@@ -4,6 +4,7 @@ from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid
 from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
@@ -142,10 +143,11 @@ class OfferListingListView(LoginRequiredMixin, generic.ListView):
     model = OfferListing
     context_object_name = 'offerlistings'
     template_name = "listings/offer_listings.html"
+    paginate_by = 10
 
     #Filters the list of offer listings to only show those that belong to the current logged in user
     def get_queryset(self):
-        return OfferListing.objects.filter(owner=self.request.user)
+        return OfferListing.objects.filter(owner=self.request.user).order_by('endTime').reverse().annotate(offer_count=Count('offerlisting'))
 
 #Detailed view for all users to see a offer listing (need to add offers for the owner to see later)
 class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):

@@ -42,13 +42,19 @@
         {% endwith %}
       {% endif %}
     {% endif %}
+    <div class="center-block listing-description">{{ offerlisting.description }}</div>
+    {% if offerlisting.notes %}
+      <div class="detail">Notes: {{ offerlisting.notes }}</div>
+    {% endif %}
   </div>
   {% if offerlisting.listingEnded != True %}
     {% if request.user != offerlisting.owner %}
       <div class="listing-details">
         {% if offerlisting.openToMoneyOffers %}
           <div class="detail">Minimum Amount Sought: <b>${{ offerlisting.minRange }}</b></div>
-          <div class="detail">Maximum Amount Sought: <b>${{ offerlisting.maxRange }}</b></div>
+          {% if offerlisting.maxRange > 0.00 %}
+            <div class="detail">Maximum Amount Sought: <b>${{ offerlisting.maxRange }}</b></div>
+          {% endif %}
         {% endif %}
       </div>
       <a href="{% url 'create-offer' pk=offerlisting.pk %}">
@@ -56,7 +62,7 @@
       </a>
     {% endif %}
   {% endif %}
-  {% if request.user == offerlisting.owner %}
+  {% if request.user == offerlisting.owner and offerlisting.listingEnded != True %}
     {% if offers %}
       <h2 class="col-lg-10 center-block">Your Offers</h2>
       <div class="all-offers-container col-lg-10 center-block">
@@ -74,6 +80,10 @@
                     {% if item.images %}
                       {% with item.images.all|first as image %}
                         <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="offer-image"></img></a>
+                        <div class="item-details">
+                          <b>{{ item.name }}</b></br>
+                          {{ item.description|truncatechars:100 }}
+                        </div></br>
                       {% endwith %}
                     {% endif %}
                   {% endfor %}

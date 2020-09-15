@@ -207,14 +207,87 @@ a:hover {
   padding: 0px 5px 0px 5px;
 }
 
-.offer-items {
-  margin-top: 5px;
-}
-
 .offer-image {
   width: 75px;
   height: 75px;
   border-radius: 15px;
   border: 1px solid grey;
   margin-right: 5px;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+.add-offer-btn {
+  float: right;
+  display: inline-block;
+}
+
+.listings-container {
+  border-bottom: 1px solid grey;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+.add-offer-listing-button {
+  width: 100px;
+  height: 75px;
+}
+
+.listing-object-active {
+  background: #94d19a;
+  border: 3px solid #5c8260;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.listing-object-inactive {
+  background: #eda6a6;
+  border: 3px solid #a67474;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.listing-image {
+  width: 175px;
+  height: 175px;
+  border-radius: 15px;
+  border: 1px solid black;
+}
+
+.listing-image-container {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.listing-details-container {
+  display: inline-block;
+  position: absolute;
+  width: auto;
+}
+
+.edit-btn {
+  float: right;
+  border-radius: 10px 15px 10px 10px;
+}
+
+.listing-prices {
+  font-weight: bold;
+  margin-top: -5px;
+  width: 100%;
+}
+
+.listing-description {
+  font-weight: bold;
+  font-style: italic;
+  margin-top: 15px;
+}
+
+.listing-desc {
+  border-top: 1px solid black;
+}
+
+.item-details {
+  display: inline-block;
 }

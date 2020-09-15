@@ -54,11 +54,13 @@ class Profile(models.Model):
         help_text="Submit an delivery address that you pick up items from.",
         default="None")
 
+    #Creates a profile object for the user when they are created
     @receiver(post_save, sender=User)
     def create_user_profile(sender, instance, created, **kwargs):
         if created:
             Profile.objects.create(user=instance)
 
+    #Saves the profile object that was created when the user was made
     @receiver(post_save, sender=User)
     def save_user_profile(sender, instance, **kwargs):
         instance.profile.save()

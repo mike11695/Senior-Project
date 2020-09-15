@@ -591,12 +591,6 @@ class ListingsModelTest(MyTestCase):
         default = listing._meta.get_field('endTimeChoices').default
         self.assertEqual(default, '1h')
 
-    #Checks to ensure that Listing listingEnded default is correct
-    def test_listing_listing_ended_default(self):
-        listing = self.offerListing
-        default = listing._meta.get_field('listingEnded').default
-        self.assertEqual(default, False)
-
     #Checks to ensure that OfferListing openToMoneyOffers default is correct
     def test_offer_listing_open_default(self):
         offer_listing = self.offerListing
