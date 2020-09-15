@@ -1478,3 +1478,57 @@ class CreateBidViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         created_bid = Bid.objects.last()
         self.assertEqual(created_bid.auctionListing, listing)
+
+class OfferDetailViewTest(MyTestCase):
+    def setUp(self):
+        super(OfferDetailViewTest, self).setUp()
+
+        #Create a user that will be redirected as they are not associated with offer
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Create an Offer instance for testing
+        self.offer = Offer.objects.create(offerListing=self.global_offer_listing1, owner=self.global_user2,
+                amount=7.00)
+        self.offer.items.add(self.global_item2)
+        self.offer.save
+
+    #Test to ensure that a user must be logged in to view an offer
+    def test_redirect_if_not_logged_in(self):
+        offer = self.offer
+        response = self.client.get(reverse('offer-detail', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they own the offer
+    def test_no_redirect_if_logged_in_owns_offer(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('offer-detail', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in if they own the listing
+    def test_no_redirect_if_logged_in_owns_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('offer-detail', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if they are not the user that owns the offer or listing
+    def test_redirect_if_logged_in_but_incorrect_user(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('offer-detail', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('offer-detail', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/offer_detail.html')

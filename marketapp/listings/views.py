@@ -348,6 +348,24 @@ def create_auction_listing(request):
         form = CreateAuctionListingForm(user=request.user)
     return render(request, 'listings/create_auction_listing.html', {'form': form})
 
+#Detailed view for listing owner and offerer to see a offer
+class OfferDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Offer
+    context_object_name = 'offer'
+    template_name = "listings/offer_detail.html"
+
+    #Checks to ensure that only the user that created the listing and user that made offer
+    # can view the detail view
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        listing = OfferListing.objects.get(id=obj.offerListing.id)
+        if obj.owner == self.request.user:
+            return super(OfferDetailView, self).dispatch(request, *args, **kwargs)
+        elif listing.owner == self.request.user:
+            return super(OfferDetailView, self).dispatch(request, *args, **kwargs)
+        else:
+            return redirect('index')
+
 #Form view for creating an offer for an offer listing
 @login_required(login_url='/accounts/login/')
 def create_offer(request, pk):

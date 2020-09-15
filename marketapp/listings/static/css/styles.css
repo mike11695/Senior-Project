@@ -222,7 +222,7 @@ a:hover {
   display: inline-block;
 }
 
-.listings-container {
+.listings-container, .offer-detail-container {
   border-bottom: 1px solid grey;
   margin-bottom: 10px;
   padding-bottom: 10px;
@@ -261,10 +261,14 @@ a:hover {
   margin-right: 10px;
 }
 
-.listing-details-container {
+.listing-details-container, .item-details-container {
   display: inline-block;
   position: absolute;
   width: auto;
+}
+
+.item-details-container {
+  margin-left: 10px;
 }
 
 .edit-btn {
@@ -284,10 +288,26 @@ a:hover {
   margin-top: 15px;
 }
 
-.listing-desc {
+.listing-desc, .item-desc {
   border-top: 1px solid black;
 }
 
 .item-details {
   display: inline-block;
+}
+
+.amount-offered {
+  color: green;
+  font-weight: bold;
+}
+
+.item-container {
+  padding: 10px;
+  border: 1px solid black;
+  border-radius: 25px;
+  margin-bottom: 15px;
+}
+
+.item-container:nth-child(even) {
+  background: #CCC
 }

@@ -64,12 +64,12 @@
   {% endif %}
   {% if request.user == offerlisting.owner and offerlisting.listingEnded != True %}
     {% if offers %}
-      <h2 class="col-lg-10 center-block">Your Offers</h2>
+      <h2 class="col-lg-10 center-block" style="text-align: center;">Your Offers:</h2>
       <div class="all-offers-container col-lg-10 center-block">
         {% for offer in offers %}
-          <div class="offer-container">
+          <div class="offer-container center-block">
             <div class="offer-header">
-              <a href=""><h5 style="display: inline-block;">Offer from {{ offer.owner }}:</h5></a>
+              <a href="{{ offer.get_absolute_url }}"><h5 style="display: inline-block;">Offer from {{ offer.owner }}:</h5></a>
               <a class="btn btn-blue accept-button" href="">Accept</a>
               {% if offer.amount > 0.00 %}
                 <div class="amount-offer">Amount Offered: ${{ offer.amount }}</div>
