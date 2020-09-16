@@ -100,7 +100,7 @@ class CreateOfferListingForm(ModelForm):
         model = OfferListing
         fields = ['name', 'description', 'items', 'endTimeChoices', 'openToMoneyOffers',
             'minRange', 'maxRange', 'notes']
-        exclude = ['owner', 'endTime', 'listingEnded']
+        exclude = ['owner', 'endTime', 'listingEnded', 'listingCompleted']
 
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
@@ -151,7 +151,7 @@ class UpdateOfferListingForm(ModelForm):
     class Meta:
         model = OfferListing
         fields = ['name', 'description', 'items', 'openToMoneyOffers', 'minRange', 'maxRange', 'notes']
-        exclude = ['owner', 'endTime', 'endTimeChoices', 'listingEnded']
+        exclude = ['owner', 'endTime', 'endTimeChoices', 'listingEnded', 'listingCompleted']
 
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
@@ -250,7 +250,7 @@ class CreateOfferForm(ModelForm):
 
     class Meta:
         model = Offer
-        exclude = ['owner']
+        exclude = ['owner', 'offerAccepted']
 
     #Initializes the items dropdown with items that only relate to the current user
     #Also gets the listing person is offering on

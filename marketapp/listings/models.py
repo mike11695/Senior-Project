@@ -332,6 +332,7 @@ class OfferListing(Listing):
         verbose_name="Maximum Price Range",
         help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).")
     notes = models.TextField(max_length=500, help_text="Include here what offers you're seeking.")
+    listingCompleted = models.BooleanField(default=False, null=True)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of OfferListing.
@@ -396,6 +397,7 @@ class Offer(models.Model):
     amount = models.DecimalField(max_digits=9, decimal_places=2,
         verbose_name="Cash Offer",
         help_text="Amount of cash you'd like to offer on listing (leave blank if you do not want to offer cash).")
+    offerAccepted = models.BooleanField(default=False, null=True)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Offer.
