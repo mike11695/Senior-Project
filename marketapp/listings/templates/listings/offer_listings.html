@@ -29,8 +29,8 @@
                   <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
                     <h4>{{ listing.name }}</h4>
                   </a>
-                  <a href=""><div class="btn btn-blue edit-btn">RELIST</div></a>
-                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                  <a href="{% url 'relist-offer-listing' pk=listing.pk %}"><div class="btn btn-blue edit-btn">RELIST</div></a>
+                  <a href="{% url 'delete-offer-listing' pk=listing.pk %}"><div class="btn btn-red delete-btn">DELETE</div></a>
                 </div>
                 {% if listing.openToMoneyOffers %}
                   <div class="listing-prices">
@@ -62,7 +62,7 @@
                   <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
                     <h4>{{ listing.name }}</h4>
                   </a>
-                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                  <a href="{% url 'delete-offer-listing' pk=listing.pk %}"><div class="btn btn-red delete-btn">DELETE</div></a>
                 </div>
               </div>
               <div class="listing-desc">
@@ -86,7 +86,7 @@
                     <h4 style="display: inline-block">{{ listing.name }}</h4> ({{ listing.offer_count }} Offers)
                   </a>
                   <a href="{% url 'update-offer-listing' pk=listing.pk %}"><div class="btn btn-blue edit-btn">EDIT</div></a>
-                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                  <a href="{% url 'delete-offer-listing' pk=listing.pk %}"><div class="btn btn-red delete-btn">DELETE</div></a>
                 </div>
                 {% if listing.openToMoneyOffers %}
                   <div class="listing-prices">

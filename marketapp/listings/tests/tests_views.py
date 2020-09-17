@@ -1045,6 +1045,170 @@ class EditOfferListingViewTest(MyTestCase):
         self.assertEqual(edited_listing.minRange, 0.00)
         self.assertEqual(edited_listing.maxRange, 0.00)
 
+class RelistOfferListingViewTest(MyTestCase):
+    def setUp(self):
+        super(RelistOfferListingViewTest, self).setUp()
+
+        #create some offers for the listing to test they are deleted when listing is relisted
+        number_of_offers = 6
+
+        for offer in range(number_of_offers):
+            new_offer = Offer.objects.create(offerListing=self.global_offer_listing2, owner=self.global_user2,
+                amount=7.00)
+            new_offer.items.add(self.global_item2)
+            new_offer.save
+
+    #Test to ensure that a user must be logged in to relist a listing
+    def test_redirect_if_not_logged_in(self):
+        listing = self.global_offer_listing2
+        response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in and they own the listing
+    def test_no_redirect_if_logged_in_and_owns_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing2
+        response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but they do not own the listing
+    def test_no_redirect_if_logged_in_but_does_not_own_listing(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing2
+        response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if logged in and they own the listing, but it is active
+    def test_redirect_if_logged_in_and_owns_listing_active_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing1
+        response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/offer-listings/')
+
+    #Test to ensure user is redirected if logged in and they own the listing, but it has been completed
+    def test_redirect_if_logged_in_and_owns_listing_completed_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing3
+        response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/offer-listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing2
+        response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/relist_offer_listing.html')
+
+    #Test to ensure that relisting the listing works
+    def test_succesful_listing_relist(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing2
+        response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('relist-offer-listing', args=[str(listing.id)]),
+            data={'name': "Test Offer Listing Relist", 'description': "Relisting my listing",
+                'items': [str(self.global_item1.id)], 'endTimeChoices': "8h", 'openToMoneyOffers': True,
+                'minRange': 15.00, 'maxRange': 20.00, 'notes': "Just offer anything"})
+        self.assertEqual(post_response.status_code, 302)
+        relisted_listing = OfferListing.objects.get(id=listing.id)
+        self.assertEqual(relisted_listing.name, 'Test Offer Listing Relist')
+        self.assertEqual(relisted_listing.minRange, 15.00)
+        self.assertEqual(relisted_listing.maxRange, 20.00)
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=8)
+        to_tz = timezone.get_default_timezone()
+        self.assertEqual(relisted_listing.endTime.astimezone(to_tz).hour, end_time_check.hour)
+
+    #Test to ensure that previous offers were deleted upon succesful relisting
+    def test_succesful_listing_relist_offers_deleted(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing2
+        response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('relist-offer-listing', args=[str(listing.id)]),
+            data={'name': "Test Offer Listing Relist", 'description': "Relisting my listing",
+                'items': [str(self.global_item1.id)], 'endTimeChoices': "8h", 'openToMoneyOffers': True,
+                'minRange': 15.00, 'maxRange': 20.00, 'notes': "Just offer anything"})
+        self.assertEqual(post_response.status_code, 302)
+        relisted_listing = OfferListing.objects.get(id=listing.id)
+        self.assertFalse(Offer.objects.filter(offerListing=relisted_listing).exists())
+
+class OfferListingDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(OfferListingDeleteViewTest, self).setUp()
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Create an offer listing object to test for deletion
+        self.offerListing = OfferListing.objects.create(owner=user,
+            name="My Items For Offers", description="A few items up for offers",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer")
+        self.offerListing.items.add = self.global_item1
+        self.offerListing.save
+        self.listingID = self.offerListing.id
+
+        #create some offers for the listing
+        number_of_offers = 3
+
+        self.offerIDs = [0 for number in range(number_of_offers)]
+
+        for offer in range(number_of_offers):
+            new_offer = Offer.objects.create(offerListing=self.offerListing, owner=self.global_user2,
+                amount=7.00)
+            new_offer.items.add(self.global_item2)
+            new_offer.save
+            self.offerIDs[offer] = new_offer.id
+
+    #Test to ensure that a user must be logged in to view listings
+    def test_redirect_if_not_logged_in(self):
+        listing = self.offerListing
+        response = self.client.get(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they own the listing
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they do not own the listing
+    def test_no_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/offer_listing_delete.html')
+
+    #Test to ensure object is deleted and offers asociated are also deleted if user confirms
+    def test_succesful_deletion(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(post_response, reverse('offer-listings'))
+        self.assertFalse(OfferListing.objects.filter(id=self.listingID).exists())
+        for offer_id in self.offerIDs:
+            self.assertFalse(Offer.objects.filter(id=offer_id).exists())
+
 class AuctionListingsViewTest(MyTestCase):
     def setUp(self):
         super(AuctionListingsViewTest, self).setUp()

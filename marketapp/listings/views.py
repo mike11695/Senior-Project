@@ -1,5 +1,6 @@
 from django.contrib.auth import login, authenticate
 from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.decorators import login_required
@@ -292,6 +293,107 @@ def update_offer_listing(request, pk):
         return render(request, 'listings/update_offer_listing.html', {'form': form})
     else:
         return redirect('index')
+
+#View for a user to relist an offer listing that they own that has ended
+class OfferListingRelistView(LoginRequiredMixin, generic.UpdateView):
+    model = OfferListing
+    fields = ['name', 'description', 'items', 'endTimeChoices', 'openToMoneyOffers',
+        'minRange', 'maxRange', 'notes']
+    template_name = "listings/relist_offer_listing.html"
+
+    #Checks to make sure owner of listing is relisting, redirects otherwise
+    #Also checks to ensure that listing actually had ended and had not been completed
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner != self.request.user:
+            return redirect('index')
+        else:
+            if obj.listingEnded and obj.listingCompleted != True:
+                return super(OfferListingRelistView, self).dispatch(request, *args, **kwargs)
+            else:
+                return redirect('offer-listings')
+
+    #Form valdation to ensure that previous offers are deleted, and end time is set
+    def form_valid(self, form):
+        relisted_listing = form.save(commit=False)
+
+        #Retrieves the offers associated with current listing and deletes them
+        Offer.objects.filter(offerListing=relisted_listing).delete()
+
+        #Get the end time choice from form and set end time accordingly
+        clean_choice = form.cleaned_data.get('endTimeChoices')
+        if clean_choice == '1h':
+            #Set end time to 1 hour from current time if choice was 1h
+            date = timezone.localtime(timezone.now()) + timedelta(hours=1)
+        elif clean_choice == '2h':
+            #Set end time to 2 hours from current time if choice was 2h
+            date = timezone.localtime(timezone.now()) + timedelta(hours=2)
+        elif clean_choice == '4h':
+            #Set end time to 4 hours from current time if choice was 4h
+            date = timezone.localtime(timezone.now()) + timedelta(hours=4)
+        elif clean_choice == '8h':
+            #Set end time to 8 hours from current time if choice was 8h
+            date = timezone.localtime(timezone.now()) + timedelta(hours=8)
+        elif clean_choice == '12h':
+            #Set end time to 12 hours from current time if choice was 12h
+            date = timezone.localtime(timezone.now()) + timedelta(hours=12)
+        elif clean_choice == '1d':
+            #Set end time to 1 day from current time if choice was 1d
+            date = timezone.localtime(timezone.now()) + timedelta(days=1)
+        elif clean_choice == '3d':
+            #Set end time to 3 days from current time if choice was 3ds
+            date = timezone.localtime(timezone.now()) + timedelta(days=3)
+        else:
+            #Set end time to 7 days from current time
+            date = timezone.localtime(timezone.now()) + timedelta(days=7)
+
+        #Get openToMoneyOffers value from form
+        clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
+
+        #Check to see if option was checked or not
+        if clean_openToMoneyOffers == True:
+            #If true, check if the user added a maxRange to form
+            clean_maxRange = form.cleaned_data.get('maxRange')
+            if clean_maxRange:
+                #If so, keep the value the same
+                relisted_listing.maxRange = clean_maxRange
+            else:
+                #If not, set it to 0.00
+                relisted_listing.maxRange = 0.00
+        else:
+            #If not checked, set ranges to 0.00
+            relisted_listing.minRange = 0.00
+            relisted_listing.maxRange = 0.00
+
+        #Set the end date for the listing
+        relisted_listing.endTime = date
+
+        #Clear the current items from the listing
+        relisted_listing.items.clear()
+
+        #Add the newly added items to the listing
+        clean_items = form.cleaned_data.get('items')
+        for item in clean_items:
+            relisted_listing.items.add(item)
+
+        #Save the object
+        relisted_listing.save()
+
+        return super(OfferListingRelistView, self).form_valid(form)
+
+#View for a user to delete an offer listing that they own
+class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = OfferListing
+    success_url = reverse_lazy('offer-listings')
+    template_name = "listings/offer_listing_delete.html"
+    context_object_name = 'offerlisting'
+
+    #Checks to make sure owner of listing clicked to delete, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner != self.request.user:
+            return redirect('index')
+        return super(OfferListingDeleteView, self).dispatch(request, *args, **kwargs)
 
 #Form for a user to view all of their active auctions (need to come back to this
 #once listings are able to end)
