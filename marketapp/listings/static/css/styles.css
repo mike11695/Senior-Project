@@ -88,6 +88,11 @@
   color: white !important;
 }
 
+.btn-red {
+  background-color: red !important;
+  color: white !important;
+}
+
 .add-button {
   text-align: right;
   display: inline-block;
@@ -249,6 +254,14 @@ a:hover {
   padding: 10px;
 }
 
+.listing-object-completed {
+  background: #dfe665;
+  border: 3px solid #8a8f3f;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
 .listing-image {
   width: 175px;
   height: 175px;
@@ -264,6 +277,13 @@ a:hover {
 .listing-details-container, .item-details-container {
   display: inline-block;
   position: absolute;
+}
+
+.listing-details-container {
+  width: 77.5%;
+}
+
+.item-details-container {
   width: auto;
 }
 
@@ -272,8 +292,21 @@ a:hover {
 }
 
 .edit-btn {
-  float: right;
+  right: 80px;
+  position: absolute;
+  border-radius: 10px 10px 10px 10px;
+  width: 75px;
+  height: 30px;
+  padding: 1px 0px 0px 0px;
+}
+
+.delete-btn {
+  right: 0px;
+  position: absolute;
   border-radius: 10px 15px 10px 10px;
+  width: 75px;
+  height: 30px;
+  padding: 1px 0px 0px 0px;
 }
 
 .listing-prices {

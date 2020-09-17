@@ -20,6 +20,7 @@ urlpatterns = [
     path('offer-listings/<int:pk>/update', views.update_offer_listing, name='update-offer-listing'),
     path('offer-listings/<int:pk>/offer', views.create_offer, name='create-offer'),
     path('offer-listings/offer/<int:pk>', views.OfferDetailView.as_view(), name='offer-detail'),
+    path('offer-listings/offer/<int:pk>/accept', views.accept_offer, name='accept-offer'),
     path('auction-listings/', views.AuctionListingListView.as_view(), name='auction-listings'),
     path('auction-listings/create-auction-listing', views.create_auction_listing, name='create-auction-listing'),
     path('auction-listings/<int:pk>', views.AuctionListingDetailView.as_view(), name='auction-listing-detail'),

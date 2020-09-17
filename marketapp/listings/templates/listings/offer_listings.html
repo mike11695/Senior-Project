@@ -25,7 +25,13 @@
             {% endwith %}
             <div class="listing-details-container">
               <div style="display: inline-block; width: 100%;">
-                <a href="{{ listing.get_absolute_url }}"><h4 style="display: inline-block">{{ listing.name }}</h4></a>
+                <div class="listing-listview-header">
+                  <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                    <h4>{{ listing.name }}</h4>
+                  </a>
+                  <a href=""><div class="btn btn-blue edit-btn">RELIST</div></a>
+                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                </div>
                 {% if listing.openToMoneyOffers %}
                   <div class="listing-prices">
                     {% if listing.maxRange > 0.00 %}
@@ -40,7 +46,29 @@
                 {{ listing.description }}
               </div>
             </div>
-            <a href=""><div class="btn btn-blue edit-btn">RELIST</div></a>
+          </div>
+        {% elif listing.listingCompleted %}
+          <div class="listing-object-completed">
+            {% with listing.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                    <h4>{{ listing.name }}</h4>
+                  </a>
+                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                </div>
+              </div>
+              <div class="listing-desc">
+                {{ listing.description }}
+              </div>
+            </div>
           </div>
         {% else %}
           <div class="listing-object-active">
@@ -53,8 +81,13 @@
             {% endwith %}
             <div class="listing-details-container">
               <div style="display: inline-block; width: 100%;">
-                <a href="{{ listing.get_absolute_url }}"><h4 style="display: inline-block">{{ listing.name }}</h4></a>
-                  ({{ listing.offer_count }} Offers)
+                <div class="listing-listview-header">
+                  <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                    <h4 style="display: inline-block">{{ listing.name }}</h4> ({{ listing.offer_count }} Offers)
+                  </a>
+                  <a href="{% url 'update-offer-listing' pk=listing.pk %}"><div class="btn btn-blue edit-btn">EDIT</div></a>
+                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                </div>
                 {% if listing.openToMoneyOffers %}
                   <div class="listing-prices">
                     {% if listing.maxRange > 0.00 %}
@@ -69,7 +102,6 @@
                 {{ listing.description }}
               </div>
             </div>
-            <a href="{% url 'update-offer-listing' pk=listing.pk %}"><div class="btn btn-blue edit-btn">EDIT</div></a>
           </div>
         {% endif %}
       {% endfor %}

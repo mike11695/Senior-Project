@@ -4,9 +4,9 @@
   <div class="col-lg-10 center-block listing-header">
     <h2>{{ offerlisting.name }}</h2>
     <h6>Owner: {{ offerlisting.owner }}</h6>
-    {% if offerlisting.listingEnded %}
+    {% if offerlisting.listingEnded and offerlisting.listingCompleted != True %}
       <h6 class="expired-listing">Ended: {{ offerlisting.endTime }}</h6>
-    {% else %}
+    {% elif offerlisting.listingCompleted != True %}
       <h6>Ends: {{ offerlisting.endTime }}</h6>
     {% endif %}
   </div>
@@ -62,37 +62,45 @@
       </a>
     {% endif %}
   {% endif %}
-  {% if request.user == offerlisting.owner and offerlisting.listingEnded != True %}
-    {% if offers %}
-      <h2 class="col-lg-10 center-block" style="text-align: center;">Your Offers:</h2>
-      <div class="all-offers-container col-lg-10 center-block">
-        {% for offer in offers %}
-          <div class="offer-container center-block">
-            <div class="offer-header">
-              <a href="{{ offer.get_absolute_url }}"><h5 style="display: inline-block;">Offer from {{ offer.owner }}:</h5></a>
-              <a class="btn btn-blue accept-button" href="">Accept</a>
-              {% if offer.amount > 0.00 %}
-                <div class="amount-offer">Amount Offered: ${{ offer.amount }}</div>
-              {% endif %}
-              {% if offer.items %}
-                <div class="offer-items">
-                  {% for item in offer.items.all %}
-                    {% if item.images %}
-                      {% with item.images.all|first as image %}
-                        <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="offer-image"></img></a>
-                        <div class="item-details">
-                          <b>{{ item.name }}</b></br>
-                          {{ item.description|truncatechars:100 }}
-                        </div></br>
-                      {% endwith %}
-                    {% endif %}
-                  {% endfor %}
-                </div>
-              {% endif %}
+  {% if request.user == offerlisting.owner %}
+    {% if offerlisting.listingEnded != True or offerlisting.listingCompleted %}
+      {% if offers %}
+        {% if offerlisting.listingCompleted %}
+          <h2 class="col-lg-10 center-block" style="text-align: center;">Accepted Offer:</h2>
+        {% else %}
+          <h2 class="col-lg-10 center-block" style="text-align: center;">Your Offers:</h2>
+        {% endif %}
+        <div class="all-offers-container col-lg-10 center-block">
+          {% for offer in offers %}
+            <div class="offer-container center-block">
+              <div class="offer-header">
+                <a href="{{ offer.get_absolute_url }}"><h5 style="display: inline-block;">Offer from {{ offer.owner }}:</h5></a>
+                {% if offer.offerListing.listingCompleted != True %}
+                  <a onclick="return confirm('Are you sure you want to accept this offer?')" class="btn btn-blue accept-button" href="{% url 'accept-offer' pk=offer.pk %}">Accept</a>
+                {% endif %}
+                {% if offer.amount > 0.00 %}
+                  <div class="amount-offer">Amount Offered: ${{ offer.amount }}</div>
+                {% endif %}
+                {% if offer.items %}
+                  <div class="offer-items">
+                    {% for item in offer.items.all %}
+                      {% if item.images %}
+                        {% with item.images.all|first as image %}
+                          <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="offer-image"></img></a>
+                          <div class="item-details">
+                            <b>{{ item.name }}</b><br>
+                            {{ item.description|truncatechars:100 }}
+                          </div><br>
+                        {% endwith %}
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
             </div>
-          </div>
-        {% endfor %}
-      </div>
+          {% endfor %}
+        </div>
+      {% endif %}
     {% endif %}
   {% endif %}
 {% endblock %}

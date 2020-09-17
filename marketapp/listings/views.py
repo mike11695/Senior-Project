@@ -165,6 +165,22 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
             context['offers'] = None
         return context
 
+    #Checks to ensure that only the user that created the listing and user that made offer
+    # can view the listing when it has been completed
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        #listing = OfferListing.objects.get(id=obj.offerListing.id)
+        if obj.listingCompleted:
+            accepted_offer = Offer.objects.get(offerListing = obj) #There will only be one offer associted with listing
+            if obj.owner == self.request.user:
+                return super(OfferListingDetailView, self).dispatch(request, *args, **kwargs)
+            elif accepted_offer.owner == self.request.user:
+                return super(OfferListingDetailView, self).dispatch(request, *args, **kwargs)
+            else:
+                return redirect('index')
+        else:
+            return super(OfferListingDetailView, self).dispatch(request, *args, **kwargs)
+
 #Form view to create an offer listing
 @login_required(login_url='/accounts/login/')
 def create_offer_listing(request):
@@ -373,7 +389,7 @@ def create_offer(request, pk):
     current_listing = get_object_or_404(OfferListing, pk=pk)
 
     #Check to ensure listing is still active
-    if current_listing.listingEnded:
+    if current_listing.listingEnded or current_listing.listingCompleted:
         return redirect('index')
     else:
         #Check to ensure the listing owner cant create an offer for their own listing
@@ -396,6 +412,37 @@ def create_offer(request, pk):
             return render(request, 'listings/create_offer.html', {'form': form})
         else:
             return redirect('index')
+
+#Method for accepting an offer on a listing, done by listing owner
+def accept_offer(request, pk):
+    current_offer = get_object_or_404(Offer, pk=pk)
+
+    if request.user:
+        if request.user != current_offer.offerListing.owner:
+            return redirect('index')
+        elif current_offer.offerListing.listingEnded or current_offer.offerListing.listingCompleted:
+            return redirect('offer-listing-detail', pk=current_offer.offerListing.pk)
+        else:
+            #Update the offer's offerAccepted field to True and save the object
+            current_offer.offerAccepted = True
+            current_offer.save()
+
+            #Retrieve the listing the offer is associated with, change listingCompleted to True and save object
+            current_listing = OfferListing.objects.get(id=current_offer.offerListing.id)
+            current_listing.listingCompleted = True
+            current_listing.save()
+
+            #Retrieve the other offers for the listing and destroy them if not accepted
+            other_offers = Offer.objects.filter(offerListing=current_listing)
+            for offer in other_offers:
+                if offer.offerAccepted != True:
+                    #Destroy the object
+                    offer.delete()
+
+            #Redirect to the listing afterwards
+            return redirect('offer-listing-detail', pk=current_offer.offerListing.pk)
+    else:
+        return redirect('index')
 
 #Form view for creating an bid for an auction listing
 @login_required(login_url='/accounts/login/')

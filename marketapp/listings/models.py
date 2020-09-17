@@ -320,7 +320,7 @@ class Listing(models.Model):
         return timezone.localtime(timezone.now()) > self.endTime
 
 #Subclass for OfferListing, a listing that is interested in offers
-#Fields needed: openToMoneyOffers, minRange, maxRange, notes, items
+#Fields needed: openToMoneyOffers, minRange, maxRange, notes, items, listingCompleted
 class OfferListing(Listing):
     #Fields for OfferListing
     openToMoneyOffers = models.BooleanField(default=True, verbose_name="Open to Money Offers?",
@@ -388,7 +388,7 @@ class Bid(models.Model):
         return f'{self.id}'
 
 #Model for Offers, which are items offered on an OfferListing (should this contain Item field?)
-#Fields needed: OfferListing, owner, items, amount
+#Fields needed: OfferListing, owner, items, amount, offerAccepted
 class Offer(models.Model):
     #Fields for Offer
     offerListing = models.ForeignKey(OfferListing, on_delete=models.CASCADE, null=True, related_name="offerlisting")

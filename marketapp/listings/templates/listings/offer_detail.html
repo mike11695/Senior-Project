@@ -31,8 +31,8 @@
       </div>
     </div>
   {% endif %}
-  {% if offer.offerListing.owner == request.user %}
-    <a href="">
+  {% if offer.offerListing.owner == request.user and offer.offerListing.listingCompleted != True %}
+    <a onclick="return confirm('Are you sure you want to accept this offer?')" href="{% url 'accept-offer' pk=offer.pk %}">
       <div class="btn btn-blue listing-btn center-block" style="margin-top: 15px; margin-bottom: 20px;">
         Accept Offer
       </div>

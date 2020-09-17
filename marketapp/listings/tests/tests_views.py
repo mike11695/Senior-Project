@@ -66,6 +66,13 @@ class MyTestCase(TestCase):
         self.global_offer_listing2.items.add(self.global_item1)
         self.global_offer_listing2.save
 
+        #Create a global offer listing that has completed
+        self.global_offer_listing3 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=date_ended, listingCompleted=True)
+        self.global_offer_listing3.items.add(self.global_item1)
+        self.global_offer_listing3.save
+
         #Create a global auction listing that is active
         self.global_auction_listing1 = AuctionListing.objects.create(owner=user1, name='Test Auction Listing',
             description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
@@ -654,6 +661,12 @@ class OfferListingDetailViewTest(MyTestCase):
             new_offer.items.add(self.global_item2)
             new_offer.save
 
+        #A completed listing offer for testing redirects
+        completed_offer = Offer.objects.create(offerListing=self.global_offer_listing3, owner=self.global_user2,
+            amount=7.00)
+        completed_offer.items.add(self.global_item2)
+        completed_offer.save
+
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
         listing = self.offerListing
@@ -694,6 +707,30 @@ class OfferListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['offers'] == None)
+
+    #Test to ensure a user is redirected if a listing has completed and they are not the owner or offerer
+    def test_redirect_if_not_owner_or_accepted_offer_listing_completed(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing3
+        response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure a user is not redirected if a listing has completed and they are the owner of listing
+    def test_no_redirect_if_listing_owner_listing_completed(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing3
+        response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure a user is not redirected if a listing has completed and they are the owner of accepted offer
+    def test_no_redirect_if_accepted_owner_listing_completed(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing3
+        response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
 
 class CreateOfferListingViewTest(MyTestCase):
     def setUp(self):
@@ -1337,6 +1374,7 @@ class CreateOfferViewTest(MyTestCase):
 
         self.active_listing = self.global_offer_listing1
         self.inactive_listing = self.global_offer_listing2
+        self.completed_listing = self.global_offer_listing3
 
     #Test to ensure that a user must be logged in to create offer
     def test_redirect_if_not_logged_in(self):
@@ -1398,6 +1436,14 @@ class CreateOfferViewTest(MyTestCase):
     #Test to ensure a user is redirected if a listing has ended
     def test_redirect_if_listing_ended(self):
         listing = self.inactive_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure a user is redirected if a listing has been completed
+    def test_redirect_if_listing_completed(self):
+        listing = self.completed_listing
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
@@ -1532,3 +1578,108 @@ class OfferDetailViewTest(MyTestCase):
         response = self.client.get(reverse('offer-detail', args=[str(offer.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_detail.html')
+
+class AcceptOfferViewTest(MyTestCase):
+    def setUp(self):
+        super(AcceptOfferViewTest, self).setUp()
+
+        #create some offers for the active listing for testing
+        number_of_offers = 5
+        for offer in range(number_of_offers):
+            new_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
+                owner=self.global_user2, amount=7.00)
+            new_offer.items.add(self.global_item2)
+            new_offer.save
+            if offer == 4:
+                self.offer = new_offer
+
+        #create offers for an inactive listing to test that a user cannot accept an offer once ended
+        self.expired_offer = Offer.objects.create(offerListing=self.global_offer_listing2,
+            owner=self.global_user2, amount=7.00)
+        expired_offer2 = Offer.objects.create(offerListing=self.global_offer_listing2,
+            owner=self.global_user2, amount=7.00)
+
+    #Test to ensure that a user must be logged in to accept an offer
+    def test_redirect_if_not_logged_in(self):
+        offer = self.offer
+        response = self.client.get(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user if logged in is redirected to the offer listing if they own the offer listing
+    def test_no_redirect_if_logged_in_owns_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/offer-listings/{0}'.format(offer.offerListing.id))
+
+    #Test to ensure user is redirected if they do not own the offer listing
+    def test_no_redirect_if_logged_does_not_own_listing(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that the offer field offerAccepted is updated
+    def test_offer_accepted_field_becomes_true(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        updated_offer = Offer.objects.get(id=offer.id)
+        self.assertEqual(updated_offer.offerAccepted, True)
+
+    #Test to ensure that the offerListing field listingCompleted is updated
+    def test_listing_completed_field_becomes_true(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        updated_listing = OfferListing.objects.get(id=offer.offerListing.id)
+        self.assertEqual(updated_listing.listingCompleted, True)
+
+    #Test to ensure that the unaccepted offers on listing are destroyed
+    def test_unaccepted_offers_are_destroyed(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing1)
+        self.assertEqual(len(all_listing_offers), 1)
+
+    #Test to ensure that the accepted offer remains
+    def test_accepted_offers_remains(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing1)
+        self.assertEqual(len(all_listing_offers), 1)
+        self.assertEqual(offer, all_listing_offers.first())
+
+    #Test to ensure that a user cannot accept an offer once listing has completed
+    def test_offer_not_accepted_listing_completed(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        response = self.client.get(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/offer-listings/{0}'.format(offer.offerListing.id))
+        all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing1)
+        self.assertEqual(len(all_listing_offers), 1)
+
+    #Test to ensure that a user cannot accept an offer once listing has ended, also ensure the same amount of offers remain
+    def test_offer_not_accepted_listing_ended(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.expired_offer
+        response = self.client.get(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/offer-listings/{0}'.format(offer.offerListing.id))
+        all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing2)
+        self.assertEqual(len(all_listing_offers), 2)
