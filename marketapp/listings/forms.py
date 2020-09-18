@@ -40,7 +40,7 @@ class AddImageForm(ModelForm):
     class Meta:
         model = Image
         fields = ['image', 'name', 'tags']
-        exclude = ['owner']
+        exclude = ['owner', 'width', 'height']
         help_texts = {'image': "Image must not be larger than 1250x1250."}
 
 class AddItemForm(ModelForm):

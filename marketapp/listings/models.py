@@ -157,11 +157,13 @@ class Tag(models.Model):
 class Image(models.Model):
     #Fields for Image
     owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    image = models.ImageField(upload_to="images")
+    image = models.ImageField(upload_to="images", width_field='width', height_field='height')
     name = models.TextField(max_length=50, verbose_name="Name of Image")
     tags = models.ManyToManyField(Tag, verbose_name="Item Tags",
         help_text="Qualities of the item in the photo, purpose and where one can find it can be used as tags.",
         blank=True)
+    width = models.IntegerField()
+    height = models.IntegerField()
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Image.

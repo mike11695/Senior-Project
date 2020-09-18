@@ -1,5 +1,40 @@
 {% extends "base_generic.html" %}
+{% load mathfilters %}
 
 {% block content %}
-  h
+  <div class="container-fluid col-lg-10 center-block item-detail-container">
+    <h1>{{ item.name }}</h1>
+    <p>{{ item.description }}
+    <div class="item-images-container">
+      {% if item.images %}
+        <h3>Images</h3>
+        {% for image in item.images.all %}
+          {% if image.height > 500 and image.width > 500 %}
+            {% with width_mul=500|div:image.width %}
+              {% with height_mul=500|div:image.height %}
+              <img src="{{ image.image.url }}" class="item-image"
+                width="{{ image.width|mul:width_mul }}"
+                height="{{ image.height|mul:height_mul }}">
+              </img><br>
+              {% endwith %}
+            {% endwith %}
+          {% elif image.height > 500 %}
+            {% with height_mul=500|div:image.height %}
+            <img src="{{ image.image.url }}" class="item-image"
+              height="{{ image.height|mul:height_mul }}">
+            </img><br>
+            {% endwith %}
+          {% elif image.width > 500 %}
+            {% with width_mul=500|div:image.width %}
+            <img src="{{ image.image.url }}" class="item-image"
+              width="{{ image.width|mul:width_mul }}">
+            </img><br>
+            {% endwith %}
+          {% else %}
+            <img src="{{ image.image.url }}" class="item-image"></img><br>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}

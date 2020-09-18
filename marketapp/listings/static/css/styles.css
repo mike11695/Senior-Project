@@ -344,3 +344,20 @@ a:hover {
 .item-container:nth-child(even) {
   background: #CCC
 }
+
+.item-detail-container {
+  text-align: center;
+}
+
+.item-image {
+  margin-top: 15px;
+  border-radius: 25px;
+  border: 5px double black;
+  padding: 5px;
+}
+
+.item-images-container {
+  border-top: 1px solid black;
+  padding-top: 10px;
+  margin-bottom: 20px;
+}
