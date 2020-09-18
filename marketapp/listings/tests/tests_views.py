@@ -971,6 +971,8 @@ class CreateOfferListingViewTest(MyTestCase):
 class EditOfferListingViewTest(MyTestCase):
     def setUp(self):
         super(EditOfferListingViewTest, self).setUp()
+
+        #Create users for testing
         user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
@@ -978,6 +980,7 @@ class EditOfferListingViewTest(MyTestCase):
             email="example1@text.com", paypalEmail="example1@text.com",
             invitesOpen=True, inquiriesOpen=True)
 
+        #Create objects needed for the new listing to be made
         tag = Tag.objects.create(name="Test Tag")
         test_image = self.global_test_image1
 
@@ -988,15 +991,20 @@ class EditOfferListingViewTest(MyTestCase):
         self.item1.images.add(image1)
         self.item1.save
 
-        date = datetime.today()
-        settings.TIME_ZONE
-        aware_date = make_aware(date)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
 
+        #Create a listing for testing
         self.offerListing = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
-            maxRange=10.00, notes="Just offer", endTime=aware_date)
+            maxRange=10.00, notes="Just offer", endTime=date_active)
         self.offerListing.items.add(self.item1)
         self.offerListing.save
+
+        #Make an offer for a listing to ensure that users can not edit listings with offers
+        new_offer = Offer.objects.create(offerListing=self.global_offer_listing1, owner=self.global_user2,
+            amount=7.00)
+        new_offer.items.add(self.global_item2)
+        new_offer.save
 
     #Test to ensure that a user must be logged in to view the listing
     def test_redirect_if_not_logged_in(self):
@@ -1028,6 +1036,30 @@ class EditOfferListingViewTest(MyTestCase):
         listing = self.offerListing
         response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if they own listing but it currently has at least one offer
+    def test_redirect_if_logged_in_but_listing_has_offers(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing1
+        response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/offer-listings/')
+
+    #Test to ensure user is redirected if they own listing but it has already been completed
+    def test_redirect_if_logged_in_but_listing_has_completed(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing3
+        response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/offer-listings/')
+
+    #Test to ensure user is redirected if they own listing but it has already ended
+    def test_redirect_if_logged_in_but_listing_has_ended(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing2
+        response = self.client.get(reverse('update-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/offer-listings/')
 
     #Test to ensure that updating the listing works
     def test_succesful_listing_update(self):

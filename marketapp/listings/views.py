@@ -253,44 +253,48 @@ def create_offer_listing(request):
 def update_offer_listing(request, pk):
     #Get the listing offer to be updated
     current_listing = get_object_or_404(OfferListing, pk=pk)
+    existing_objects = Offer.objects.filter(offerListing=current_listing).exists()
 
     if request.user == current_listing.owner:
-        if request.method == 'POST':
-            form = UpdateOfferListingForm(data=request.POST, user=request.user, instance=current_listing)
-            if form.is_valid():
-                current_listing = form.save(commit=False)
+        if current_listing.listingCompleted != True and current_listing.listingEnded != True and existing_objects != True:
+            if request.method == 'POST':
+                form = UpdateOfferListingForm(data=request.POST, user=request.user, instance=current_listing)
+                if form.is_valid():
+                    current_listing = form.save(commit=False)
 
-                #Get openToMoneyOffers value from form
-                clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
+                    #Get openToMoneyOffers value from form
+                    clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
 
-                #Check to see if option was checked or not
-                if clean_openToMoneyOffers == True:
-                    #If true, check if the user added a maxRange to form
-                    clean_maxRange = form.cleaned_data.get('maxRange')
-                    if clean_maxRange:
-                        #If so, keep the value the same
-                        current_listing.maxRange = clean_maxRange
+                    #Check to see if option was checked or not
+                    if clean_openToMoneyOffers == True:
+                        #If true, check if the user added a maxRange to form
+                        clean_maxRange = form.cleaned_data.get('maxRange')
+                        if clean_maxRange:
+                            #If so, keep the value the same
+                            current_listing.maxRange = clean_maxRange
+                        else:
+                            #If not, set it to 0.00
+                            current_listing.maxRange = 0.00
                     else:
-                        #If not, set it to 0.00
+                        #If not checked, set ranges to 0.00
+                        current_listing.minRange = 0.00
                         current_listing.maxRange = 0.00
-                else:
-                    #If not checked, set ranges to 0.00
-                    current_listing.minRange = 0.00
-                    current_listing.maxRange = 0.00
 
-                #Clear the current items from the listing
-                current_listing.items.clear()
+                    #Clear the current items from the listing
+                    current_listing.items.clear()
 
-                #Add the newly added items to the listing
-                clean_items = form.cleaned_data.get('items')
-                for item in clean_items:
-                    current_listing.items.add(item)
+                    #Add the newly added items to the listing
+                    clean_items = form.cleaned_data.get('items')
+                    for item in clean_items:
+                        current_listing.items.add(item)
 
-                current_listing.save()
-                return redirect('offer-listing-detail', pk=current_listing.pk)
+                    current_listing.save()
+                    return redirect('offer-listing-detail', pk=current_listing.pk)
+            else:
+                form = UpdateOfferListingForm(user=request.user, instance=current_listing)
+            return render(request, 'listings/update_offer_listing.html', {'form': form})
         else:
-            form = UpdateOfferListingForm(user=request.user, instance=current_listing)
-        return render(request, 'listings/update_offer_listing.html', {'form': form})
+            return redirect('offer-listings')
     else:
         return redirect('index')
 
