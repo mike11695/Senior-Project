@@ -58,7 +58,7 @@
         {% endif %}
       </div>
       <a href="{% url 'create-offer' pk=offerlisting.pk %}">
-        <div class="btn btn-blue listing-btn center-block">Make an Offer</div>
+        <div class="btn btn-blue listing-btn center-block" style="margin-bottom: 20px;">Make an Offer</div>
       </a>
     {% endif %}
   {% endif %}
@@ -77,6 +77,7 @@
                 <a href="{{ offer.get_absolute_url }}"><h5 style="display: inline-block;">Offer from {{ offer.owner }}:</h5></a>
                 {% if offer.offerListing.listingCompleted != True %}
                   <a onclick="return confirm('Are you sure you want to accept this offer?')" class="btn btn-blue accept-button" href="{% url 'accept-offer' pk=offer.pk %}">Accept</a>
+                  <br><a class="btn btn-red decline-button" href="{% url 'delete-offer' pk=offer.pk %}">Decline</a>
                 {% endif %}
                 {% if offer.amount > 0.00 %}
                   <div class="amount-offer">Amount Offered: ${{ offer.amount }}</div>

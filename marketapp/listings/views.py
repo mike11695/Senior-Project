@@ -550,6 +550,32 @@ def accept_offer(request, pk):
     else:
         return redirect('index')
 
+#View for a user to delete an offer that they own or is
+class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = Offer
+    template_name = "listings/offer_delete.html"
+    context_object_name = 'offer'
+
+    #Checks to make sure owner of listing or owner of offer clicked to delete, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner == self.request.user:
+            return super(OfferDeleteView, self).dispatch(request, *args, **kwargs)
+        elif obj.offerListing.owner == self.request.user:
+            return super(OfferDeleteView, self).dispatch(request, *args, **kwargs)
+        else:
+            return redirect('index')
+
+    #Returns offer listing owner to the offer listing, will return offer owner to their list of offers
+    def get_success_url(self):
+        obj = self.get_object()
+        listing = OfferListing.objects.get(id=obj.offerListing.id)
+        if obj.owner == self.request.user:
+            #Change this to offer list later for user that owns offer
+            return reverse_lazy('offer-listing-detail', kwargs={'pk': listing.pk})
+        else:
+            return reverse_lazy('offer-listing-detail', kwargs={'pk': listing.pk})
+
 #Form view for creating an bid for an auction listing
 @login_required(login_url='/accounts/login/')
 def create_bid(request, pk):

@@ -1,9 +1,11 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-<form method="post">{% csrf_token %}
-  <p>Are you sure you want to delete this listing?</p>
-  <h3>{{ offerlisting.name }}</h3>
-  <input type="submit" value="Confirm" class="btn btn-blue">
-</form>
+  <div class="col-lg-10 center-block">
+    <form method="post" style="text-align: center;">{% csrf_token %}
+      <p>Are you sure you want to delete this listing?</p>
+      <h3>{{ offerlisting.name }}</h3>
+      <input type="submit" value="Confirm" class="btn btn-blue">
+    </form>
+  </div>
 {% endblock %}

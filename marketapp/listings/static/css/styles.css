@@ -212,6 +212,15 @@ a:hover {
   padding: 0px 5px 0px 5px;
 }
 
+.decline-button {
+  float: right;
+  display: inline-block;
+  width: 75px;
+  height: 25px;
+  font-size: 14px;
+  padding: 0px 5px 0px 5px;
+}
+
 .offer-image {
   width: 75px;
   height: 75px;
@@ -349,7 +358,7 @@ a:hover {
   text-align: center;
 }
 
-.item-image {
+.item-detail-image {
   margin-top: 15px;
   border-radius: 25px;
   border: 5px double black;

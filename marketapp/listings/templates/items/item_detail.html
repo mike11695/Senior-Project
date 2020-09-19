@@ -10,14 +10,21 @@
         <h3>Images</h3>
         {% for image in item.images.all %}
           {% if image.height > 500 and image.width > 500 %}
-            {% with width_mul=500|div:image.width %}
-              {% with height_mul=500|div:image.height %}
-              <img src="{{ image.image.url }}" class="item-image"
-                width="{{ image.width|mul:width_mul }}"
-                height="{{ image.height|mul:height_mul }}">
-              </img><br>
+            {% if image.width > image.height %}
+              {% with width_mul=500|div:image.width %}
+                <img src="{{ image.image.url }}" class="item-detail-image"
+                  width="{{ image.width|mul:width_mul }}"
+                  height="{{ image.height|mul:width_mul }}">
+                </img><br>
               {% endwith %}
-            {% endwith %}
+            {% else %}
+              {% with height_mul=500|div:image.height %}
+                <img src="{{ image.image.url }}" class="item-detail-image"
+                  width="{{ image.width|mul:height_mul }}"
+                  height="{{ image.height|mul:height_mul }}">
+                </img><br>
+              {% endwith %}
+            {% endif %}
           {% elif image.height > 500 %}
             {% with height_mul=500|div:image.height %}
             <img src="{{ image.image.url }}" class="item-image"
