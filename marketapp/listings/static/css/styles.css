@@ -370,3 +370,28 @@ a:hover {
   padding-top: 10px;
   margin-bottom: 20px;
 }
+
+.item-list-item-name {
+  font-weight: bold;
+  text-align: center;
+}
+
+.item-list-display {
+  background-color: #bacad9;
+  display: inline-block;
+  color: black;
+  padding: 10px;
+  border-radius: 20px;
+  width: 225px;
+  height: 255px;
+  box-shadow: 5px 5px 10px 0px;
+  margin-left: 35px;
+  margin-bottom: 25px;
+}
+
+.item-button {
+  width: 55px;
+  height: 25px;
+  padding: 0px;
+  font-size: 14px;
+}

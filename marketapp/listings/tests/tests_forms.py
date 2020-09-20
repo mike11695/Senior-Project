@@ -1,5 +1,5 @@
 from django.test import TestCase
-from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
+from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     CreateAuctionListingForm, CreateOfferForm, CreateBidForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
@@ -223,7 +223,7 @@ class AddImageFormTest(TestCase):
         form = AddImageForm(data, {'image': image})
         self.assertFalse(form.is_valid())
 
-class AddItemFormTest(TestCase):
+class ItemFormTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         user = User.objects.create_user(username="mikel", password="example",
@@ -251,7 +251,7 @@ class AddItemFormTest(TestCase):
         name = "My Item"
         description = "An Item to test adding items."
         data = {'name': name, 'description': description, 'images': [str(image1.id), str(image2.id)]}
-        form = AddItemForm(data=data, user=user)
+        form = ItemForm(data=data, user=user)
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is not able to upload an item if name is missing
@@ -261,7 +261,7 @@ class AddItemFormTest(TestCase):
         image2 = Image.objects.get(id=2)
         description = "An Item to test adding items."
         data = {'description': description, 'images': [str(image1.id), str(image2.id)]}
-        form = AddItemForm(data=data, user=user)
+        form = ItemForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to upload an item if name is too long
@@ -272,7 +272,7 @@ class AddItemFormTest(TestCase):
         name = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         description = "An Item to test adding items."
         data = {'name': name, 'description': description, 'images': [str(image1.id), str(image2.id)]}
-        form = AddItemForm(data=data, user=user)
+        form = ItemForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to upload an item if description is too long
@@ -283,7 +283,7 @@ class AddItemFormTest(TestCase):
         name = "My Item"
         description = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         data = {'name': name, 'description': description, 'images': [str(image1.id), str(image2.id)]}
-        form = AddItemForm(data=data, user=user)
+        form = ItemForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to upload an item if image is missing
@@ -292,22 +292,22 @@ class AddItemFormTest(TestCase):
         name = "My Item"
         description = "An Item to test adding items."
         data = {'name': name, 'description': description}
-        form = AddItemForm(data=data, user=user)
+        form = ItemForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure that name field help text is correct
     def test_item_upload_name_help_text(self):
         user = User.objects.get(pk=1)
-        form = AddItemForm(user=user)
+        form = ItemForm(user=user)
         self.assertEqual(form.fields['name'].help_text, "Name for item is required.")
 
     #Test to ensure that images field help text is correct
     def test_item_upload_image_help_text(self):
         user = User.objects.get(pk=1)
-        form = AddItemForm(user=user)
+        form = ItemForm(user=user)
         self.assertEqual(form.fields['images'].help_text, "An image is required.")
 
-class CreateOfferListingFormTest(MyTestCase):
+class OfferListingFormTest(MyTestCase):
     #Test to ensure a user is able to create an offer listing providing all fields
     def test_valid_offer_listing_creation(self):
         user = self.global_user1
@@ -322,7 +322,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is able to create an offer listing if maxRange is missing
@@ -338,7 +338,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is not able to create an offer listing if minRange > maxRange and maxRange !=0
@@ -355,7 +355,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is able to create an offer listing if minRange > maxRange and maxRange == 0
@@ -372,7 +372,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is not able to create an offer listing if minRange = maxRange=
@@ -389,7 +389,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an offer listing if minRange & maxRange are negative
@@ -406,7 +406,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create a listing using someone elses item
@@ -423,7 +423,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item2.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create a listing if name is missing
@@ -439,7 +439,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'description': description, 'items': [str(item2.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create a listing if name is too long
@@ -456,7 +456,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item2.id)],
             'endTimeChoices': end_time_choice, 'openToMoneyOffers': open_to_money,
             'minRange': min_range, 'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create a listing if item is missing
@@ -472,7 +472,7 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'endTimeChoices': end_time_choice,
             'openToMoneyOffers': open_to_money, 'minRange': min_range, 'maxRange': max_range,
             'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create a listing if end time choice is missing
@@ -488,31 +488,31 @@ class CreateOfferListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item2.id)],
             'openToMoneyOffers': open_to_money, 'minRange': min_range,
             'maxRange': max_range, 'notes': notes}
-        form = CreateOfferListingForm(data=data, user=user)
+        form = OfferListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure that name field help text is correct
     def test_offer_listing_name_help_text(self):
         user = self.global_user1
-        form = CreateOfferListingForm(user=user)
+        form = OfferListingForm(user=user)
         self.assertEqual(form.fields['name'].help_text, "Name for listing is required.")
 
     #Test to ensure that items field help text is correct
     def test_offer_listing_image_help_text(self):
         user = self.global_user1
-        form = CreateOfferListingForm(user=user)
+        form = OfferListingForm(user=user)
         self.assertEqual(form.fields['items'].help_text, "An item is required.")
 
     #Test to ensure that minRange field help text is correct
     def test_offer_listing_min_range_help_text(self):
         user = self.global_user1
-        form = CreateOfferListingForm(user=user)
+        form = OfferListingForm(user=user)
         self.assertEqual(form.fields['minRange'].help_text, "Minimum money offers you'll consider.")
 
     #Test to ensure that maxRange field help text is correct
     def test_offer_listing_max_range_help_text(self):
         user = self.global_user1
-        form = CreateOfferListingForm(user=user)
+        form = OfferListingForm(user=user)
         self.assertEqual(form.fields['maxRange'].help_text, "Maximum money offers you'll consider (leave blank if you don't have a maximum).")
 
 class CreateAuctionListingFormTest(MyTestCase):

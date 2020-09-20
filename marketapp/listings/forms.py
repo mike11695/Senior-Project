@@ -11,6 +11,7 @@ from django.utils.timezone import make_aware
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 
+#Form for a user to sign up to the site
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
     last_name = forms.CharField(max_length=30, required=True)
@@ -22,6 +23,7 @@ class SignUpForm(UserCreationForm):
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'paypalEmail', 'password1', 'password2', )
 
+#Form for a user to upload an image to the site
 class AddImageForm(ModelForm):
     def clean_image(self):
         clean_image = self.cleaned_data.get('image', False)
@@ -43,7 +45,8 @@ class AddImageForm(ModelForm):
         exclude = ['owner', 'width', 'height']
         help_texts = {'image': "Image must not be larger than 1250x1250."}
 
-class AddItemForm(ModelForm):
+#Form for a user to add and edit an item
+class ItemForm(ModelForm):
     images = forms.ModelMultipleChoiceField(queryset=None, help_text="An image is required.")
     name = forms.CharField(max_length=50, required=True, help_text="Name for item is required.")
 
@@ -55,10 +58,11 @@ class AddItemForm(ModelForm):
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
-       super(AddItemForm, self).__init__(*args, **kwargs)
+       super(ItemForm, self).__init__(*args, **kwargs)
        self.fields['images'].queryset = Image.objects.filter(owner=self.user)
 
-class CreateOfferListingForm(ModelForm):
+#Form for creating and editing an offer listing
+class OfferListingForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         clean_openToMoneyOffers = cleaned_data.get('openToMoneyOffers')
@@ -105,7 +109,7 @@ class CreateOfferListingForm(ModelForm):
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
-       super(CreateOfferListingForm, self).__init__(*args, **kwargs)
+       super(OfferListingForm, self).__init__(*args, **kwargs)
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
 
 #This class is pretty much the same as CreateOfferListingForm, except it removes endTimeChoices
@@ -159,6 +163,7 @@ class UpdateOfferListingForm(ModelForm):
        super(UpdateOfferListingForm, self).__init__(*args, **kwargs)
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
 
+#Form for a user to create an auction listing
 class CreateAuctionListingForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()
@@ -212,6 +217,7 @@ class CreateAuctionListingForm(ModelForm):
        super(CreateAuctionListingForm, self).__init__(*args, **kwargs)
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
 
+#Form for a user to create an offer for an offer listing
 class CreateOfferForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()
@@ -267,6 +273,7 @@ class CreateOfferForm(ModelForm):
            self.fields['amount'].widget.attrs['readonly'] = True
        #self.fields['offerListing'].initial = self.listing
 
+#Form for a user to create a bid for an auction listing
 class CreateBidForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()

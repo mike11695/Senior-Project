@@ -1,24 +1,54 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <div class="container-fluid">
-    <div class="row content-header-row">
-      <div class="col-lg-4">
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
         <h1>My Items</h1>
       </div>
-      <div class="col-lg-8 add-button">
+      <div class="add-button">
         <a href="{% url 'items-add' %}"><div class="btn btn-green">Add Item</div></a>
       </div>
     </div>
   </div>
   {% if items %}
-  <ul>
+  <div class="container-fluid col-lg-8 center-block" style="margin-top: 20px; margin-bottom: 20px;">
     {% for item in items %}
-      <li>
-        <a href="{{ item.get_absolute_url }}">{{ item.name }}</a>
-      </li>
+      <a href="{{ item.get_absolute_url }}">
+        <div class="item-list-display">
+          {% if item.images %}
+            {% with item.images.all|first as image %}
+              <div class="item-image"><img src="{{ image.image.url }}"
+                style="width: 175px; height: 175px; border: 2px solid black"></img>
+              </div>
+            {% endwith %}
+          {% endif %}
+          <div class="item-list-item-name"><h5>{{ item.name }}</h5></div>
+          <div class="center-block" style="text-align: center;">
+            <a class="btn btn-blue item-button" href="">EDIT</a>
+            <a class="btn btn-red item-button" href="">DELETE</a>
+          </div>
+        </div>
+      </a>
     {% endfor %}
-  </ul>
+  </div>
+  <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+    <div class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <div class="current" style="text-align: center;">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </div>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </div>
+  </div>
   {% else %}
     <p>You don't have any items yet.</p>
   {% endif %}

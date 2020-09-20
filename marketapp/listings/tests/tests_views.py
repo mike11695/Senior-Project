@@ -372,7 +372,7 @@ class AddItemViewTest(MyTestCase):
         self.test_image1 = self.global_test_image1
         self.test_image2 = self.global_test_image2
 
-    #Test to ensure that a user must be logged in to upload image
+    #Test to ensure that a user must be logged in to create item
     def test_redirect_if_not_logged_in(self):
         response = self.client.get(reverse('items-add'))
         self.assertRedirects(response, '/accounts/login/?next=/listings/items/add')
@@ -392,7 +392,7 @@ class AddItemViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'items/add_item.html')
 
-    #Test to ensure that a user is able to create the image and have it relate to them
+    #Test to ensure that a user is able to create the item and have it relate to them
     def test_item_is_created(self):
         user = User.objects.create_user(username="mikey", password="example",
             email="exampley@text.com", paypalEmail="exampley@text.com",
@@ -421,7 +421,7 @@ class AddItemViewTest(MyTestCase):
         new_item = Item.objects.last()
         self.assertEqual(new_item.owner, post_response.wsgi_request.user)
 
-    #Test to ensure user is redirected to image gallery if form was valid
+    #Test to ensure user is redirected to item list if form was valid
     def test_item_is_created_redirect(self):
         user = User.objects.create_user(username="mikey", password="example",
             email="exampley@text.com", paypalEmail="exampley@text.com",
@@ -448,6 +448,52 @@ class AddItemViewTest(MyTestCase):
                 'images': [str(my_test_image1.id), str(my_test_image2.id)]})
         self.assertEqual(post_response.status_code, 302)
         self.assertRedirects(post_response, '/listings/items/')
+
+class EditItemViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to edit an item
+    def test_redirect_if_not_logged_in(self):
+        item = self.global_item1
+        response = self.client.get(reverse('edit-item', args=[str(item.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/items/{0}/edit'.format(item.id))
+
+    #Test to ensure user is not redirected if logged in and owns item
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.global_item1
+        response = self.client.get(reverse('edit-item', args=[str(item.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but does not own item
+    def test_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        item = self.global_item1
+        response = self.client.get(reverse('edit-item', args=[str(item.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.global_item1
+        response = self.client.get(reverse('edit-item', args=[str(item.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'items/edit_item.html')
+
+    #Test to ensure that a user is able to edit the image successfully
+    def test_item_is_updated(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.global_item1
+        response = self.client.get(reverse('edit-item', args=[str(item.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-item', args=[str(item.id)]),
+            data={'name': "My Edited Item", 'description': "Updating an item",
+                'images': [str(self.global_image1.id)]})
+        self.assertEqual(post_response.status_code, 302)
+        edited_item = Item.objects.get(id=item.id)
+        self.assertEqual(edited_item.name, 'My Edited Item')
 
 class FAQViewTest(TestCase):
     def setUp(self):
@@ -1094,7 +1140,7 @@ class RelistOfferListingViewTest(MyTestCase):
     def test_redirect_if_not_logged_in(self):
         listing = self.global_offer_listing2
         response = self.client.get(reverse('relist-offer-listing', args=[str(listing.id)]))
-        self.assertRedirects(response, '/listings/')
+        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/{0}/relist'.format(listing.id))
 
     #Test to ensure user is not redirected if logged in and they own the listing
     def test_no_redirect_if_logged_in_and_owns_listing(self):

@@ -27,18 +27,18 @@
             {% endif %}
           {% elif image.height > 500 %}
             {% with height_mul=500|div:image.height %}
-            <img src="{{ image.image.url }}" class="item-image"
+            <img src="{{ image.image.url }}" class="item-detail-image"
               height="{{ image.height|mul:height_mul }}">
             </img><br>
             {% endwith %}
           {% elif image.width > 500 %}
             {% with width_mul=500|div:image.width %}
-            <img src="{{ image.image.url }}" class="item-image"
+            <img src="{{ image.image.url }}" class="item-detail-image"
               width="{{ image.width|mul:width_mul }}">
             </img><br>
             {% endwith %}
           {% else %}
-            <img src="{{ image.image.url }}" class="item-image"></img><br>
+            <img src="{{ image.image.url }}" class="item-detail-image"></img><br>
           {% endif %}
         {% endfor %}
       {% endif %}

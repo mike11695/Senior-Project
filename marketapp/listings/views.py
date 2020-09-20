@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid
-from listings.forms import (SignUpForm, AddImageForm, AddItemForm, CreateOfferListingForm,
+from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     CreateAuctionListingForm, UpdateOfferListingForm, CreateOfferForm, CreateBidForm)
 
 from datetime import datetime, timedelta
@@ -85,10 +85,11 @@ class ItemListView(LoginRequiredMixin, generic.ListView):
     model = Item
     context_object_name = 'items'
     template_name = "items/items.html"
+    paginate_by = 20
 
     #Filters the list of items to only show those that belong to the current logged in user
     def get_queryset(self):
-        return Item.objects.filter(owner=self.request.user)
+        return Item.objects.filter(owner=self.request.user).order_by('id')
 
 #Detail view for an item only the owner can see
 class ItemDetailView(LoginRequiredMixin, generic.DetailView):
@@ -99,7 +100,7 @@ class ItemDetailView(LoginRequiredMixin, generic.DetailView):
 @login_required(login_url='/accounts/login/')
 def add_item(request):
     if request.method == 'POST':
-        form = AddItemForm(data=request.POST, user=request.user)
+        form = ItemForm(data=request.POST, user=request.user)
         if form.is_valid():
             created_item = form.save()
 
@@ -111,8 +112,37 @@ def add_item(request):
             created_item.save()
             return redirect('items')
     else:
-        form = AddItemForm(user=request.user)
+        form = ItemForm(user=request.user)
     return render(request, 'items/add_item.html', {'form': form})
+
+#Form view to edit an item
+@login_required(login_url='/accounts/login/')
+def edit_item(request, pk):
+    #Get the listing offer to be relisted
+    current_item = get_object_or_404(Item, pk=pk)
+
+    #Check if the owner of item is editing the item
+    if current_item.owner == request.user:
+        if request.method == 'POST':
+            form = ItemForm(data=request.POST, user=request.user, instance=current_item)
+            if form.is_valid():
+                edited_item = form.save(commit=False)
+
+                #Clear the existing images
+                edited_item.images.clear()
+
+                #Add the new items from the form
+                clean_images = form.cleaned_data.get('images')
+                for image in clean_images:
+                    edited_item.images.add(image)
+
+                edited_item.save()
+                return redirect('item-detail', pk=current_item.pk)
+        else:
+            form = ItemForm(user=request.user, instance=current_item)
+        return render(request, 'items/edit_item.html', {'form': form})
+    else:
+        return redirect('index')
 
 #Index page for FAQs
 @login_required(login_url='/accounts/login/')
@@ -186,7 +216,7 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
 @login_required(login_url='/accounts/login/')
 def create_offer_listing(request):
     if request.method == 'POST':
-        form = CreateOfferListingForm(data=request.POST, user=request.user)
+        form = OfferListingForm(data=request.POST, user=request.user)
         if form.is_valid():
             created_listing = form.save()
 
@@ -245,7 +275,7 @@ def create_offer_listing(request):
             created_listing.save()
             return redirect('offer-listings')
     else:
-        form = CreateOfferListingForm(user=request.user)
+        form = OfferListingForm(user=request.user)
     return render(request, 'listings/create_offer_listing.html', {'form': form})
 
 #Form view for editing an offer listing without changing the end time
@@ -298,7 +328,90 @@ def update_offer_listing(request, pk):
     else:
         return redirect('index')
 
-#View for a user to relist an offer listing that they own that has ended
+#Form view for relisting an offer listing
+@login_required(login_url='/accounts/login/')
+def relist_offer_listing(request, pk):
+    #Get the listing offer to be relisted
+    current_listing = get_object_or_404(OfferListing, pk=pk)
+    existing_offers = Offer.objects.filter(offerListing=current_listing)
+
+    if request.user == current_listing.owner:
+        if current_listing.listingEnded and current_listing.listingCompleted != True:
+            if request.method == 'POST':
+                form = OfferListingForm(data=request.POST, user=request.user, instance=current_listing)
+                if form.is_valid():
+                    current_listing = form.save(commit=False)
+
+                    #Delete the previous existing offers
+                    existing_offers.delete()
+
+                    #Get openToMoneyOffers value from form
+                    clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
+
+                    #Check to see if option was checked or not
+                    if clean_openToMoneyOffers == True:
+                        #If true, check if the user added a maxRange to form
+                        clean_maxRange = form.cleaned_data.get('maxRange')
+                        if clean_maxRange:
+                            #If so, keep the value the same
+                            current_listing.maxRange = clean_maxRange
+                        else:
+                            #If not, set it to 0.00
+                            current_listing.maxRange = 0.00
+                    else:
+                        #If not checked, set ranges to 0.00
+                        current_listing.minRange = 0.00
+                        current_listing.maxRange = 0.00
+
+                    #Clear the current items from the listing
+                    current_listing.items.clear()
+
+                    #Add the newly added items to the listing
+                    clean_items = form.cleaned_data.get('items')
+                    for item in clean_items:
+                        current_listing.items.add(item)
+
+                    #Get the end time choice from form and set end time accordingly
+                    clean_choice = form.cleaned_data.get('endTimeChoices')
+                    if clean_choice == '1h':
+                        #Set end time to 1 hour from current time if choice was 1h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=1)
+                    elif clean_choice == '2h':
+                        #Set end time to 2 hours from current time if choice was 2h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=2)
+                    elif clean_choice == '4h':
+                        #Set end time to 4 hours from current time if choice was 4h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=4)
+                    elif clean_choice == '8h':
+                        #Set end time to 8 hours from current time if choice was 8h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=8)
+                    elif clean_choice == '12h':
+                        #Set end time to 12 hours from current time if choice was 12h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=12)
+                    elif clean_choice == '1d':
+                        #Set end time to 1 day from current time if choice was 1d
+                        date = timezone.localtime(timezone.now()) + timedelta(days=1)
+                    elif clean_choice == '3d':
+                        #Set end time to 3 days from current time if choice was 3ds
+                        date = timezone.localtime(timezone.now()) + timedelta(days=3)
+                    else:
+                        #Set end time to 7 days from current time
+                        date = timezone.localtime(timezone.now()) + timedelta(days=7)
+
+                    #Set the end date for the listing
+                    current_listing.endTime = date
+
+                    current_listing.save()
+                    return redirect('offer-listing-detail', pk=current_listing.pk)
+            else:
+                form = OfferListingForm(user=request.user, instance=current_listing)
+            return render(request, 'listings/relist_offer_listing.html', {'form': form})
+        else:
+            return redirect('offer-listings')
+    else:
+        return redirect('index')
+
+#View for a user to relist an offer listing that they own that has ended (Old one, to be removed)
 class OfferListingRelistView(LoginRequiredMixin, generic.UpdateView):
     model = OfferListing
     fields = ['name', 'description', 'items', 'endTimeChoices', 'openToMoneyOffers',
