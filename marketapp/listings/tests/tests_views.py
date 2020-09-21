@@ -255,6 +255,156 @@ class AddImageViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         self.assertRedirects(post_response, '/listings/images/')
 
+class EditImageViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to edit an image
+    def test_redirect_if_not_logged_in(self):
+        image = self.global_image1
+        response = self.client.get(reverse('edit-image', args=[str(image.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in and owns image
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('edit-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but does not own image
+    def test_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('edit-image', args=[str(image.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('edit-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'images/edit_image.html')
+
+    #Test to ensure that a user is able to edit the image successfully
+    def test_item_is_updated(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('edit-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-image', args=[str(image.id)]),
+            data={'name': "My Edited Image", 'tags': [str(self.tag.id)]})
+        self.assertEqual(post_response.status_code, 302)
+        edited_image = Image.objects.get(id=image.id)
+        self.assertEqual(edited_image.name, 'My Edited Image')
+
+    #Test to ensure that a user is not able to edit the image successfully without a name
+    def test_item_is_not_updated_no_name(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('edit-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-image', args=[str(image.id)]),
+            data={'tags': [str(self.tag.id)]})
+        self.assertEqual(post_response.status_code, 200)
+
+    #Test to ensure that a user is able to edit the image successfully without tags
+    def test_item_is_updated_no_tags(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('edit-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-image', args=[str(image.id)]),
+            data={'name': "My Edited Image"})
+        self.assertEqual(post_response.status_code, 302)
+        edited_image = Image.objects.get(id=image.id)
+        self.assertEqual(edited_image.name, 'My Edited Image')
+
+class ImageDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(ImageDeleteViewTest, self).setUp()
+
+        #Create an image object to test for deletion
+        test_image = SimpleUploadedFile(name='art1.png',
+            content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        self.image = Image.objects.create(owner=self.global_user1,
+            image=test_image, name="Test Image")
+        self.image_id = self.image.id
+
+        #create an item object to test that it will be deleted after having the sole image deleted
+        self.item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.item.images.add = self.image
+        self.item.save
+        self.item_id = self.item.id
+
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create an offer listing to test for deletion
+        self.offer_listing = OfferListing.objects.create(owner=self.global_user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=date_active)
+        self.offer_listing.items.add(self.item)
+        self.offer_listing.save
+        self.offer_listing_id = self.offer_listing.id
+
+        #create an auction listing to test for deletion
+        self.auction_listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            endTime=date_active)
+        self.auction_listing.items.add(self.item)
+        self.auction_listing.save
+        self.auction_listing_id = self.auction_listing.id
+
+    #Test to ensure that a user must be logged in to delete an image
+    def test_redirect_if_not_logged_in(self):
+        image = self.image
+        response = self.client.get(reverse('delete-image', args=[str(image.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they own the image
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.image
+        response = self.client.get(reverse('delete-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they do not own the image
+    def test_no_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        image = self.image
+        response = self.client.get(reverse('delete-image', args=[str(image.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.image
+        response = self.client.get(reverse('delete-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'images/image_delete.html')
+
+    #Test to ensure object is deleted if user confirms as well as items that contain the image
+    #as its sole image and listings that contained the item
+    def test_succesful_deletion(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.image
+        post_response = self.client.post(reverse('delete-image', args=[str(image.id)]))
+        self.assertRedirects(post_response, reverse('images'))
+        self.assertFalse(Image.objects.filter(id=self.image_id).exists())
+        self.assertFalse(Item.objects.filter(id=self.item_id).exists())
+        self.assertFalse(OfferListing.objects.filter(id=self.offer_listing_id).exists())
+        self.assertFalse(AuctionListing.objects.filter(id=self.auction_listing_id).exists())
+        self.assertTrue(Item.objects.filter(id=self.global_item1.id).exists())
+
 class ItemsViewTest(MyTestCase):
     def setUp(self):
         super(ItemsViewTest, self).setUp()
@@ -494,6 +644,78 @@ class EditItemViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         edited_item = Item.objects.get(id=item.id)
         self.assertEqual(edited_item.name, 'My Edited Item')
+
+class ItemDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(ItemDeleteViewTest, self).setUp()
+        #Create an item object to test for deletion
+        self.item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.item.images.add = self.global_image1
+        self.item.save
+        self.item_id = self.item.id
+
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create an offer listing to test for deletion
+        self.offer_listing = OfferListing.objects.create(owner=self.global_user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=date_active)
+        self.offer_listing.items.add(self.item)
+        self.offer_listing.save
+        self.offer_listing_id = self.offer_listing.id
+
+        #create an auction listing to test for deletion
+        self.auction_listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            endTime=date_active)
+        self.auction_listing.items.add(self.item)
+        self.auction_listing.save
+        self.auction_listing_id = self.auction_listing.id
+
+    #Test to ensure that a user must be logged in to delete an item
+    def test_redirect_if_not_logged_in(self):
+        item = self.item
+        response = self.client.get(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they own the listing
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.item
+        response = self.client.get(reverse('delete-item', args=[str(item.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they do not own the item
+    def test_no_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        item = self.item
+        response = self.client.get(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.item
+        response = self.client.get(reverse('delete-item', args=[str(item.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'items/item_delete.html')
+
+    #Test to ensure object is deleted if user confirms as well as listings that contained the item
+    def test_succesful_deletion(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(post_response, reverse('items'))
+        self.assertFalse(Item.objects.filter(id=self.item_id).exists())
+        self.assertFalse(OfferListing.objects.filter(id=self.offer_listing_id).exists())
+        self.assertFalse(AuctionListing.objects.filter(id=self.auction_listing_id).exists())
+        self.assertTrue(OfferListing.objects.filter(id=self.global_offer_listing1.id).exists())
+        self.assertTrue(AuctionListing.objects.filter(id=self.global_auction_listing1.id).exists())
 
 class FAQViewTest(TestCase):
     def setUp(self):

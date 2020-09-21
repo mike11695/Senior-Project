@@ -23,10 +23,10 @@
               </div>
             {% endwith %}
           {% endif %}
-          <div class="item-list-item-name"><h5>{{ item.name }}</h5></div>
+          <div class="item-list-item-name"><h5>{{ item.name|truncatechars:15 }}</h5></div>
           <div class="center-block" style="text-align: center;">
-            <a class="btn btn-blue item-button" href="">EDIT</a>
-            <a class="btn btn-red item-button" href="">DELETE</a>
+            <a class="btn btn-blue item-button" href="{% url 'edit-item' pk=item.pk %}">EDIT</a>
+            <a class="btn btn-red item-button" href="{% url 'delete-item' pk=item.pk %}">DELETE</a>
           </div>
         </div>
       </a>

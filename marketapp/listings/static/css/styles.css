@@ -138,7 +138,7 @@
   font-weight: bold;
 }
 
-.item-image {
+.item-image, .image-image {
   text-align: center;
 }
 
@@ -356,6 +356,7 @@ a:hover {
 
 .item-detail-container {
   text-align: center;
+  overflow: hidden;
 }
 
 .item-detail-image {
@@ -371,12 +372,12 @@ a:hover {
   margin-bottom: 20px;
 }
 
-.item-list-item-name {
+.item-list-item-name, .image-list-image-name {
   font-weight: bold;
   text-align: center;
 }
 
-.item-list-display {
+.item-list-display, .image-list-display {
   background-color: #bacad9;
   display: inline-block;
   color: black;
@@ -389,7 +390,7 @@ a:hover {
   margin-bottom: 25px;
 }
 
-.item-button {
+.item-button, .image-button {
   width: 55px;
   height: 25px;
   padding: 0px;

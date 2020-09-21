@@ -6,6 +6,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
+from django.http import HttpResponse, HttpResponseRedirect
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
@@ -80,6 +81,64 @@ def add_image(request):
         form = AddImageForm()
     return render(request, 'images/add_image.html', {'form': form})
 
+#View for a user to edit an image, but only the name and the tags
+class ImageEditView(LoginRequiredMixin, generic.UpdateView):
+    model = Image
+    fields = ['name', 'tags']
+    template_name = "images/edit_image.html"
+
+    #Checks to make sure owner of image is editing, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner != self.request.user:
+            return redirect('index')
+        return super(ImageEditView, self).dispatch(request, *args, **kwargs)
+
+#View for a user to delete an image that they own
+class ImageDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = Image
+    success_url = reverse_lazy('images')
+    template_name = "images/image_delete.html"
+    context_object_name = 'image'
+
+    #Checks to make sure owner of image clicked to delete, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner != self.request.user:
+            return redirect('index')
+        return super(ImageDeleteView, self).dispatch(request, *args, **kwargs)
+
+    #Get items that contain image to be deleted and delete them if they contain no other images afterwards
+    def delete(self, request, *args, **kwargs):
+       self.object = self.get_object()
+       items = Item.objects.filter(owner=self.object.owner)
+       if self.object.owner == self.request.user:
+           self.object.delete()
+           if items:
+               for item in items:
+                   if item.images.count() == 0:
+                       #get the owner's listings to search which ones contain the item
+                       offer_listings = OfferListing.objects.filter(owner=self.object.owner)
+                       auction_listings = AuctionListing.objects.filter(owner=self.object.owner)
+
+                       if offer_listings:
+                           for listing in offer_listings:
+                               if item in listing.items.all():
+                                   #Deletes offer listing if it contained the item
+                                   listing.delete()
+
+                       if auction_listings:
+                           for listing in auction_listings:
+                               if item in listing.items.all():
+                                   #Deletes auction listing if it contained the item
+                                   listing.delete()
+
+                       #Deletes item if no other images are contained as to not have items with broken images
+                       item.delete()
+           return HttpResponseRedirect(self.get_success_url())
+       else:
+           return redirect('index')
+
 #View for a user to see a list of items they created
 class ItemListView(LoginRequiredMixin, generic.ListView):
     model = Item
@@ -143,6 +202,44 @@ def edit_item(request, pk):
         return render(request, 'items/edit_item.html', {'form': form})
     else:
         return redirect('index')
+
+#View for a user to delete an item that they own
+class ItemDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = Item
+    success_url = reverse_lazy('items')
+    template_name = "items/item_delete.html"
+    context_object_name = 'item'
+
+    #Checks to make sure owner of listing clicked to delete, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner != self.request.user:
+            return redirect('index')
+        return super(ItemDeleteView, self).dispatch(request, *args, **kwargs)
+
+    #Get listings that contain item to be deleted and delete them if they contain the item
+    #Add wishlists and search listings to this once implemented
+    def delete(self, request, *args, **kwargs):
+       self.object = self.get_object()
+       offer_listings = OfferListing.objects.filter(owner=self.object.owner)
+       auction_listings = AuctionListing.objects.filter(owner=self.object.owner)
+       if self.object.owner == self.request.user:
+           if offer_listings:
+               for listing in offer_listings:
+                   if self.object in listing.items.all():
+                       #Deletes offer listing if it contained the item
+                       listing.delete()
+
+           if auction_listings:
+               for listing in auction_listings:
+                   if self.object in listing.items.all():
+                       #Deletes auction listing if it contained the item
+                       listing.delete()
+
+           self.object.delete()
+           return HttpResponseRedirect(self.get_success_url())
+       else:
+           return redirect('index')
 
 #Index page for FAQs
 @login_required(login_url='/accounts/login/')

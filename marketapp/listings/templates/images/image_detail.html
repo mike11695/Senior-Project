@@ -1,5 +1,24 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  h
+  <div class="container-fluid col-lg-10 center-block">
+    <img src="{{ image.image.url }}"
+      style="border: 5px solid black; border-radius: 25px; margin-bottom: 10px;"
+      class="center-block"></img>
+  </div>
+  <h2 style="font-style: italic; font-weight: bold; margin-bottom: 10px; text-align: center;">
+    {{ image.name }}
+  </h2>
+  {% if image.tags.count > 0 %}
+    <div style="margin-bottom: 20px; text-align: center;">
+      Tags:
+      {% for tag in image.tags.all %}
+        {% if forloop.last %}
+          {{ tag }}
+        {% else %}
+          {{ tag }},
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
 {% endblock %}
