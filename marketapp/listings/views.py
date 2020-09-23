@@ -616,15 +616,22 @@ class AuctionListingListView(LoginRequiredMixin, generic.ListView):
     context_object_name = 'auctionlistings'
     template_name = "listings/auction_listings.html"
 
-    #Filters the list of offer listings to only show those that belong to the current logged in user
+    #Filters the list of auction listings to only show those that belong to the
+    #current logged in user along with bids
     def get_queryset(self):
-        return AuctionListing.objects.filter(owner=self.request.user)
+        return AuctionListing.objects.filter(owner=self.request.user).order_by('endTime').reverse().annotate(bid_count=Count('bids'))
 
 #Detailed view for all users to see an auction
 class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = AuctionListing
-    context_object_name = 'auction-listing-detail'
+    context_object_name = 'auctionlisting'
     template_name = "listings/auction_listing_detail.html"
+
+    def get_last_bid(self):
+        try:
+            return self.bids.all().reverse()[0]
+        except IndexError:
+            pass
 
 #Form view for creating an auction listing
 @login_required(login_url='/accounts/login/')
@@ -722,7 +729,7 @@ def create_offer(request, pk):
 
                     created_offer.owner = request.user
                     created_offer.save()
-                    return redirect('offer-listing-detail', pk=current_listing.pk)
+                    return redirect('offer-detail', pk=created_offer.pk)
             else:
                 form = CreateOfferForm(user=request.user, instance=current_listing, initial={'offerListing': current_listing})
             return render(request, 'listings/create_offer.html', {'form': form})

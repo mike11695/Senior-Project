@@ -1615,6 +1615,11 @@ class AuctionListingsViewTest(MyTestCase):
             listing.items.add(item2)
             listing.save
 
+        #create some bids for tests
+        for num in range(5):
+            Bid.objects.create(auctionListing=self.global_auction_listing1,
+                bidder=self.global_user2, amount=(5.00 * (.25 * num)), winningBid = False)
+
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
         response = self.client.get(reverse('auction-listings'))
@@ -1650,6 +1655,17 @@ class AuctionListingsViewTest(MyTestCase):
         response = self.client.get(reverse('auction-listings'))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['auctionlistings']) == 2)
+
+    #Test to ensure that the a user can see number of bids on a listing
+    def test_list_only_current_users_listings_user2(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('auction-listings'))
+        self.assertEqual(response.status_code, 200)
+        listing_to_check = AuctionListing.objects.get(pk=self.global_auction_listing1.pk)
+        for obj in response:
+            if obj == listing_to_check:
+                self.assertEqual(obj.bid_count, 5)
 
 class AuctionListingDetailViewTest(MyTestCase):
     def setUp(self):
@@ -1957,6 +1973,7 @@ class CreateOfferViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         created_offer = Offer.objects.last()
         self.assertEqual(created_offer.offerListing, listing)
+        self.assertRedirects(post_response, '/listings/offer-listings/offer/{0}'.format(created_offer.id))
 
     #Test to ensure a user is redirected if a listing has ended
     def test_redirect_if_listing_ended(self):

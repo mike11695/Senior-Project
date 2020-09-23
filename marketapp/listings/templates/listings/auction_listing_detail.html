@@ -1,5 +1,80 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  h
+  <div class="col-lg-10 center-block listing-header">
+    <h2>{{ auctionlisting.name }}</h2>
+    <h6>Owner: {{ auctionlisting.owner }}</h6>
+    {% if auctionlisting.listingEnded %}
+      <h6 class="expired-listing">Ended: {{ auctionlisting.endTime }}</h6>
+    {% else %}
+      <h6>Ends: {{ auctionlisting.endTime }}</h6>
+    {% endif %}
+  </div>
+  <div class="listing-item-container col-lg-10 center-block">
+    <div class="listing-item-container-header"><h4>This listing contains:</h4></div>
+    {% if auctionlisting.items %}
+      {% if auctionlisting.items.all.count > 1 %}
+        {% for item in auctionlisting.items.all %}
+          <a href="{{ item.get_absolute_url }}">
+            <div class="item-display multiple-items">
+              <div class="item-count">{{ forloop.counter }}</div>
+              {% if item.images %}
+                {% with item.images.all|first as image %}
+                  <div class="item-image"><img src="{{ image.image.url }}" style="width: 150px; height: 150px;"></img></div>
+                {% endwith %}
+              {% endif %}
+              <div class="item-name">{{ item.name }}</div>
+            </div>
+          </a>
+        {% endfor %}
+      {% else %}
+        {% with auctionlisting.items.all.all|first as item %}
+          <a href="{{ item.get_absolute_url }}">
+            <div class="item-display">
+              {% if item.images %}
+                {% with item.images.all|first as image %}
+                  <div class="item-image"><img src="{{ image.image.url }}" style="width: 150px; height: 150px;"></img></div>
+                {% endwith %}
+              {% endif %}
+              <div class="item-name"><h5>{{ item.name }}</h5></div>
+            </div>
+          </a>
+        {% endwith %}
+      {% endif %}
+    {% endif %}
+    <div class="center-block listing-description">{{ auctionlisting.description }}</div>
+  </div>
+  {% if auctionlisting.listingEnded != True %}
+    <div class="listing-details">
+      <div class="detail">Starting Bid: <b>${{ auctionlisting.startingBid }}</b></div>
+      <div class="detail">Minimum Increment: <b>${{ auctionlisting.minimumIncrement }}</b></div>
+      <div class="detail">Autobuy: <b>${{ auctionlisting.autobuy }}</b></div><br>
+      {% if auctionlisting.bids.count > 0 %}
+        {% if auctionlisting.bids.count > 1 %}
+          <div class="detail"><h3>Current Bid: <b>${{ auctionlisting.bids.all.last.amount }}</b></h3></div>
+        {% else %}
+          {% with auctionlisting.bids.all|first as bid %}
+            <div class="detail"><h3>Current Bid: <b>${{ bid.amount }}</b></h3></div>
+          {% endwith %}
+        {% endif %}
+      {% else %}
+        <div class="detail"><h3>Current Bid: None</h3></div>
+      {% endif %}
+    </div>
+    {% if request.user != auctionlisting.owner %}
+      <a href="{% url 'create-bid' pk=auctionlisting.pk %}">
+        <div class="btn btn-blue listing-btn center-block" style="margin-bottom: 20px;">Place Bid</div>
+      </a>
+    {% endif %}
+  {% else %}
+    {% if auctionlisting.bids.count > 0 %}
+      {% for bid in auctionlisting.bids.all %}
+        {% if bid.winningBid %}
+          <div class="detail"><h3>Winning Bid: <b>${{ bid.amount }}</b></h3></div>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <div class="detail"><h3>Winning Bid: None</h3></div>
+    {% endif %}
+  {% endif %}
 {% endblock %}

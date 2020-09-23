@@ -1,25 +1,113 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <div class="container-fluid">
-    <div class="row content-header-row">
-      <div class="col-lg-4">
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
         <h1>My Auction Listings</h1>
       </div>
-      <div class="col-lg-8 add-button">
+      <div class="add-button">
         <a href="{% url 'create-auction-listing' %}"><div class="btn btn-green">Add Auction Listing</div></a>
       </div>
     </div>
   </div>
   {% if auctionlistings %}
-  <ul>
-    {% for listing in auctionlistings %}
-      <li>
-        <a href="{{ listing.get_absolute_url }}">{{ listing.name }}</a>
-      </li>
-    {% endfor %}
-  </ul>
+    <div class="center-block col-lg-10">
+      {% for listing in auctionlistings %}
+        {% if listing.listingEnded and listing.bid_count == 0 %}
+          <div class="listing-object-inactive">
+            {% with listing.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                    <h4>{{ listing.name }}</h4>
+                  </a>
+                  <a href=""><div class="btn btn-blue edit-btn">RELIST</div></a>
+                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                </div>
+                <div class="listing-prices">
+                  Starting Bid: ${{ listing.startingBid }}<br>
+                  Autobuy: ${{ listing.autobuy }}
+                </div>
+              </div>
+              <div class="listing-desc">
+                {{ listing.description }}
+              </div>
+            </div>
+          </div>
+        {% elif listing.listingEnded and listing.bid_count > 0 %}
+          <div class="listing-object-completed">
+            {% with listing.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                    <h4>{{ listing.name }}</h4>
+                  </a>
+                  <a href=""><div class="btn btn-blue edit-btn">RELIST</div></a>
+                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                </div>
+                <div class="listing-prices">
+                  {% for bid in listings.bids.all %}
+                    {% if bid.winningBid %}
+                      Winning Bid: ${{ bid }}
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="listing-desc">
+                {{ listing.description }}
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="listing-object-active">
+            {% with listing.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                    <h4>{{ listing.name }}</h4>
+                  </a>
+                </div>
+                <div class="listing-prices">
+                  Starting Bid: ${{ listing.startingBid }} |
+                  {% if listing.bids %}
+                    Current Bid: ${{ listing.bids.all.last.amount }}<br>
+                  {% else %}
+                    Current Bid: None<br>
+                  {% endif %}
+                  Autobuy: ${{ listing.autobuy }}
+                </div>
+              </div>
+              <div class="listing-desc">
+                {{ listing.description }}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
   {% else %}
-    <p>You don't have any auction listings yet.</p>
+    <p style="text-align: center;">You don't have any auction listings yet.</p>
   {% endif %}
 {% endblock %}

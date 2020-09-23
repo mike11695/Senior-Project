@@ -374,7 +374,7 @@ class AuctionListing(Listing):
 #Fields needed: AuctionListing, bidder, amount, winningBid
 class Bid(models.Model):
     #Fields for Bid
-    auctionListing = models.ForeignKey(AuctionListing, on_delete=models.CASCADE, null=True, related_name="auctionlisting")
+    auctionListing = models.ForeignKey(AuctionListing, on_delete=models.CASCADE, null=True, related_name="bids")
     bidder = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="bidder")
     amount = models.DecimalField(max_digits=9, decimal_places=2,
         verbose_name="Bid Amount",

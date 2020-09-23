@@ -307,9 +307,9 @@ class CreateBidForm(ModelForm):
                         #Amount bid is greater than the maximum that can be bid
                         highest_bid = clean_listing.startingBid + (clean_listing.minimumIncrement * 3)
                         raise ValidationError("Maximum bid that can be placed is ${0}".format(highest_bid))
-                    elif clean_amount < (current_bid + clean_listing.minimumIncrement):
+                    elif clean_amount < (current_bid.amount + clean_listing.minimumIncrement):
                         #Amount bid is less than the minimum bid that can currently be bid
-                        minimal_bid = current_bid + clean_listing.minimumIncrement
+                        minimal_bid = current_bid.amount + clean_listing.minimumIncrement
                         raise ValidationError("Minimum bid that can be placed is ${0}".format(minimal_bid))
                 else:
                     #There are no bids currently

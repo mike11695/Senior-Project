@@ -14,8 +14,8 @@
   {% if offerlistings %}
     <div class="center-block col-lg-10">
       {% for listing in offerlistings %}
-        {% if listing.listingEnded %}
-          <div class="listing-object-inactive">
+        {% if listing.listingCompleted %}
+          <div class="listing-object-completed">
             {% with listing.items.all|first as item %}
               {% with item.images.all|first as image %}
                 <div class="listing-image-container">
@@ -23,6 +23,29 @@
                 </div>
               {% endwith %}
             {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                    <h4>{{ listing.name }}</h4>
+                  </a>
+                  <a href="{% url 'delete-offer-listing' pk=listing.pk %}"><div class="btn btn-red delete-btn">DELETE</div></a>
+                </div>
+              </div>
+              <div class="listing-desc">
+                {{ listing.description }}
+              </div>
+            </div>
+          </div>
+        {% elif listing.listingEnded %}
+        <div class="listing-object-inactive">
+          {% with listing.items.all|first as item %}
+            {% with item.images.all|first as image %}
+              <div class="listing-image-container">
+                <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+              </div>
+            {% endwith %}
+          {% endwith %}
             <div class="listing-details-container">
               <div style="display: inline-block; width: 100%;">
                 <div class="listing-listview-header">
@@ -41,29 +64,6 @@
                     {% endif %}
                   </div>
                 {% endif %}
-              </div>
-              <div class="listing-desc">
-                {{ listing.description }}
-              </div>
-            </div>
-          </div>
-        {% elif listing.listingCompleted %}
-          <div class="listing-object-completed">
-            {% with listing.items.all|first as item %}
-              {% with item.images.all|first as image %}
-                <div class="listing-image-container">
-                  <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
-                </div>
-              {% endwith %}
-            {% endwith %}
-            <div class="listing-details-container">
-              <div style="display: inline-block; width: 100%;">
-                <div class="listing-listview-header">
-                  <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
-                    <h4>{{ listing.name }}</h4>
-                  </a>
-                  <a href="{% url 'delete-offer-listing' pk=listing.pk %}"><div class="btn btn-red delete-btn">DELETE</div></a>
-                </div>
               </div>
               <div class="listing-desc">
                 {{ listing.description }}
@@ -124,6 +124,6 @@
       </div>
     </div>
   {% else %}
-    <p>You don't have any offer listings yet.</p>
+    <p style="text-align: center;">You don't have any offer listings yet.</p>
   {% endif %}
 {% endblock %}
