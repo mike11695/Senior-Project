@@ -48,7 +48,9 @@
     <div class="listing-details">
       <div class="detail">Starting Bid: <b>${{ auctionlisting.startingBid }}</b></div>
       <div class="detail">Minimum Increment: <b>${{ auctionlisting.minimumIncrement }}</b></div>
-      <div class="detail">Autobuy: <b>${{ auctionlisting.autobuy }}</b></div><br>
+      {% if auctionlisting.autobuy %}
+        <div class="detail">Autobuy: <b>${{ auctionlisting.autobuy }}</b></div><br>
+      {% endif %}
       {% if auctionlisting.bids.count > 0 %}
         {% if auctionlisting.bids.count > 1 %}
           <div class="detail"><h3>Current Bid: <b>${{ auctionlisting.bids.all.last.amount }}</b></h3></div>

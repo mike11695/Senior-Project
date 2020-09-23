@@ -2067,6 +2067,42 @@ class CreateBidViewTest(MyTestCase):
         created_bid = Bid.objects.last()
         self.assertEqual(created_bid.auctionListing, listing)
 
+    #Test to ensure that a auction ends if autobuy bid is made
+    def test_successful_bid_creation_autobuy_ends_listing(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
+            data={'amount': 25.00})
+        self.assertEqual(post_response.status_code, 302)
+        updated_listing = AuctionListing.objects.get(id=listing.id)
+        self.assertEqual(updated_listing.listingEnded, True)
+
+    #Test to ensure that previous winning bid is set to false and current bid is winning bid
+    def test_successful_bid_creation_previous_bid_changed(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
+            data={'amount': 5.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_bid1 = Bid.objects.last()
+        self.assertEqual(created_bid1.winningBid, True)
+        self.assertEqual(created_bid1.auctionListing, listing)
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
+            data={'amount': 6.00})
+        self.assertEqual(post_response.status_code, 302)
+        edited_bid1 = Bid.objects.get(id=created_bid1.id)
+        created_bid2 = Bid.objects.last()
+        self.assertEqual(edited_bid1.winningBid, False)
+        self.assertEqual(created_bid2.winningBid, True)
+
 class OfferDetailViewTest(MyTestCase):
     def setUp(self):
         super(OfferDetailViewTest, self).setUp()
