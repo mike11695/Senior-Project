@@ -75,14 +75,14 @@ class MyTestCase(TestCase):
 
         #Create a global auction listing that is active
         self.global_auction_listing1 = AuctionListing.objects.create(owner=user1, name='Test Auction Listing',
-            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
             endTime=date_active)
         self.global_auction_listing1.items.add(self.global_item1)
         self.global_auction_listing1.save
 
         #Create a global auction listing that is inactive
         self.global_auction_listing2 = AuctionListing.objects.create(owner=user1, name='Test Auction Listing',
-            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
             endTime=date_ended)
         self.global_auction_listing2.items.add(self.global_item1)
         self.global_auction_listing2.save
@@ -1906,6 +1906,77 @@ class CreateAuctionListingViewTest(MyTestCase):
         new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
         self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
 
+class RelistAuctionListingViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to relist a listing
+    def test_redirect_if_not_logged_in(self):
+        listing = self.global_auction_listing2
+        response = self.client.get(reverse('relist-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/{0}/relist'.format(listing.id))
+
+    #Test to ensure user is not redirected if logged in and they own the listing
+    def test_no_redirect_if_logged_in_and_owns_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing2
+        response = self.client.get(reverse('relist-auction-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but they do not own the listing
+    def test_redirect_if_logged_in_but_does_not_own_listing(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing2
+        response = self.client.get(reverse('relist-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if they own listing but it has bids
+    def test_redirect_if_owner_but_bids_exist(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing2
+        bid = Bid.objects.create(auctionListing=self.global_auction_listing2,
+            bidder=self.global_user2, amount=5.00, winningBid = True)
+        response = self.client.get(reverse('relist-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/auction-listings/')
+
+    #Test to ensure user is redirected if they own listing but it is still active
+    def test_redirect_if_owner_but_active_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing1
+        response = self.client.get(reverse('relist-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/auction-listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing2
+        response = self.client.get(reverse('relist-auction-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/relist_auction_listing.html')
+
+    #Test to ensure that relisting the listing works
+    def test_succesful_listing_relist(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing2
+        listing.bids.clear()
+        response = self.client.get(reverse('relist-auction-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('relist-auction-listing', args=[str(listing.id)]),
+            data={'name': "Test Offer Listing Relist", 'description': "Relisting my listing",
+                'items': [str(self.global_item1.id)], 'endTimeChoices': "4h", 'startingBid': 10.00,
+                'minimumIncrement': 1.00, 'autobuy': 30.00})
+        self.assertEqual(post_response.status_code, 302)
+        relisted_listing = AuctionListing.objects.get(id=listing.id)
+        self.assertEqual(relisted_listing.name, 'Test Offer Listing Relist')
+        self.assertEqual(relisted_listing.startingBid, 10.00)
+        self.assertEqual(relisted_listing.autobuy, 30.00)
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=4)
+        to_tz = timezone.get_default_timezone()
+        self.assertEqual(relisted_listing.endTime.astimezone(to_tz).hour, end_time_check.hour)
+
 class CreateOfferViewTest(MyTestCase):
     def setUp(self):
         super(CreateOfferViewTest, self).setUp()
@@ -2261,3 +2332,84 @@ class AcceptOfferViewTest(MyTestCase):
         self.assertRedirects(response, '/listings/offer-listings/{0}'.format(offer.offerListing.id))
         all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing2)
         self.assertEqual(len(all_listing_offers), 2)
+
+class AuctionListingDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(AuctionListingDeleteViewTest, self).setUp()
+
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+        date_inactive = timezone.localtime(timezone.now()) - timedelta(days=1)
+
+        #Create auction listing objects to test for deletion
+        self.inactive_auction_listing = AuctionListing.objects.create(owner=self.global_user1,
+            name='Test Auction Listing', description="Just a test listing", startingBid=5.00,
+            minimumIncrement=1.00, autobuy=25.00, endTime=date_inactive)
+        self.inactive_auction_listing.items.add = self.global_item1
+        self.inactive_auction_listing.save
+        self.inactive_listing_id = self.inactive_auction_listing.id
+
+        self.active_auction_listing = AuctionListing.objects.create(owner=self.global_user1,
+            name='Test Auction Listing', description="Just a test listing", startingBid=5.00,
+            minimumIncrement=1.00, autobuy=25.00, endTime=date_active)
+        self.active_auction_listing.items.add = self.global_item1
+        self.active_auction_listing.save
+
+        #create some bids for the listing
+        number_of_bids = 3
+
+        self.bid_IDs = [0 for number in range(number_of_bids)]
+
+        for count in range(number_of_bids):
+            new_bid = Bid.objects.create(auctionListing=self.inactive_auction_listing, bidder=self.global_user2,
+                amount=(5.00 + (1.00 * count)))
+            self.bid_IDs[count] = new_bid.id
+
+    #Test to ensure that a user must be logged in to view listings
+    def test_redirect_if_not_logged_in(self):
+        listing = self.inactive_auction_listing
+        response = self.client.get(reverse('delete-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they own the listing
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_auction_listing
+        response = self.client.get(reverse('delete-auction-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they do not own the listing
+    def test_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_auction_listing
+        response = self.client.get(reverse('delete-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if logged in and is owner but listing is active
+    def test_redirect_if_logged_in_owner_but_active_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.active_auction_listing
+        response = self.client.get(reverse('delete-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/auction-listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_auction_listing
+        response = self.client.get(reverse('delete-auction-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/auction_listing_delete.html')
+
+    #Test to ensure object is deleted and offers asociated are also deleted if user confirms
+    def test_succesful_deletion(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_auction_listing
+        post_response = self.client.post(reverse('delete-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(post_response, reverse('auction-listings'))
+        self.assertFalse(AuctionListing.objects.filter(id=self.inactive_listing_id).exists())
+        for bid_id in self.bid_IDs:
+            self.assertFalse(Bid.objects.filter(id=bid_id).exists())

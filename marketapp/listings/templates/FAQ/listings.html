@@ -19,7 +19,7 @@
     the listing will be closed and you will need to communicate with the other user on how
     you'll be exchanging goods.  A receipt will also be made for the transaction for your
     convienence.</p>
-  <h1>Editing, Relisting and Deleting a Listing</h1>
+  <h1>Editing, Relisting and Deleting a Offer Listing</h1>
   <p>To edit an offer listing, first navigate to your listings by hovering over "My Listings"
     in the top right navigation bar and in the dropdown selecting "Offers".  For each of your
     listings in the list view, if a listing is active, there will be a button in the top right
@@ -89,8 +89,34 @@
     be generated for your convenience. You will then have to communicate with the winner on how
     you will exchange your items for money.  If an auction closes without any bids, you can relist
     it as well as edit any of the attributes, such as starting bid and autobuy price.  Auctions once
-    created cannot be edited or deleted, so please check all the information for your auction before
-    finalizing the creation.</p>
+    created cannot be edited or deleted until they end, so please check all the information for your
+    auction before finalizing the creation.</p>
+  <h1>Relisting and Deleting a Auction Listing</h1>
+  <p>Once a auction has ended, you will have the option to relist it if it had received no bids.
+    On the page for your auction listings, each auction that has ended and received no bids will
+    have a button that says "RELIST" in the top right of the container.  Clicking on this will take
+    you to the relisting form where you can edit the existing fields of your auction and choose a
+    new ending time.</p>
+  <p>Deleting a auction is very easy, however, you may only delete auctions that have expired or have
+    been completed by bids being placed before it ended.  On the page where you can view all your
+    auctions, each auction that has ended will have a button that says "DELETE" in the top right corner
+    of the container.  Clicking this will take you to a confirmation page where can confirm if you want
+    to delete the auction or not.  Be careful, once you delete a auction, it can not be undone, and you
+    will have to remake the auction again afterwards if you want to auction off the items that were included
+    again.</p>
+  <h1>How to Bid on an Auction</h1>
+  <p>To place a bid on an auction, first go to to the navigation bar at the top, hover over "All
+    Listings" and select "Auctions" in the dropdown.  You'll be taken to a list of all active auctions
+    currently on the site.  Select the auction that you're interested in and you'll be taken to the
+    detail view for the auction listing.  Navigate to the bottom of the page and click on "Place Bid".
+    You'll be taken to the bid creation form where you can input the amount you would like to bid.  The
+    amount you bid, if there are no bids placed yet, must be equal to or greater than the starting bid,
+    but cannot be more than the starting bid plus three times the minimum increment.  If there are already
+    bids, the lowest amount you can bid would be the current bid plus the minimum increment.  You will
+    not be able to bid more than the current bid plus three times the minimum increment however.  However,
+    if a listing has an autobuy amount, you can bid the autobuy amount to instantly win the auction.  Once
+    your bid has been made, you will not be able to bid again until someone outbids you.  Bids can only
+    be made on active auction listings.</p>
 </div>
 <div class="faq-content col-md-10">
   <h1>FAQs for All Listings</h1>
@@ -127,5 +153,9 @@
     bid.</p>
   <h3 class="faq-question">How large can my autobuy price be?</h3>
   <p>The autobuy price must be greater than your starting bid, and can be up to $9,999,999.99.</p>
+  <h3 class="faq-question">I messed up prices for my auction and cannot end it, what can I do?</h3>
+  <p>If you truly messed up on creating an auction, you can submit a report to have it removed or edited as
+    soon as possible.  If you misentered the autobuy amount and someone bid it before it can be removed, still
+    submit a report and it can still be removed/edited.  Communicate with the bidder about the mistake as well.</p>
 </div>
 {% endblock %}

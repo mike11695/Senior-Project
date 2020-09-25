@@ -29,8 +29,8 @@
                   <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
                     <h4>{{ listing.name }}</h4>
                   </a>
-                  <a href=""><div class="btn btn-blue edit-btn">RELIST</div></a>
-                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                  <a href="{% url 'relist-auction-listing' pk=listing.pk %}"><div class="btn btn-blue edit-btn">RELIST</div></a>
+                  <a href="{% url 'delete-auction-listing' pk=listing.pk %}"><div class="btn btn-red delete-btn">DELETE</div></a>
                 </div>
                 <div class="listing-prices">
                   Starting Bid: ${{ listing.startingBid }}<br>
@@ -57,13 +57,12 @@
                   <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
                     <h4>{{ listing.name }}</h4>
                   </a>
-                  <a href=""><div class="btn btn-blue edit-btn">RELIST</div></a>
-                  <a href=""><div class="btn btn-red delete-btn">DELETE</div></a>
+                  <a href="{% url 'delete-auction-listing' pk=listing.pk %}"><div class="btn btn-red delete-btn">DELETE</div></a>
                 </div>
                 <div class="listing-prices">
-                  {% for bid in listings.bids.all %}
-                    {% if bid.winningBid %}
-                      Winning Bid: ${{ bid }}
+                  {% for bid in listing.bids.all %}
+                    {% if bid.winningBid == True %}
+                      Winning Bid: ${{ bid.amount }}
                     {% endif %}
                   {% endfor %}
                 </div>
@@ -91,14 +90,14 @@
                 </div>
                 <div class="listing-prices">
                   Starting Bid: ${{ listing.startingBid }} |
-                  {% if listing.bids %}
+                  {% if listing.bids.count > 0 %}
                     Current Bid: ${{ listing.bids.all.last.amount }}<br>
                   {% else %}
                     Current Bid: None<br>
                   {% endif %}
                   {% if listing.autobuy %}
                     Autobuy: ${{ listing.autobuy }}
-                  {% end %}
+                  {% endif %}
                 </div>
               </div>
               <div class="listing-desc">

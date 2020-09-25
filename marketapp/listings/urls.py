@@ -32,4 +32,6 @@ urlpatterns = [
     path('auction-listings/create-auction-listing', views.create_auction_listing, name='create-auction-listing'),
     path('auction-listings/<int:pk>', views.AuctionListingDetailView.as_view(), name='auction-listing-detail'),
     path('auction-listings/<int:pk>/bid', views.create_bid, name='create-bid'),
+    path('auction-listings/<int:pk>/relist', views.relist_auction_listing, name='relist-auction-listing'),
+    path('auction-listings/<int:pk>/delete', views.AuctionListingDeleteView.as_view(), name='delete-auction-listing'),
 ]

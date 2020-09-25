@@ -164,7 +164,7 @@ class UpdateOfferListingForm(ModelForm):
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
 
 #Form for a user to create an auction listing
-class CreateAuctionListingForm(ModelForm):
+class AuctionListingForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         clean_starting_bid = cleaned_data.get('startingBid')
@@ -214,7 +214,7 @@ class CreateAuctionListingForm(ModelForm):
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
-       super(CreateAuctionListingForm, self).__init__(*args, **kwargs)
+       super(AuctionListingForm, self).__init__(*args, **kwargs)
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
 
 #Form for a user to create an offer for an offer listing
@@ -293,7 +293,27 @@ class CreateBidForm(ModelForm):
                     else:
                         current_bid = bids.last()
 
-                    if clean_amount != clean_listing.autobuy:
+                    if clean_listing.autobuy:
+                        if clean_amount != clean_listing.autobuy:
+                            if clean_amount == current_bid.amount and current_bid.amount == clean_listing.startingBid:
+                                #Amount bid is same as starting and current bid
+                                raise ValidationError("Starting bid has already been placed.")
+                            elif clean_amount <= current_bid.amount:
+                                #Amount bid is less than or equal to the current bid
+                                lowest_bid = clean_listing.startingBid + clean_listing.minimumIncrement
+                                raise ValidationError("Lowest bid that can be placed is ${0}".format(lowest_bid))
+                            elif current_bid.bidder == clean_bidder:
+                                #User already has the current bid
+                                raise ValidationError("You already have the current bid.")
+                            elif clean_amount > (current_bid.amount + (clean_listing.minimumIncrement * 3)):
+                                #Amount bid is greater than the maximum that can be bid
+                                highest_bid = clean_listing.amount + (clean_listing.minimumIncrement * 3)
+                                raise ValidationError("Maximum bid that can be placed is ${0}".format(highest_bid))
+                            elif clean_amount < (current_bid.amount + clean_listing.minimumIncrement):
+                                #Amount bid is less than the minimum bid that can currently be bid
+                                minimal_bid = current_bid.amount + clean_listing.minimumIncrement
+                                raise ValidationError("Minimum bid that can be placed is ${0}".format(minimal_bid))
+                    else:
                         if clean_amount == current_bid.amount and current_bid.amount == clean_listing.startingBid:
                             #Amount bid is same as starting and current bid
                             raise ValidationError("Starting bid has already been placed.")
@@ -314,7 +334,20 @@ class CreateBidForm(ModelForm):
                             raise ValidationError("Minimum bid that can be placed is ${0}".format(minimal_bid))
                 else:
                     #There are no bids currently
-                    if clean_amount != clean_listing.autobuy:
+                    if clean_listing.autobuy:
+                        if clean_amount != clean_listing.autobuy:
+                            if clean_amount < clean_listing.startingBid:
+                                #Amount bid is less than the starting bid
+                                raise ValidationError("Bid must be equal to or greater than the starting bid.")
+                            elif clean_amount > (clean_listing.startingBid + (clean_listing.minimumIncrement * 3)):
+                                #Amount bid is greater than the maximum that can be bid
+                                highest_bid = clean_listing.startingBid + (clean_listing.minimumIncrement * 3)
+                                raise ValidationError("Maximum bid that can be placed is ${0}".format(highest_bid))
+                            elif clean_amount < (clean_listing.startingBid + clean_listing.minimumIncrement) and clean_amount != clean_listing.startingBid:
+                                #Amount bid is less than the minimum bid that can currently be bid
+                                minimal_bid = clean_listing.startingBid + clean_listing.minimumIncrement
+                                raise ValidationError("Minimum bid that can be placed is ${0}".format(minimal_bid))
+                    else:
                         if clean_amount < clean_listing.startingBid:
                             #Amount bid is less than the starting bid
                             raise ValidationError("Bid must be equal to or greater than the starting bid.")

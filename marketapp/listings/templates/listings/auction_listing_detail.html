@@ -79,4 +79,18 @@
       <div class="detail"><h3>Winning Bid: None</h3></div>
     {% endif %}
   {% endif %}
+  {% if auctionlisting.owner == request.user and auctionlisting.bids.count > 0 %}
+    <div class="bids-container col-lg-10 center-block">
+      <h3>Latest Bids</h3>
+      {% if auctionlisting.bids.count > 10 %}
+        {% for bid in auctionlisting.bids.all|slice:":10" reversed %}
+          <b>{{ forloop.counter }}</b>: ${{ bid.amount }} - {{ bid.owner }}<br>
+        {% endfor %}
+      {% else %}
+        {% for bid in auctionlisting.bids.all reversed %}
+          <b>{{ forloop.counter }}</b>: ${{ bid.amount }} - {{ bid.bidder }}<br>
+        {% endfor %}
+      {% endif %}
+    </div>
+  {% endif %}
 {% endblock %}

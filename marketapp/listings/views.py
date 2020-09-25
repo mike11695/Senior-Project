@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
-    CreateAuctionListingForm, UpdateOfferListingForm, CreateOfferForm, CreateBidForm)
+    AuctionListingForm, UpdateOfferListingForm, CreateOfferForm, CreateBidForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -550,7 +550,7 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
 @login_required(login_url='/accounts/login/')
 def create_auction_listing(request):
     if request.method == 'POST':
-        form = CreateAuctionListingForm(data=request.POST, user=request.user)
+        form = AuctionListingForm(data=request.POST, user=request.user)
         if form.is_valid():
             created_listing = form.save()
 
@@ -597,7 +597,7 @@ def create_auction_listing(request):
             created_listing.save()
             return redirect('auction-listings')
     else:
-        form = CreateAuctionListingForm(user=request.user)
+        form = AuctionListingForm(user=request.user)
     return render(request, 'listings/create_auction_listing.html', {'form': form})
 
 #Detailed view for listing owner and offerer to see a offer
@@ -712,43 +712,165 @@ def create_bid(request, pk):
     #Get the listing object the bid is being created for
     current_listing = get_object_or_404(AuctionListing, pk=pk)
 
+    previous_winning_bid = None
+
+    #Get the previous winning bid
+    if current_listing.bids.count() > 0:
+        for bid in current_listing.bids.all():
+            if bid.winningBid == True:
+                previous_winning_bid = bid
+
     #Check to make sure listing is still active
     if current_listing.listingEnded:
         return redirect('index')
     else:
         #Check to ensure that the auction owner cannot bid on their own auction
         if request.user != current_listing.owner:
-            if request.method == 'POST':
-                form = CreateBidForm(data=request.POST, instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
-                if form.is_valid():
-                    created_bid = form.save()
+            if previous_winning_bid:
+                if request.user != previous_winning_bid.bidder:
+                    if request.method == 'POST':
+                        form = CreateBidForm(data=request.POST, instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
+                        if form.is_valid():
+                            created_bid = form.save()
 
-                    #Set the bidder and auctionListing fields (not sure why they aren't saving with the form...)
-                    created_bid.bidder = request.user
-                    created_bid.auctionListing = current_listing
+                            #Set the bidder and auctionListing fields (not sure why they aren't saving with the form...)
+                            created_bid.bidder = request.user
+                            created_bid.auctionListing = current_listing
 
-                    #End the auction if the bid amount matches autobuy price
-                    bid_amount = form.cleaned_data.get('amount')
-                    if current_listing.autobuy == bid_amount:
-                        current_listing.endTime = timezone.localtime(timezone.now())
-                        current_listing.save()
+                            #End the auction if the bid amount matches autobuy price
+                            bid_amount = form.cleaned_data.get('amount')
+                            if current_listing.autobuy == bid_amount:
+                                current_listing.endTime = timezone.localtime(timezone.now())
+                                current_listing.save()
 
-                    #Get the previous winning bid and change it to no longer be winning bid
-                    if current_listing.bids.count() > 0:
-                        for bid in current_listing.bids.all():
-                            print(bid)
-                            if bid.winningBid == True:
-                                print("A bid was found")
-                                bid.winningBid = False
-                                bid.save()
+                            #Get the previous winning bid and change it to no longer be winning bid
+                            previous_winning_bid.winningBid = False
+                            previous_winning_bid.save()
 
-                    #Set winning bid to be the current winning bid
-                    created_bid.winningBid = True
+                            #Set winning bid to be the current winning bid
+                            created_bid.winningBid = True
 
-                    created_bid.save()
+                            created_bid.save()
+                            return redirect('auction-listing-detail', pk=current_listing.pk)
+                    else:
+                        form = CreateBidForm(instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
+                    return render(request, 'listings/create_bid.html', {'form': form})
+                else:
                     return redirect('auction-listing-detail', pk=current_listing.pk)
             else:
-                form = CreateBidForm(instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
-            return render(request, 'listings/create_bid.html', {'form': form})
+                if request.method == 'POST':
+                    form = CreateBidForm(data=request.POST, instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
+                    if form.is_valid():
+                        created_bid = form.save()
+
+                        #Set the bidder and auctionListing fields (not sure why they aren't saving with the form...)
+                        created_bid.bidder = request.user
+                        created_bid.auctionListing = current_listing
+
+                        #End the auction if the bid amount matches autobuy price
+                        bid_amount = form.cleaned_data.get('amount')
+                        if current_listing.autobuy == bid_amount:
+                            current_listing.endTime = timezone.localtime(timezone.now())
+                            current_listing.save()
+
+                        #Set winning bid to be the current winning bid
+                        created_bid.winningBid = True
+
+                        created_bid.save()
+                        return redirect('auction-listing-detail', pk=current_listing.pk)
+                else:
+                    form = CreateBidForm(instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
+                return render(request, 'listings/create_bid.html', {'form': form})
+        else:
+            return redirect('index')
+
+#Form view for relisting an auction listing
+@login_required(login_url='/accounts/login/')
+def relist_auction_listing(request, pk):
+    #Get the listing to be relisted
+    current_listing = get_object_or_404(AuctionListing, pk=pk)
+
+    if current_listing.owner == request.user:
+        if current_listing.listingEnded and current_listing.bids.count() == 0:
+            if request.method == 'POST':
+                form = AuctionListingForm(data=request.POST, user=request.user, instance=current_listing)
+                if form.is_valid():
+                    current_listing = form.save(commit=False)
+
+                    #Clear the current items from the listing
+                    current_listing.items.clear()
+
+                    #Add the newly added items to the listing
+                    clean_items = form.cleaned_data.get('items')
+                    for item in clean_items:
+                        current_listing.items.add(item)
+
+                    #Get the end time choice from form and set end time accordingly
+                    clean_choice = form.cleaned_data.get('endTimeChoices')
+                    if clean_choice == '1h':
+                        #Set end time to 1 hour from current time if choice was 1h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=1)
+                    elif clean_choice == '2h':
+                        #Set end time to 2 hours from current time if choice was 2h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=2)
+                    elif clean_choice == '4h':
+                        #Set end time to 4 hours from current time if choice was 4h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=4)
+                    elif clean_choice == '8h':
+                        #Set end time to 8 hours from current time if choice was 8h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=8)
+                    elif clean_choice == '12h':
+                        #Set end time to 12 hours from current time if choice was 12h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=12)
+                    elif clean_choice == '1d':
+                        #Set end time to 1 day from current time if choice was 1d
+                        date = timezone.localtime(timezone.now()) + timedelta(days=1)
+                    elif clean_choice == '3d':
+                        #Set end time to 3 days from current time if choice was 3ds
+                        date = timezone.localtime(timezone.now()) + timedelta(days=3)
+                    else:
+                        #Set end time to 7 days from current time
+                        date = timezone.localtime(timezone.now()) + timedelta(days=7)
+
+                    #Set the end date for the listing
+                    current_listing.endTime = date
+
+                    #Get autobuy value from the form
+                    clean_autobuy = form.cleaned_data.get('autobuy')
+
+                    #Check to see if user filled in autobuy field
+                    if clean_autobuy:
+                        #If filled in, keep the original value
+                        current_listing.autobuy = clean_autobuy
+                    else:
+                        #If not filled in, set it to 0.00
+                        current_listing.autobuy = 0.00
+
+                    current_listing.save()
+                    return redirect('auction-listing-detail', pk=current_listing.pk)
+            else:
+                form = AuctionListingForm(user=request.user, instance=current_listing)
+            return render(request, 'listings/relist_auction_listing.html', {'form': form})
+        else:
+            return redirect('auction-listings')
+    else:
+        return redirect('index')
+
+#View for a user to delete an auction listing that they own
+class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = AuctionListing
+    success_url = reverse_lazy('auction-listings')
+    template_name = "listings/auction_listing_delete.html"
+    context_object_name = 'auctionlisting'
+
+    #Checks to make sure owner of listing clicked to delete, redirects otherwise
+    #if auction is still active, redirect to auction listings
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner == self.request.user:
+            if obj.listingEnded:
+                return super(AuctionListingDeleteView, self).dispatch(request, *args, **kwargs)
+            else:
+                return redirect('auction-listings')
         else:
             return redirect('index')
