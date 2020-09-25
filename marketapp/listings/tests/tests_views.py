@@ -1000,6 +1000,90 @@ class OfferListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
 
+class AllOfferListingsViewTest(MyTestCase):
+    def setUp(self):
+        super(AllOfferListingsViewTest, self).setUp()
+
+        #Create a variety of listings to test with
+        #Number of active listings should be 10 as there is a global active listing
+        number_of_active_listings_user1 = 4
+        number_of_active_listings_user2 = 5
+        number_of_inactive_listings_user1 = 2
+        number_of_completed_listings_user2 = 3
+
+        self.num_active_listings = 10
+
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        for num in range(number_of_active_listings_user1):
+            listing = OfferListing.objects.create(owner=self.global_user1,
+                name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
+                openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
+                endTime=date_active)
+            listing.items.add(self.global_item1)
+            listing.save
+
+        for num in range(number_of_active_listings_user2):
+            listing = OfferListing.objects.create(owner=self.global_user2,
+                name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
+                openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
+                endTime=date_active)
+            listing.items.add(self.global_item2)
+            listing.save
+
+        for num in range(number_of_inactive_listings_user1):
+            listing = OfferListing.objects.create(owner=self.global_user1,
+                name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
+                openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
+                endTime=date_ended)
+            listing.items.add(self.global_item1)
+            listing.save
+
+        for num in range(number_of_completed_listings_user2):
+            listing = OfferListing.objects.create(owner=self.global_user2,
+                name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
+                openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
+                endTime=date_active, listingCompleted=True)
+            listing.items.add(self.global_item2)
+            listing.save
+
+    #Test to ensure that a user must be logged in to view listings
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('all-offer-listings'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/all')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-offer-listings'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-offer-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/all_offer_listings.html')
+
+    #Test to ensure that a user sees the correct amount of active listings
+    def test_list_only_active_listings(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-offer-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['offerlistings']), self.num_active_listings)
+
+    #Test to ensure that  different user sees the correct amount of active listings
+    def test_list_only_active_listings_new_user(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-offer-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['offerlistings']), self.num_active_listings)
+
 class CreateOfferListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateOfferListingViewTest, self).setUp()

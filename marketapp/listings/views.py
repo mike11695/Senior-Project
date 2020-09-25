@@ -265,8 +265,7 @@ def faq_listings(request):
     # Render the HTML template faq/listings.html with the data in the context variable
     return render(request, 'faq/listings.html')
 
-#List view for a user to see all of the offer listings they have active (Need to change this
-#once listings are able to end)
+#List view for a user to see all of the offer listings they have
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
     model = OfferListing
     context_object_name = 'offerlistings'
@@ -308,6 +307,49 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
                 return redirect('index')
         else:
             return super(OfferListingDetailView, self).dispatch(request, *args, **kwargs)
+
+#List view for a user to see all of the offer listings that are active on site
+class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
+    model = OfferListing
+    context_object_name = 'offerlistings'
+    template_name = "listings/all_offer_listings.html"
+    paginate_by = 10
+
+    #Filters the list of offer listings to only show those that belong to the current logged in user
+    def get_queryset(self):
+        listings_ids = [listing.id for listing in OfferListing.objects.all() if listing.listingEnded == False
+            and listing.listingCompleted == False]
+        queryset = OfferListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
+
+        current_date = timezone.localtime(timezone.now())
+
+        for obj in queryset:
+            time_left = obj.endTime - current_date
+            if time_left.total_seconds() <= 1800:
+                obj.endingSoon = True
+            else:
+                obj.endingSoon = False
+
+        return queryset
+
+    #Add  endingSoon to context so that listings that end in 30 minutes display differently
+    """def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        current_date = timezone.localtime(timezone.now())
+
+        for listing in self.get_queryset():
+            time_left = current_date - listing.endTime
+            if time_left.total_seconds() <= 1800:
+                context.append({
+                    'endingSoon': True,
+                })
+            else:
+                context.append({
+                    'endingSoon': False,
+                })
+
+        return context"""
+
 
 #Form view to create an offer listing
 @login_required(login_url='/accounts/login/')

@@ -404,3 +404,43 @@ a:hover {
   padding-top: 10px;
   border-top: 1px solid grey;
 }
+
+.listing-owner {
+  font-weight: bold;
+  border-left: 1px solid black;
+  padding-left: 8px;
+  display: inline-block;
+  margin-left: 3px;
+}
+
+.all-listing-object {
+  background: white;
+  border: 3px solid grey;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.all-listing-object:nth-child(even) {
+  background: #CCC;
+}
+
+.all-listing-object-ending-soon {
+  background: #eda6a6;
+  border: 3px solid #a67474;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.all-listing-object-ending-soon:nth-child(even) {
+  background: #ed7979;
+  border: 3px solid #a34e4e;
+}
+
+.ending-soon {
+  color: red;
+  float: right;
+  display: inline-block;
+  font-weight: bold;
+}
