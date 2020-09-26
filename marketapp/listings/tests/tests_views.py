@@ -1789,6 +1789,93 @@ class AuctionListingDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/auction_listing_detail.html')
 
+class AllAuctionListingsViewTest(MyTestCase):
+    def setUp(self):
+        super(AllAuctionListingsViewTest, self).setUp()
+
+        #Create a variety of listings to test with
+        #Number of active listings should be 11 as there is a global active listing
+        number_of_active_listings_user1 = 7
+        number_of_active_listings_user2 = 5
+        number_of_inactive_listings_user1 = 4
+
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        for num in range(number_of_active_listings_user1):
+            listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+                description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+                endTime=date_active)
+            listing.items.add(self.global_item1)
+            listing.save
+
+        for num in range(number_of_active_listings_user2):
+            listing = AuctionListing.objects.create(owner=self.global_user2, name='Test Auction Listing',
+                description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+                endTime=date_active)
+            listing.items.add(self.global_item2)
+            listing.save
+            print(num)
+
+        for num in range(number_of_inactive_listings_user1):
+            listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+                description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+                endTime=date_ended)
+            listing.items.add(self.global_item1)
+            listing.save
+
+    #Test to ensure that a user must be logged in to view listings
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('all-auction-listings'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/all')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-auction-listings'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-auction-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/all_auction_listings.html')
+
+    #Test to ensure that a user sees the correct amount of active listings for first page
+    def test_list_only_active_listings_page_1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-auction-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['auctionlistings']), 10)
+
+    #Test to ensure that a user sees the correct amount of active listings for second page
+    def test_list_only_active_listings_page_2(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-auction-listings')+'?page=2')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['auctionlistings']), 3)
+
+    #Test to ensure that  different user sees the correct amount of active listings for first page
+    def test_list_only_active_listings_new_user_page_1(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-auction-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['auctionlistings']), 10)
+
+    #Test to ensure that  different user sees the correct amount of active listings for second page
+    def test_list_only_active_listings_new_user_page_2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-auction-listings')+'?page=2')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['auctionlistings']), 3)
+
 class CreateAuctionListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateAuctionListingViewTest, self).setUp()

@@ -34,7 +34,9 @@
                 </div>
                 <div class="listing-prices">
                   Starting Bid: ${{ listing.startingBid }}<br>
-                  Autobuy: ${{ listing.autobuy }}
+                  {% if listing.autobuy != 0.00 %}
+                    Autobuy: ${{ listing.autobuy }}
+                  {% endif %}
                 </div>
               </div>
               <div class="listing-desc">
@@ -95,7 +97,7 @@
                   {% else %}
                     Current Bid: None<br>
                   {% endif %}
-                  {% if listing.autobuy %}
+                  {% if listing.autobuy != 0.00 %}
                     Autobuy: ${{ listing.autobuy }}
                   {% endif %}
                 </div>

@@ -332,25 +332,6 @@ class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
 
         return queryset
 
-    #Add  endingSoon to context so that listings that end in 30 minutes display differently
-    """def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        current_date = timezone.localtime(timezone.now())
-
-        for listing in self.get_queryset():
-            time_left = current_date - listing.endTime
-            if time_left.total_seconds() <= 1800:
-                context.append({
-                    'endingSoon': True,
-                })
-            else:
-                context.append({
-                    'endingSoon': False,
-                })
-
-        return context"""
-
-
 #Form view to create an offer listing
 @login_required(login_url='/accounts/login/')
 def create_offer_listing(request):
@@ -587,6 +568,29 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
             return self.bids.all().reverse()[0]
         except IndexError:
             pass
+
+#List view for a user to see all of the auction listings that are active on site
+class AllAuctionListingsListView(LoginRequiredMixin, generic.ListView):
+    model = AuctionListing
+    context_object_name = 'auctionlistings'
+    template_name = "listings/all_auction_listings.html"
+    paginate_by = 10
+
+    #Filters the list of offer listings to only show those that belong to the current logged in user
+    def get_queryset(self):
+        listings_ids = [listing.id for listing in AuctionListing.objects.all() if listing.listingEnded == False]
+        queryset = AuctionListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
+
+        current_date = timezone.localtime(timezone.now())
+
+        for obj in queryset:
+            time_left = obj.endTime - current_date
+            if time_left.total_seconds() <= 1800:
+                obj.endingSoon = True
+            else:
+                obj.endingSoon = False
+
+        return queryset
 
 #Form view for creating an auction listing
 @login_required(login_url='/accounts/login/')
