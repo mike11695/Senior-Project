@@ -1661,13 +1661,16 @@ class OfferDeleteViewTest(MyTestCase):
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
 
-        #Create an offer for testing deletion with
-        self.offer = Offer.objects.create(offerListing=self.global_offer_listing1,
+        #Create offers for testing deletion with
+        self.regular_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
             owner=self.global_user2, amount=7.00)
+
+        self.accepted_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
+            owner=self.global_user2, amount=7.00, offerAccepted=True)
 
     #Test to ensure that a user must be logged in to delete an offer
     def test_redirect_if_not_logged_in(self):
-        offer = self.offer
+        offer = self.regular_offer
         response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
         self.assertRedirects(response, '/listings/')
 
@@ -1675,7 +1678,7 @@ class OfferDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_owner_of_listing(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        offer = self.offer
+        offer = self.regular_offer
         response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
         self.assertEqual(response.status_code, 200)
 
@@ -1683,7 +1686,7 @@ class OfferDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_owner_of_offer(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
-        offer = self.offer
+        offer = self.regular_offer
         response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
         self.assertEqual(response.status_code, 200)
 
@@ -1691,7 +1694,7 @@ class OfferDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_not_owner_of_listing_or_offer(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
-        offer = self.offer
+        offer = self.regular_offer
         response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
         self.assertRedirects(response, '/listings/')
 
@@ -1699,7 +1702,7 @@ class OfferDeleteViewTest(MyTestCase):
     def test_correct_template_used(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        offer = self.offer
+        offer = self.regular_offer
         response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_delete.html')
@@ -1708,11 +1711,21 @@ class OfferDeleteViewTest(MyTestCase):
     def test_succesful_deletion(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        offer = self.offer
-        offer_id = self.offer.id
+        offer = self.regular_offer
+        offer_id = self.regular_offer.id
         post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
         self.assertRedirects(post_response, reverse('offer-listing-detail', args=[str(self.global_offer_listing1.id)]))
         self.assertFalse(Offer.objects.filter(id=offer_id).exists())
+
+    #Test to ensure an accepted offer cannot be deleted
+    def test_unsuccesful_deletion_accepted_offer(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.accepted_offer
+        offer_id = self.accepted_offer.id
+        post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertRedirects(post_response, reverse('offer-detail', args=[str(offer.id)]))
+        self.assertTrue(Offer.objects.filter(id=offer_id).exists())
 
 class AuctionListingsViewTest(MyTestCase):
     def setUp(self):
@@ -2577,6 +2590,16 @@ class AcceptOfferViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         updated_listing = OfferListing.objects.get(id=offer.offerListing.id)
         self.assertEqual(updated_listing.listingCompleted, True)
+
+    #Test to ensure that the offerListing ends when an offer is accepted
+    def test_listing_ends(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        updated_listing = OfferListing.objects.get(id=offer.offerListing.id)
+        self.assertEqual(updated_listing.listingEnded, True)
 
     #Test to ensure that the unaccepted offers on listing are destroyed
     def test_unaccepted_offers_are_destroyed(self):

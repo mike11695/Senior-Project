@@ -736,9 +736,13 @@ def accept_offer(request, pk):
             current_offer.offerAccepted = True
             current_offer.save()
 
-            #Retrieve the listing the offer is associated with, change listingCompleted to True and save object
+            #Retrieve the listing the offer is associated with, change listingCompleted to True
             current_listing = OfferListing.objects.get(id=current_offer.offerListing.id)
             current_listing.listingCompleted = True
+
+            #Set endTime for listing to current date and time so that it ends after accepting offer
+            date = timezone.localtime(timezone.now())
+            current_listing.endTime = date
             current_listing.save()
 
             #Retrieve the other offers for the listing and destroy them if not accepted
@@ -763,9 +767,15 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.owner == self.request.user:
-            return super(OfferDeleteView, self).dispatch(request, *args, **kwargs)
+            if obj.offerAccepted:
+                return redirect('offer-detail', pk=obj.pk)
+            else:
+                return super(OfferDeleteView, self).dispatch(request, *args, **kwargs)
         elif obj.offerListing.owner == self.request.user:
-            return super(OfferDeleteView, self).dispatch(request, *args, **kwargs)
+            if obj.offerAccepted:
+                return redirect('offer-detail', pk=obj.pk)
+            else:
+                return super(OfferDeleteView, self).dispatch(request, *args, **kwargs)
         else:
             return redirect('index')
 
