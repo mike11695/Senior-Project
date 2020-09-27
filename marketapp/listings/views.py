@@ -332,6 +332,17 @@ class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
 
         return queryset
 
+#View for a user to see a list of offers they have made
+class MyOffersListView(LoginRequiredMixin, generic.ListView):
+    model = Offer
+    context_object_name = 'offers'
+    template_name = "listings/offers.html"
+    paginate_by = 10
+
+    #Filters the list of offers to only show those that belong to the current logged in user
+    def get_queryset(self):
+        return Offer.objects.filter(owner=self.request.user)
+
 #Form view to create an offer listing
 @login_required(login_url='/accounts/login/')
 def create_offer_listing(request):
@@ -551,6 +562,7 @@ class AuctionListingListView(LoginRequiredMixin, generic.ListView):
     model = AuctionListing
     context_object_name = 'auctionlistings'
     template_name = "listings/auction_listings.html"
+    paginate_by = 10
 
     #Filters the list of auction listings to only show those that belong to the
     #current logged in user along with bids

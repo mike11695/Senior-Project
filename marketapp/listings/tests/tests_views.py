@@ -1084,6 +1084,66 @@ class AllOfferListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['offerlistings']), self.num_active_listings)
 
+class MyOffersViewTest(MyTestCase):
+    def setUp(self):
+        super(MyOffersViewTest, self).setUp()
+        #Create a user for testing with
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Set the amount of offers to be made to test
+        number_of_offers_user1 = 3
+        number_of_offers_user2 = 8
+
+        #Create the required amount of offers for user 1
+        for num in range(number_of_offers_user1):
+            offer = Offer.objects.create(offerListing=self.global_offer_listing1, owner=user,
+                amount=7.00)
+
+        #Create the required amount of offers for user 2
+        for num in range(number_of_offers_user2):
+            offer = Offer.objects.create(offerListing=self.global_offer_listing1, owner=self.global_user2,
+                amount=7.00)
+            offer.items.add(self.global_item2)
+            offer.save
+
+    #Test to ensure that a user must be logged in view offers
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('my-offers'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/my-offers')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('my-offers'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('my-offers'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/offers.html')
+
+    #Test to ensure that the user only sees offers they have made for first user
+    def test_list_only_current_users_images_user1(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('my-offers'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['offers']) == 3)
+
+    #Test to ensure that the user only sees offers they have made for the second user
+    def test_list_only_current_users_images_user2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('my-offers'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['offers']) == 8)
+
 class CreateOfferListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateOfferListingViewTest, self).setUp()

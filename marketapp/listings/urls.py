@@ -20,6 +20,7 @@ urlpatterns = [
     path('items/<int:pk>/delete', views.ItemDeleteView.as_view(), name='delete-item'),
     path('offer-listings/', views.OfferListingListView.as_view(), name='offer-listings'),
     path('offer-listings/all', views.AllOfferListingsListView.as_view(), name='all-offer-listings'),
+    path('offer-listings/my-offers', views.MyOffersListView.as_view(), name='my-offers'),
     path('offer-listings/create-offer-listing', views.create_offer_listing, name='create-offer-listing'),
     path('offer-listings/<int:pk>', views.OfferListingDetailView.as_view(), name='offer-listing-detail'),
     path('offer-listings/<int:pk>/update', views.update_offer_listing, name='update-offer-listing'),

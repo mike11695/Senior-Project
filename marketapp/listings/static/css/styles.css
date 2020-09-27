@@ -225,7 +225,7 @@ a:hover {
   width: 75px;
   height: 75px;
   border-radius: 15px;
-  border: 1px solid grey;
+  border: 2px solid black;
   margin-right: 5px;
   margin-top: 5px;
   display: inline-block;
@@ -390,7 +390,7 @@ a:hover {
   margin-bottom: 25px;
 }
 
-.item-button, .image-button {
+.item-button, .image-button, .offer-btn {
   width: 55px;
   height: 25px;
   padding: 0px;
@@ -443,4 +443,17 @@ a:hover {
   float: right;
   display: inline-block;
   font-weight: bold;
+}
+
+.my-offer-container {
+  background: white;
+  border: 3px solid grey;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.my-offer-container:nth-child(even) {
+  background: #CCC;
 }
