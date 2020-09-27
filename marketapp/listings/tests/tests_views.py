@@ -1129,7 +1129,7 @@ class MyOffersViewTest(MyTestCase):
         self.assertTemplateUsed(response, 'listings/offers.html')
 
     #Test to ensure that the user only sees offers they have made for first user
-    def test_list_only_current_users_images_user1(self):
+    def test_list_only_current_users_offers_user1(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('my-offers'))
@@ -1137,7 +1137,7 @@ class MyOffersViewTest(MyTestCase):
         self.assertTrue(len(response.context['offers']) == 3)
 
     #Test to ensure that the user only sees offers they have made for the second user
-    def test_list_only_current_users_images_user2(self):
+    def test_list_only_current_users_offers_user2(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('my-offers'))
@@ -1935,6 +1935,63 @@ class AllAuctionListingsViewTest(MyTestCase):
         response = self.client.get(reverse('all-auction-listings')+'?page=2')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['auctionlistings']), 3)
+
+class MyBidsViewTest(MyTestCase):
+    def setUp(self):
+        super(MyBidsViewTest, self).setUp()
+        #Create a user for testing with
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Set the amount of bids to be made to test
+        number_of_bids = 9
+
+        #Create the required amount of bids
+        for num in range(number_of_bids):
+            remainder = num % 2
+            if remainder == 0:
+                bid = Bid.objects.create(auctionListing=self.global_auction_listing1, bidder=user,
+                    amount=5.00+(1.00*num))
+            else:
+                bid = Bid.objects.create(auctionListing=self.global_auction_listing1,
+                    bidder=self.global_user2, amount=5.00+(1.00*num))
+
+    #Test to ensure that a user must be logged in view bids
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('my-bids'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/my-bids')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('my-bids'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('my-bids'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/bids.html')
+
+    #Test to ensure that the user only sees bids they have made for first user
+    def test_list_only_current_users_bids_user1(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('my-bids'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['bids']) == 5)
+
+    #Test to ensure that the user only sees offers they have made for the second user
+    def test_list_only_current_users_bids_user2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('my-bids'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['bids']) == 4)
 
 class CreateAuctionListingViewTest(MyTestCase):
     def setUp(self):

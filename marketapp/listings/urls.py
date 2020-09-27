@@ -32,6 +32,7 @@ urlpatterns = [
     path('offer-listings/offer/<int:pk>/delete', views.OfferDeleteView.as_view(), name='delete-offer'),
     path('auction-listings/', views.AuctionListingListView.as_view(), name='auction-listings'),
     path('auction-listings/all', views.AllAuctionListingsListView.as_view(), name='all-auction-listings'),
+    path('auction-listings/my-bids', views.MyBidsListView.as_view(), name='my-bids'),
     path('auction-listings/create-auction-listing', views.create_auction_listing, name='create-auction-listing'),
     path('auction-listings/<int:pk>', views.AuctionListingDetailView.as_view(), name='auction-listing-detail'),
     path('auction-listings/<int:pk>/bid', views.create_bid, name='create-bid'),

@@ -341,7 +341,9 @@ class MyOffersListView(LoginRequiredMixin, generic.ListView):
 
     #Filters the list of offers to only show those that belong to the current logged in user
     def get_queryset(self):
-        return Offer.objects.filter(owner=self.request.user)
+        offer_ids = [offer.id for offer in Offer.objects.all() if offer.offerListing.listingEnded == False or
+            offer.offerListing.listingCompleted and offer.offerAccepted]
+        return Offer.objects.filter(id__in=offer_ids, owner=self.request.user).order_by('id')
 
 #Form view to create an offer listing
 @login_required(login_url='/accounts/login/')
@@ -603,6 +605,19 @@ class AllAuctionListingsListView(LoginRequiredMixin, generic.ListView):
                 obj.endingSoon = False
 
         return queryset
+
+#View for a user to see a list of bids they have made
+class MyBidsListView(LoginRequiredMixin, generic.ListView):
+    model = Bid
+    context_object_name = 'bids'
+    template_name = "listings/bids.html"
+    paginate_by = 10
+
+    #Filters the list of bids to only show those that belong to the current logged in user
+    def get_queryset(self):
+        bid_ids = [bid.id for bid in Bid.objects.all() if bid.auctionListing.listingEnded == False or
+            bid.auctionListing.listingEnded and bid.winningBid]
+        return Bid.objects.filter(id__in=bid_ids, bidder=self.request.user).order_by('id')
 
 #Form view for creating an auction listing
 @login_required(login_url='/accounts/login/')

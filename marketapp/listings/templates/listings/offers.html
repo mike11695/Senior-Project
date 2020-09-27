@@ -11,7 +11,7 @@
   {% if offers %}
     <div class="center-block col-lg-5">
       {% for offer in offers %}
-        {% if offer.offerListing.listingEnded != True %}
+        {% if offer.offerAccepted != True %}
           <div class="my-offer-container">
             <h4><a href="{{ offer.get_absolute_url }}">Offer For: {{ offer.offerListing }}</a></h4>
             {% if offer.amount %}
@@ -49,6 +49,35 @@
                   Retract
                 </div>
               </a>
+            </div>
+          </div>
+        {% else %}
+          <div class="my-offer-container-accepted">
+            <h4><a href="{{ offer.get_absolute_url }}">Offer For: {{ offer.offerListing }}</a></h4>
+            {% if offer.amount %}
+              <div><b>Amount Offered: <span class="amount-offered">${{ offer.amount }}</span></b></div>
+            {% endif %}
+            {% if offer.items %}
+              {% if offer.items.count > 10 %}
+                {% for item in offer.items.all|slice:":10" %}
+                  {% if item.images %}
+                    {% with item.images.all|first as image %}
+                      <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="offer-image"></img></a>
+                    {% endwith %}
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                {% for item in offer.items.all %}
+                  {% if item.images %}
+                    {% with item.images.all|first as image %}
+                      <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="offer-image"></img></a>
+                    {% endwith %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endif %}
+            <div class="center-block" style="text-align: center; margin-top: 10px;">
+              <h5>Offer Was Accepted!</h5>
             </div>
           </div>
         {% endif %}

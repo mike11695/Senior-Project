@@ -1,0 +1,60 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>My Bids</h1>
+      </div>
+    </div>
+  </div>
+  {% if bids %}
+    <div class="center-block col-lg-5">
+      {% for bid in bids %}
+        {% if bid.auctionListing.listingEnded != True  %}
+          <div class="my-bid-container">
+            <h4><a href="{{ bid.auctionListing.get_absolute_url }}">Bid For: {{ bid.auctionListing }}</a></h4>
+            {% if bid.winningBid %}
+              <h5>This bid is the current bid</h5>
+              <div><b>Bid Amount: <span class="amount-offered">${{ bid.amount }}</span></b></div>
+              {% else %}
+              <h5>Someone has outbid you!</h5>
+              <span>The current bid is </span>
+              {% for listingBid in bid.auctionListing.bids.all %}
+                {% if listingBid.winningBid %}
+                  <span class="amount-offered">${{ listingBid.amount }}</span>
+                  <div><b>Your Previous Bid: <span style="color: red;">${{ bid.amount }}</span></b></div>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="my-bid-container-winner">
+            <h4><a href="{{ bid.auctionListing.get_absolute_url }}">Bid For: {{ bid.auctionListing }}</a></h4>
+            <h5>Winning Bid!</h5>
+            <div><b>Bid Amount: <span class="amount-offered">${{ bid.amount }}</span></b></div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p style="text-align: center;">You don't have any bids placed currently.</p>
+  {% endif %}
+{% endblock %}

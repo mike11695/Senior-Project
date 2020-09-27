@@ -445,7 +445,7 @@ a:hover {
   font-weight: bold;
 }
 
-.my-offer-container {
+.my-offer-container, .my-bid-container {
   background: white;
   border: 3px solid grey;
   border-radius: 25px;
@@ -454,6 +454,15 @@ a:hover {
   text-align: center;
 }
 
-.my-offer-container:nth-child(even) {
+.my-offer-container:nth-child(even), .my-bid-container:nth-child(even) {
   background: #CCC;
+}
+
+.my-offer-container-accepted, .my-bid-container-winner {
+  background: #94d19a;
+  border: 3px solid #5c8260;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+  text-align: center;
 }
