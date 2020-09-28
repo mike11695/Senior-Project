@@ -218,7 +218,7 @@ class AuctionListingForm(ModelForm):
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
 
 #Form for a user to create an offer for an offer listing
-class CreateOfferForm(ModelForm):
+class OfferForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         clean_amount = cleaned_data.get('amount')
@@ -264,14 +264,66 @@ class CreateOfferForm(ModelForm):
        self.user = kwargs.pop('user')
        listing = kwargs.pop('instance')
        self.listing = OfferListing.objects.get(id=listing.id)
-       super(CreateOfferForm, self).__init__(*args, **kwargs)
+       super(OfferForm, self).__init__(*args, **kwargs)
        self.fields['items'].queryset = Item.objects.filter(owner=self.user)
        if self.listing.openToMoneyOffers:
            self.fields['amount'].initial = 0.00
        else:
            self.fields['amount'].initial = 0.00
            self.fields['amount'].widget.attrs['readonly'] = True
-       #self.fields['offerListing'].initial = self.listing
+
+#Form for a user to create an offer for an offer listing
+class EditOfferForm(ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        clean_amount = cleaned_data.get('amount')
+        clean_listing = cleaned_data.get('offerListing')
+
+        if timezone.localtime(timezone.now()) > clean_listing.endTime:
+            raise ValidationError("Listing has ended, no offers can be made.")
+        else:
+            if clean_amount:
+                if clean_listing.openToMoneyOffers:
+                    if (clean_amount < clean_listing.minRange) and clean_amount != 0.00:
+                        #Check to see that the amount offered is not less than the listing's minimum range
+                        raise ValidationError("Amount offered is less than the minimum range of ${0}".format(clean_listing.minRange))
+                    elif clean_amount > clean_listing.maxRange:
+                        #Check to see that the amount offered is not more than the listing's maximum range
+                        raise ValidationError("Amount offered is more than the maximum range of ${0}".format(clean_listing.maxRange))
+                else:
+                    raise ValidationError("Listing is not accepting money offers.")
+            else:
+                clean_items = cleaned_data.get('items')
+                if clean_items:
+                    pass
+                else:
+                    raise ValidationError("An item must be offered.")
+
+        return
+
+    offerListing = forms.ModelChoiceField(queryset=OfferListing.objects.all(), required=False,
+        disabled=True, label="Offer Listing")
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
+        help_text="Items are not required for an offer if user is open to money offers.",
+        required=False)
+    amount = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
+        help_text="Amount of cash you'd like to offer on listing (Leave blank or enter 0.00 if you do not want to offer cash).")
+
+    class Meta:
+        model = Offer
+        exclude = ['owner', 'offerAccepted']
+
+    #Initializes the items dropdown with items that only relate to the current user
+    #Also gets the listing person is offering on
+    def __init__(self, *args, **kwargs):
+       self.user = kwargs.pop('user')
+       listing = kwargs.pop('listing')
+       super(EditOfferForm, self).__init__(*args, **kwargs)
+       self.listing = OfferListing.objects.get(id=listing.id)
+       self.fields['items'].queryset = Item.objects.filter(owner=self.user)
+       if self.listing.openToMoneyOffers == False:
+           self.fields['amount'].initial = 0.00
+           self.fields['amount'].widget.attrs['readonly'] = True
 
 #Form for a user to create a bid for an auction listing
 class CreateBidForm(ModelForm):

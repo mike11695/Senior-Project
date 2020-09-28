@@ -1,6 +1,6 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
-    CreateAuctionListingForm, CreateOfferForm, CreateBidForm)
+    AuctionListingForm, OfferForm, CreateBidForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid)
@@ -529,7 +529,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if name is too long
@@ -545,7 +545,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if name is missing
@@ -560,7 +560,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if description is missing
@@ -575,7 +575,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'items': [str(item1.id)], 'endTimeChoices': end_time_choice,
             'startingBid': starting_bid, 'minimumIncrement': minimum_increment,
             'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if item is missing
@@ -589,7 +589,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         autobuy = 5.00
         data = {'name': name, 'description': description, 'endTimeChoices': end_time_choice,
             'startingBid': starting_bid, 'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if item is not owned by current user
@@ -605,7 +605,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item2.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if starting bid is missing
@@ -620,7 +620,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'minimumIncrement': minimum_increment,
             'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if starting bid is less than 0.01
@@ -636,7 +636,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if minimum increment is missing
@@ -651,7 +651,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if minimum increment is negative
@@ -667,7 +667,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if minimum increment is greater than starting bid
@@ -683,7 +683,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is able to create an auction listing if autobuy is missing
@@ -698,7 +698,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if autobuy is equal to or less than starting bid
@@ -714,7 +714,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an auction listing if autobuy is negative
@@ -730,37 +730,37 @@ class CreateAuctionListingFormTest(MyTestCase):
         data = {'name': name, 'description': description, 'items': [str(item1.id)],
             'endTimeChoices': end_time_choice, 'startingBid': starting_bid,
             'minimumIncrement': minimum_increment, 'autobuy': autobuy}
-        form = CreateAuctionListingForm(data=data, user=user)
+        form = AuctionListingForm(data=data, user=user)
         self.assertFalse(form.is_valid())
 
     #Test to ensure that name field help text is correct
     def test_auction_listing_name_help_text(self):
         user = self.global_user1
-        form = CreateAuctionListingForm(user=user)
+        form = AuctionListingForm(user=user)
         self.assertEqual(form.fields['name'].help_text, "Name for listing is required.")
 
     #Test to ensure that items field help text is correct
     def test_auction_listing_image_help_text(self):
         user = self.global_user1
-        form = CreateAuctionListingForm(user=user)
+        form = AuctionListingForm(user=user)
         self.assertEqual(form.fields['items'].help_text, "An item is required.")
 
     #Test to ensure that startingBid field help text is correct
     def test_auction_listing_start_bid_help_text(self):
         user = self.global_user1
-        form = CreateAuctionListingForm(user=user)
+        form = AuctionListingForm(user=user)
         self.assertEqual(form.fields['startingBid'].help_text, "Money amount bidding should start at for auction.")
 
     #Test to ensure that minimumIncrement field help text is correct
     def test_auction_listing_start_bid_help_text(self):
         user = self.global_user1
-        form = CreateAuctionListingForm(user=user)
+        form = AuctionListingForm(user=user)
         self.assertEqual(form.fields['minimumIncrement'].help_text, "Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).")
 
     #Test to ensure that autobuy field help text is correct
     def test_auction_listing_autobuy_help_text(self):
         user = self.global_user1
-        form = CreateAuctionListingForm(user=user)
+        form = AuctionListingForm(user=user)
         self.assertEqual(form.fields['autobuy'].help_text, "A bid greater than the starting bid that will automatically win the auction if placed. (Leave blank if not interested in having an autobuy price)")
 
 class CreateOfferFormTest(MyTestCase):
@@ -799,7 +799,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing1
         amount = 5.00
         data = {'items': [str(self.global_item2.id)], 'amount': amount}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is able to create an offer for a listing open to money without an item
@@ -808,7 +808,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing1
         amount = 5.00
         data = {'amount': amount}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is able to create an offer for a listing open to money without offering money
@@ -817,7 +817,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing1
         amount = 5.00
         data = {'items': [str(self.global_item2.id)]}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is not able to create an offer for a listing open to money offering below minimum
@@ -826,7 +826,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing1
         amount = 4.00
         data = {'items': [str(self.global_item2.id)], 'amount': amount}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an offer for a listing open to money offering above maximum
@@ -835,7 +835,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing1
         amount = 11.00
         data = {'items': [str(self.global_item2.id)], 'amount': amount}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an offer for a listing open to money without an item or cash
@@ -843,7 +843,7 @@ class CreateOfferFormTest(MyTestCase):
         user = self.global_user2
         listing = self.offer_listing1
         data = {}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an offer for a listing not open to money offering cash
@@ -852,7 +852,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing2
         amount = 5.00
         data = {'items': [str(self.global_item2.id)], 'amount': amount}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an offer for a listing open to money without an item
@@ -861,7 +861,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing2
         amount = 5.00
         data = {}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to create an offer for a listing using an item they dont own
@@ -870,7 +870,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing1
         amount = 5.00
         data = {'items': [str(self.global_item1.id)], 'amount': amount}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
 
     #Test to ensure that a user cannot place an offer on a listing that has ended
@@ -879,7 +879,7 @@ class CreateOfferFormTest(MyTestCase):
         listing = self.offer_listing3
         amount = 5.00
         data = {'items': [str(self.global_item2.id)], 'amount': amount}
-        form = CreateOfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
+        form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
 
 class CreateBidFormTest(MyTestCase):

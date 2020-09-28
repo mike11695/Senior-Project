@@ -48,7 +48,7 @@
   {% elif offer.owner == request.user and offer.offerListing.listingCompleted != True %}
     {% if offer.offerListing.listingEnded != True %}
       <div class="center-block" style="text-align: center;">
-        <a href="">
+        <a href="{% url 'edit-offer' pk=offer.pk %}">
           <div class="btn btn-blue listing-btn" style="margin-top: 15px; margin-bottom: 20px;
             display: inline-block;">
             Edit Offer

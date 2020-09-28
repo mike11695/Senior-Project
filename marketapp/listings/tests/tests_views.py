@@ -1653,80 +1653,6 @@ class OfferListingDeleteViewTest(MyTestCase):
         for offer_id in self.offerIDs:
             self.assertFalse(Offer.objects.filter(id=offer_id).exists())
 
-class OfferDeleteViewTest(MyTestCase):
-    def setUp(self):
-        super(OfferDeleteViewTest, self).setUp()
-        #User that is not associated with offer
-        user = User.objects.create_user(username="mike", password="example",
-            email="example@text.com", paypalEmail="example@text.com",
-            invitesOpen=True, inquiriesOpen=True)
-
-        #Create offers for testing deletion with
-        self.regular_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
-            owner=self.global_user2, amount=7.00)
-
-        self.accepted_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
-            owner=self.global_user2, amount=7.00, offerAccepted=True)
-
-    #Test to ensure that a user must be logged in to delete an offer
-    def test_redirect_if_not_logged_in(self):
-        offer = self.regular_offer
-        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
-        self.assertRedirects(response, '/listings/')
-
-    #Test to ensure user is not redirected if logged in if they own the listing
-    def test_no_redirect_if_logged_in_owner_of_listing(self):
-        login = self.client.login(username='mike2', password='example')
-        self.assertTrue(login)
-        offer = self.regular_offer
-        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
-        self.assertEqual(response.status_code, 200)
-
-    #Test to ensure user is not redirected if logged in if they own the offer
-    def test_no_redirect_if_logged_in_owner_of_offer(self):
-        login = self.client.login(username='mike3', password='example')
-        self.assertTrue(login)
-        offer = self.regular_offer
-        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
-        self.assertEqual(response.status_code, 200)
-
-    #Test to ensure user is redirected if logged but they do not own the listing or offer
-    def test_no_redirect_if_logged_in_not_owner_of_listing_or_offer(self):
-        login = self.client.login(username='mike', password='example')
-        self.assertTrue(login)
-        offer = self.regular_offer
-        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
-        self.assertRedirects(response, '/listings/')
-
-    #Test to ensure right template is used/exists
-    def test_correct_template_used(self):
-        login = self.client.login(username='mike2', password='example')
-        self.assertTrue(login)
-        offer = self.regular_offer
-        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'listings/offer_delete.html')
-
-    #Test to ensure object is deleted
-    def test_succesful_deletion(self):
-        login = self.client.login(username='mike2', password='example')
-        self.assertTrue(login)
-        offer = self.regular_offer
-        offer_id = self.regular_offer.id
-        post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
-        self.assertRedirects(post_response, reverse('offer-listing-detail', args=[str(self.global_offer_listing1.id)]))
-        self.assertFalse(Offer.objects.filter(id=offer_id).exists())
-
-    #Test to ensure an accepted offer cannot be deleted
-    def test_unsuccesful_deletion_accepted_offer(self):
-        login = self.client.login(username='mike2', password='example')
-        self.assertTrue(login)
-        offer = self.accepted_offer
-        offer_id = self.accepted_offer.id
-        post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
-        self.assertRedirects(post_response, reverse('offer-detail', args=[str(offer.id)]))
-        self.assertTrue(Offer.objects.filter(id=offer_id).exists())
-
 class AuctionListingsViewTest(MyTestCase):
     def setUp(self):
         super(AuctionListingsViewTest, self).setUp()
@@ -2643,6 +2569,155 @@ class AcceptOfferViewTest(MyTestCase):
         self.assertRedirects(response, '/listings/offer-listings/{0}'.format(offer.offerListing.id))
         all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing2)
         self.assertEqual(len(all_listing_offers), 2)
+
+class OfferDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(OfferDeleteViewTest, self).setUp()
+        #User that is not associated with offer
+        user = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Create offers for testing deletion with
+        self.regular_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
+            owner=self.global_user2, amount=7.00)
+
+        self.accepted_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
+            owner=self.global_user2, amount=7.00, offerAccepted=True)
+
+    #Test to ensure that a user must be logged in to delete an offer
+    def test_redirect_if_not_logged_in(self):
+        offer = self.regular_offer
+        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they own the listing
+    def test_no_redirect_if_logged_in_owner_of_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.regular_offer
+        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in if they own the offer
+    def test_no_redirect_if_logged_in_owner_of_offer(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.regular_offer
+        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they do not own the listing or offer
+    def test_no_redirect_if_logged_in_not_owner_of_listing_or_offer(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        offer = self.regular_offer
+        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.regular_offer
+        response = self.client.get(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/offer_delete.html')
+
+    #Test to ensure object is deleted
+    def test_succesful_deletion(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.regular_offer
+        offer_id = self.regular_offer.id
+        post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertRedirects(post_response, reverse('offer-listing-detail', args=[str(self.global_offer_listing1.id)]))
+        self.assertFalse(Offer.objects.filter(id=offer_id).exists())
+
+    #Test to ensure an accepted offer cannot be deleted
+    def test_unsuccesful_deletion_accepted_offer(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.accepted_offer
+        offer_id = self.accepted_offer.id
+        post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertRedirects(post_response, reverse('offer-detail', args=[str(offer.id)]))
+        self.assertTrue(Offer.objects.filter(id=offer_id).exists())
+
+class OfferEditViewTest(MyTestCase):
+    def setUp(self):
+        super(OfferEditViewTest, self).setUp()
+
+        #Create offers for testing editing with
+        self.offer = Offer.objects.create(offerListing=self.global_offer_listing1,
+            owner=self.global_user2, amount=7.00)
+        self.offer.items.add(self.global_item2)
+        self.offer.save
+
+        self.expired_offer = Offer.objects.create(offerListing=self.global_offer_listing2,
+            owner=self.global_user2, amount=7.00)
+        self.completed_offer = Offer.objects.create(offerListing=self.global_offer_listing3,
+            owner=self.global_user2, amount=7.00)
+
+    #Test to ensure that a user must be logged in to edit an offer
+    def test_redirect_if_not_logged_in(self):
+        offer = self.offer
+        response = self.client.get(reverse('edit-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/offer/{0}/edit'.format(offer.id))
+
+    #Test to ensure user is not redirected if logged in if they own the offer
+    def test_no_redirect_if_logged_in_owner_of_offer(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('edit-offer', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they do not own the offer
+    def test_redirect_if_logged_in_not_owner_of_offer(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('edit-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if logged in if they own the offer but listing ended
+    def test_redirect_if_logged_in_owner_of_offer_listing_ended(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.expired_offer
+        response = self.client.get(reverse('edit-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, reverse('offer-detail', args=[str(offer.id)]))
+
+    #Test to ensure user is redirected if logged in if they own the offer but listing is completed
+    def test_redirect_if_logged_in_owner_of_offer_listing_completed(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.completed_offer
+        response = self.client.get(reverse('edit-offer', args=[str(offer.id)]))
+        self.assertRedirects(response, reverse('offer-detail', args=[str(offer.id)]))
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('edit-offer', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'listings/offer_edit.html')
+
+    #Test to ensure object is edited
+    def test_succesful_edit(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        response = self.client.get(reverse('edit-offer', args=[str(offer.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-offer', args=[str(offer.id)]),
+            data={'items': [str(self.global_item2.id)], 'amount': 10.00})
+        self.assertEqual(post_response.status_code, 302)
+        edited_offer = Offer.objects.get(id=offer.id)
+        self.assertEqual(edited_offer.amount, 10.00)
 
 class AuctionListingDeleteViewTest(MyTestCase):
     def setUp(self):

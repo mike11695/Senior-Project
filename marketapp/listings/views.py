@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
-    AuctionListingForm, UpdateOfferListingForm, CreateOfferForm, CreateBidForm)
+    AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -673,6 +673,78 @@ def create_auction_listing(request):
         form = AuctionListingForm(user=request.user)
     return render(request, 'listings/create_auction_listing.html', {'form': form})
 
+#Form view for relisting an auction listing
+@login_required(login_url='/accounts/login/')
+def relist_auction_listing(request, pk):
+    #Get the listing to be relisted
+    current_listing = get_object_or_404(AuctionListing, pk=pk)
+
+    if current_listing.owner == request.user:
+        if current_listing.listingEnded and current_listing.bids.count() == 0:
+            if request.method == 'POST':
+                form = AuctionListingForm(data=request.POST, user=request.user, instance=current_listing)
+                if form.is_valid():
+                    current_listing = form.save(commit=False)
+
+                    #Clear the current items from the listing
+                    current_listing.items.clear()
+
+                    #Add the newly added items to the listing
+                    clean_items = form.cleaned_data.get('items')
+                    for item in clean_items:
+                        current_listing.items.add(item)
+
+                    #Get the end time choice from form and set end time accordingly
+                    clean_choice = form.cleaned_data.get('endTimeChoices')
+                    if clean_choice == '1h':
+                        #Set end time to 1 hour from current time if choice was 1h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=1)
+                    elif clean_choice == '2h':
+                        #Set end time to 2 hours from current time if choice was 2h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=2)
+                    elif clean_choice == '4h':
+                        #Set end time to 4 hours from current time if choice was 4h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=4)
+                    elif clean_choice == '8h':
+                        #Set end time to 8 hours from current time if choice was 8h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=8)
+                    elif clean_choice == '12h':
+                        #Set end time to 12 hours from current time if choice was 12h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=12)
+                    elif clean_choice == '1d':
+                        #Set end time to 1 day from current time if choice was 1d
+                        date = timezone.localtime(timezone.now()) + timedelta(days=1)
+                    elif clean_choice == '3d':
+                        #Set end time to 3 days from current time if choice was 3ds
+                        date = timezone.localtime(timezone.now()) + timedelta(days=3)
+                    else:
+                        #Set end time to 7 days from current time
+                        date = timezone.localtime(timezone.now()) + timedelta(days=7)
+
+                    #Set the end date for the listing
+                    current_listing.endTime = date
+
+                    #Get autobuy value from the form
+                    clean_autobuy = form.cleaned_data.get('autobuy')
+
+                    #Check to see if user filled in autobuy field
+                    if clean_autobuy:
+                        #If filled in, keep the original value
+                        current_listing.autobuy = clean_autobuy
+                    else:
+                        #If not filled in, set it to 0.00
+                        current_listing.autobuy = 0.00
+
+                    current_listing.save()
+                    return redirect('auction-listing-detail', pk=current_listing.pk)
+            else:
+                form = AuctionListingForm(user=request.user, instance=current_listing)
+            return render(request, 'listings/relist_auction_listing.html', {'form': form})
+        else:
+            return redirect('auction-listings')
+    else:
+        return redirect('index')
+
 #Detailed view for listing owner and offerer to see a offer
 class OfferDetailView(LoginRequiredMixin, generic.DetailView):
     model = Offer
@@ -704,7 +776,7 @@ def create_offer(request, pk):
         #Check to ensure the listing owner cant create an offer for their own listing
         if request.user != current_listing.owner:
             if request.method == 'POST':
-                form = CreateOfferForm(data=request.POST, user=request.user, instance=current_listing, initial={'offerListing': current_listing})
+                form = OfferForm(data=request.POST, user=request.user, instance=current_listing, initial={'offerListing': current_listing})
                 if form.is_valid():
                     created_offer = form.save()
 
@@ -717,8 +789,42 @@ def create_offer(request, pk):
                     created_offer.save()
                     return redirect('offer-detail', pk=created_offer.pk)
             else:
-                form = CreateOfferForm(user=request.user, instance=current_listing, initial={'offerListing': current_listing})
+                form = OfferForm(user=request.user, instance=current_listing, initial={'offerListing': current_listing})
             return render(request, 'listings/create_offer.html', {'form': form})
+        else:
+            return redirect('index')
+
+#Form view for editing an offer a user owns
+@login_required(login_url='/accounts/login/')
+def edit_offer(request, pk):
+    #Get the offer object to be edited
+    current_offer = get_object_or_404(Offer, pk=pk)
+
+    #Check to ensure listing is still active before editing
+    if current_offer.offerListing.listingEnded or current_offer.offerListing.listingCompleted:
+        return redirect('offer-detail', pk=current_offer.pk)
+    else:
+        #Check to ensure that the owner of the offer is editing it
+        if request.user == current_offer.owner:
+            if request.method == 'POST':
+                form = EditOfferForm(data=request.POST, user=request.user, instance=current_offer,
+                    listing=current_offer.offerListing)
+                if form.is_valid():
+                    edited_offer = form.save(commit=False)
+
+                    #Clear the offer's current items
+                    edited_offer.items.clear()
+
+                    #Add the items submitted to the offer
+                    clean_items = form.cleaned_data.get('items')
+                    for item in clean_items:
+                        edited_offer.items.add(item)
+
+                    edited_offer.save()
+                    return redirect('offer-detail', pk=edited_offer.pk)
+            else:
+                form = EditOfferForm(user=request.user, instance=current_offer, listing=current_offer.offerListing)
+            return render(request, 'listings/offer_edit.html', {'form': form})
         else:
             return redirect('index')
 
@@ -866,78 +972,6 @@ def create_bid(request, pk):
                 return render(request, 'listings/create_bid.html', {'form': form})
         else:
             return redirect('index')
-
-#Form view for relisting an auction listing
-@login_required(login_url='/accounts/login/')
-def relist_auction_listing(request, pk):
-    #Get the listing to be relisted
-    current_listing = get_object_or_404(AuctionListing, pk=pk)
-
-    if current_listing.owner == request.user:
-        if current_listing.listingEnded and current_listing.bids.count() == 0:
-            if request.method == 'POST':
-                form = AuctionListingForm(data=request.POST, user=request.user, instance=current_listing)
-                if form.is_valid():
-                    current_listing = form.save(commit=False)
-
-                    #Clear the current items from the listing
-                    current_listing.items.clear()
-
-                    #Add the newly added items to the listing
-                    clean_items = form.cleaned_data.get('items')
-                    for item in clean_items:
-                        current_listing.items.add(item)
-
-                    #Get the end time choice from form and set end time accordingly
-                    clean_choice = form.cleaned_data.get('endTimeChoices')
-                    if clean_choice == '1h':
-                        #Set end time to 1 hour from current time if choice was 1h
-                        date = timezone.localtime(timezone.now()) + timedelta(hours=1)
-                    elif clean_choice == '2h':
-                        #Set end time to 2 hours from current time if choice was 2h
-                        date = timezone.localtime(timezone.now()) + timedelta(hours=2)
-                    elif clean_choice == '4h':
-                        #Set end time to 4 hours from current time if choice was 4h
-                        date = timezone.localtime(timezone.now()) + timedelta(hours=4)
-                    elif clean_choice == '8h':
-                        #Set end time to 8 hours from current time if choice was 8h
-                        date = timezone.localtime(timezone.now()) + timedelta(hours=8)
-                    elif clean_choice == '12h':
-                        #Set end time to 12 hours from current time if choice was 12h
-                        date = timezone.localtime(timezone.now()) + timedelta(hours=12)
-                    elif clean_choice == '1d':
-                        #Set end time to 1 day from current time if choice was 1d
-                        date = timezone.localtime(timezone.now()) + timedelta(days=1)
-                    elif clean_choice == '3d':
-                        #Set end time to 3 days from current time if choice was 3ds
-                        date = timezone.localtime(timezone.now()) + timedelta(days=3)
-                    else:
-                        #Set end time to 7 days from current time
-                        date = timezone.localtime(timezone.now()) + timedelta(days=7)
-
-                    #Set the end date for the listing
-                    current_listing.endTime = date
-
-                    #Get autobuy value from the form
-                    clean_autobuy = form.cleaned_data.get('autobuy')
-
-                    #Check to see if user filled in autobuy field
-                    if clean_autobuy:
-                        #If filled in, keep the original value
-                        current_listing.autobuy = clean_autobuy
-                    else:
-                        #If not filled in, set it to 0.00
-                        current_listing.autobuy = 0.00
-
-                    current_listing.save()
-                    return redirect('auction-listing-detail', pk=current_listing.pk)
-            else:
-                form = AuctionListingForm(user=request.user, instance=current_listing)
-            return render(request, 'listings/relist_auction_listing.html', {'form': form})
-        else:
-            return redirect('auction-listings')
-    else:
-        return redirect('index')
 
 #View for a user to delete an auction listing that they own
 class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):

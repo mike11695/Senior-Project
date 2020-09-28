@@ -29,6 +29,7 @@ urlpatterns = [
     path('offer-listings/<int:pk>/delete', views.OfferListingDeleteView.as_view(), name='delete-offer-listing'),
     path('offer-listings/offer/<int:pk>', views.OfferDetailView.as_view(), name='offer-detail'),
     path('offer-listings/offer/<int:pk>/accept', views.accept_offer, name='accept-offer'),
+    path('offer-listings/offer/<int:pk>/edit', views.edit_offer, name='edit-offer'),
     path('offer-listings/offer/<int:pk>/delete', views.OfferDeleteView.as_view(), name='delete-offer'),
     path('auction-listings/', views.AuctionListingListView.as_view(), name='auction-listings'),
     path('auction-listings/all', views.AllAuctionListingsListView.as_view(), name='all-auction-listings'),
