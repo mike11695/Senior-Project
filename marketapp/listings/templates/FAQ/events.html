@@ -1,0 +1,30 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to Create an Event</h1>
+    <p>In order to create an event that you can invite other users to, hover over "Events"
+      in the top right and click on it.  On this page, you will see all the events that you
+      have created and events that you have accepted an invitation to.  In the header on this
+      page, underneath "My Events", there will be a button that says "Create Event".  Clicking
+      on the button will take you to the form to create an event.</p>
+    <p>When creating an event, your event must have a title, context, date for when the event
+      will be held and the location where the event will be held at.  When submitting the date
+      for the event, it should be submitted in 'YY-MM-DD' format or 'YY-MM-DD HH:MM' format.  Once
+      you have filled in all the fields for your event, click on "Create" at the bottom of the
+      form to finish creating your event.</p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Events</h1>
+    <h3 class="faq-question">How many events can I make/be a part of?</h3>
+    <p>There are currently no limits to the number of events you can host or be a part of.</p>
+    <h3 class="faq-question">If I need to change details for my event after creating it, can I?</h3>
+    <p>Yes, just go to your list of events and for every event that you are the host of, there will
+      be a button in each container that says "Edit".  Click on the button to go to the form to edit
+      your event's fields.</p>
+    <h3 class="faq-question">How many participants can an event have?</h3>
+    <p>You can invite as many participants as you would like to an event, as there is currently no
+      limit.</p>
+  </div>
+{% endblock %}

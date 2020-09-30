@@ -7,7 +7,8 @@
         <h1>{{ event.title }}</h1>
         <h3>
           {{ event.location }}<br>
-          @ {{ event.date }}
+          @ {{ event.date }}<br><br>
+          Hosted by <a href="">{{ event.host.first_name }} {{ event.host.last_name }}</a>
         </h3>
       </div>
       <h5 class="event-context">

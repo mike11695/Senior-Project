@@ -519,3 +519,30 @@ a:hover {
   margin-top: 50px;
   padding-top: 25px;
 }
+
+.event-invite-btn {
+  right: 160px;
+  position: absolute;
+  border-radius: 10px 10px 10px 10px;
+  width: 75px;
+  height: 30px;
+  padding: 1px 0px 0px 0px;
+}
+
+.event-edit-btn {
+  right: 80px;
+  position: absolute;
+  border-radius: 10px 10px 10px 10px;
+  width: 75px;
+  height: 30px;
+  padding: 1px 0px 0px 0px;
+}
+
+.event-delete-btn {
+  right: 0px;
+  position: absolute;
+  border-radius: 10px 15px 10px 10px;
+  width: 75px;
+  height: 30px;
+  padding: 1px 0px 0px 0px;
+}

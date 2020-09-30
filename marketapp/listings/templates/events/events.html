@@ -19,8 +19,9 @@
             <div class="col-lg-12">
               <a href="{{ event.get_absolute_url }}"><h2 class="event-title">{{ event.title }}</h2></a>
               <div class="event-buttons">
-                <a href=""><span class="btn btn-blue edit-btn">RELIST</span></a>
-                <a href=""><span class="btn btn-red delete-btn">DELETE</span></a>
+                <a href=""><span class="btn btn-green event-invite-btn">INVITE</span></a>
+                <a href=""><span class="btn btn-blue event-edit-btn">EDIT</span></a>
+                <a href=""><span class="btn btn-red event-delete-btn">DELETE</span></a>
               </div>
             </div>
             <div>{{ event.context }}</div>
