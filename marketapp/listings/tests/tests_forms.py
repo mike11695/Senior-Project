@@ -1,9 +1,9 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
-    AuctionListingForm, OfferForm, CreateBidForm)
+    AuctionListingForm, OfferForm, CreateBidForm, EventForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid)
+    AuctionListing, Offer, Bid, Event)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1034,3 +1034,114 @@ class CreateBidFormTest(MyTestCase):
         form = CreateBidForm(data=data, instance=listing, initial={'auctionListing': listing,
             'bidder': user})
         self.assertTrue(form.is_valid())
+
+class EventFormTest(MyTestCase):
+    #Test to ensure a user is able to create an event providing all fields
+    def test_valid_event_creation(self):
+        title = "My Test Event"
+        context = "Come to my event please, I'm lonely."
+        date = "2020-11-06 15:00"
+        location = "1234 Sesame Street"
+        data = {'title': title, 'context': context, 'date': date, 'location': location}
+        form = EventForm(data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create an event if title is too long
+    def test_invalid_event_creation_title_too_long(self):
+        title = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        context = "Come to my event please, I'm lonely."
+        date = "2020-11-06 15:00"
+        location = "1234 Sesame Street"
+        data = {'title': title, 'context': context, 'date': date, 'location': location}
+        form = EventForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an event if context is too long
+    def test_invalid_event_creation_context_too_long(self):
+        title = "My Test Event"
+        context = ("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        date = "2020-11-06 15:00"
+        location = "1234 Sesame Street"
+        data = {'title': title, 'context': context, 'date': date, 'location': location}
+        form = EventForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an event if date is invalid
+    def test_invalid_event_creation_invalid_date(self):
+        title = "My Test Event"
+        context = "Come to my event please, I'm lonely."
+        date = "220-11-06 15:00"
+        location = "1234 Sesame Street"
+        data = {'title': title, 'context': context, 'date': date, 'location': location}
+        form = EventForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an event if location is too long
+    def test_invalid_event_creation_invalid_date(self):
+        title = "My Test Event"
+        context = "Come to my event please, I'm lonely."
+        date = "220-11-06 15:00"
+        location = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        data = {'title': title, 'context': context, 'date': date, 'location': location}
+        form = EventForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an event if title is missing
+    def test_invalid_event_creation_title_missing(self):
+        title = "My Test Event"
+        context = "Come to my event please, I'm lonely."
+        date = "2020-11-06 15:00"
+        location = "1234 Sesame Street"
+        data = {'context': context, 'date': date, 'location': location}
+        form = EventForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an event without context given
+    def test_valid_event_creation_no_context(self):
+        title = "My Test Event"
+        context = "Come to my event please, I'm lonely."
+        date = "2020-11-06 15:00"
+        location = "1234 Sesame Street"
+        data = {'title': title, 'date': date, 'location': location}
+        form = EventForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an event if date is missing
+    def test_invalid_event_creation_date_missing(self):
+        title = "My Test Event"
+        context = "Come to my event please, I'm lonely."
+        date = "2020-11-06 15:00"
+        location = "1234 Sesame Street"
+        data = {'title': title, 'context': context, 'location': location}
+        form = EventForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an event if location is missing
+    def test_invalid_event_creation_location_missing(self):
+        title = "My Test Event"
+        context = "Come to my event please, I'm lonely."
+        date = "2020-11-06 15:00"
+        location = "1234 Sesame Street"
+        data = {'title': title, 'context': context, 'date': date}
+        form = EventForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that title field help text is correct
+    def test_event_title_help_text(self):
+        form = EventForm()
+        self.assertEqual(form.fields['title'].help_text, "Title For the Event Required.")
+
+    #Test to ensure that date field help text is correct
+    def test_event_date_help_text(self):
+        form = EventForm()
+        self.assertEqual(form.fields['date'].help_text, "Date/Time for Event ('YY-MM-DD' format or 'YY-MM-DD H:M' format).")
+
+    #Test to ensure that location field help text is correct
+    def test_event_location_help_text(self):
+        form = EventForm()
+        self.assertEqual(form.fields['location'].help_text, "Address Where Event is Held.")

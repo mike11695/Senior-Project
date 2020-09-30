@@ -196,7 +196,7 @@ class Item(models.Model):
 #Fields needed: Owner, title, description
 class Wishlist(models.Model):
     #Fields for Wishlist
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.OneToOneField(User, on_delete=models.CASCADE, null=True, related_name="wishlist")
     title = models.TextField(max_length=50)
     description = models.TextField(max_length=250,
         help_text="A brief description of your wishlist and what it contains.")
@@ -214,7 +214,7 @@ class Wishlist(models.Model):
 #Fields needed: Host, participants, title, context, date, location
 class Event(models.Model):
     #Fields for Event
-    host = models.ForeignKey(User, on_delete=models.CASCADE, related_name="host")
+    host = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="host")
     participants = models.ManyToManyField(User, related_name="participants")
     title = models.TextField(max_length=50, verbose_name="Title of Event")
     context = models.TextField(max_length=250,

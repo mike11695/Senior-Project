@@ -1,7 +1,8 @@
 from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
-from listings.models import User, Image, Tag, Item, Listing, OfferListing, AuctionListing, Offer, Bid
+from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
+    AuctionListing, Offer, Bid, Event)
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -443,3 +444,16 @@ class CreateBidForm(ModelForm):
                 self.fields['amount'].initial = current_bid.amount + self.listing.minimumIncrement
         else:
             self.fields['amount'].initial = self.listing.startingBid
+
+#Form for a user to create an event
+class EventForm(ModelForm):
+    #Host will be set in form creation view, participants will be added when they accept an invitation
+    title = forms.CharField(max_length=50, required=True, help_text="Title For the Event Required.")
+    date = forms.DateTimeField(required=True,
+        help_text="Date/Time for Event ('YY-MM-DD' format or 'YY-MM-DD H:M' format).")
+    location = forms.CharField(max_length=100, required=True, help_text="Address Where Event is Held.")
+
+    class Meta:
+        model = Event
+        fields = ['title', 'context', 'date', 'location']
+        exclude = ['host', 'participants']

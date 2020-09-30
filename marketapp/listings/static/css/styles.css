@@ -466,3 +466,38 @@ a:hover {
   padding: 10px;
   text-align: center;
 }
+
+.event-owner-container {
+  background: #7ca4e6;
+  border: 3px solid #536d99;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 15px;
+}
+
+.event-owner-container a {
+  color: white;
+}
+
+.event-participant-container {
+  background: white;
+  border: 3px solid grey;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 15px;
+}
+
+.event-title {
+  display: inline-block;
+  text-decoration: underline;
+  margin-left: -15px;
+}
+
+.event-buttons {
+  float: right;
+  display: inline-block;
+}
+
+.event-details {
+  margin-top: 10px;
+}

@@ -1,6 +1,6 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid)
+    AuctionListing, Offer, Bid, Event)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -2799,3 +2799,117 @@ class AuctionListingDeleteViewTest(MyTestCase):
         self.assertFalse(AuctionListing.objects.filter(id=self.inactive_listing_id).exists())
         for bid_id in self.bid_IDs:
             self.assertFalse(Bid.objects.filter(id=bid_id).exists())
+
+class EventListViewTest(MyTestCase):
+    def setUp(self):
+        super(EventListViewTest, self).setUp()
+
+        #Create a user to invite to an event
+        user1 = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        self.number_of_events_user1 = 3
+        self.number_of_events_user2 = 6
+        self.number_of_events_user3 = 5
+
+        #Create the events for the 1st user
+        for num in range(self.number_of_events_user1):
+            event = Event.objects.create(host=self.global_user1,
+                title="My Awesome Event", context="Please come to my event.",
+                date="2020-11-06 15:00", location="1234 Sesame Street")
+            remainder = num % 2
+            if remainder == 0:
+                event.participants.add(user1)
+                event.save
+
+        #Create the events for the 2nd user
+        for num in range(self.number_of_events_user2):
+            event = Event.objects.create(host=self.global_user2,
+                title="My Radical Event", context="Please come to my event.",
+                date="2020-12-25 15:00", location="6789 Sesame Street")
+            remainder = num % 2
+            if remainder == 0:
+                event.participants.add(user1)
+                event.save
+
+    #Test to ensure that a user must be logged in to view events
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('events'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/events/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('events'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('events'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'events/events.html')
+
+    #Test to ensure that the user only sees events they're hosting for user1
+    def test_list_only_current_users_events_user1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('events'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['events']), self.number_of_events_user1)
+
+    #Test to ensure that the user only sees events they're hosting for user2
+    def test_list_only_current_users_events_user2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('events'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['events']), self.number_of_events_user2)
+
+    #Test to ensure that the user only sees events they've been invited to for user3
+    def test_list_only_current_users_events_user3(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('events'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['events']), self.number_of_events_user3)
+
+class CreateEventViewTest(MyTestCase):
+    def setUp(self):
+        super(CreateEventViewTest, self).setUp()
+
+    #Test to ensure that a user must be logged in to create an event
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('create-event'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/events/create-event')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-event'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-event'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'events/create_event.html')
+
+    #Test to ensure that a event is created succesfully and relates to the current user
+    def test_successful_event_creation_related_to_user(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-event'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-event'),
+            data={'title': "My Cool Event", 'context': "It will be cool, please come",
+                'date': "2020-11-06 15:00", 'location': "SUNY Potsdam"})
+        self.assertEqual(post_response.status_code, 302)
+        created_event = Event.objects.last()
+        self.assertEqual(created_event.host, post_response.wsgi_request.user)

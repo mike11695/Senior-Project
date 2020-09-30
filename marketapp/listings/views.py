@@ -8,9 +8,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 
-from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid
+from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid, Event
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
-    AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm)
+    AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
+    EventForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -991,3 +992,34 @@ class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                 return redirect('auction-listings')
         else:
             return redirect('index')
+
+#View for a user to see a list of events they created
+class EventListView(LoginRequiredMixin, generic.ListView):
+    model = Event
+    context_object_name = 'events'
+    template_name = "events/events.html"
+    paginate_by = 10
+
+    #Filters the list of items to only show those that belong to the current logged in user
+    def get_queryset(self):
+        host_events = Event.objects.filter(host=self.request.user)
+        participant_events = Event.objects.filter(participants__id=self.request.user.id)
+        return host_events.union(participant_events).order_by('id')
+
+#Form view for creating an event
+@login_required(login_url='/accounts/login/')
+def create_event(request):
+    if request.method == 'POST':
+        form = EventForm(data=request.POST)
+        if form.is_valid():
+            created_event = form.save()
+
+            #Set the user that created event as the host for the event
+            created_event.host = request.user
+
+            #Save the object and redirect to events list view
+            created_event.save()
+            return redirect('events')
+    else:
+        form = EventForm()
+    return render(request, 'events/create_event.html', {'form': form})
