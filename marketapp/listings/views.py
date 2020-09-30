@@ -1044,3 +1044,23 @@ def create_event(request):
     else:
         form = EventForm()
     return render(request, 'events/create_event.html', {'form': form})
+
+#Form view for editing an event
+@login_required(login_url='/accounts/login/')
+def edit_event(request, pk):
+    current_event = get_object_or_404(Event, pk=pk)
+
+    #Check to ensure that the host is editing the event, redirect otherwise
+    if current_event.host == request.user:
+        if request.method == 'POST':
+            form = EventForm(data=request.POST, instance=current_event)
+            if form.is_valid():
+                created_event = form.save(commit=False)
+
+                created_event.save()
+                return redirect('event-detail', pk=created_event.pk)
+        else:
+            form = EventForm(instance=current_event)
+        return render(request, 'events/edit_event.html', {'form': form})
+    else:
+        return redirect('index')

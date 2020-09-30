@@ -2989,3 +2989,51 @@ class CreateEventViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         created_event = Event.objects.last()
         self.assertEqual(created_event.host, post_response.wsgi_request.user)
+
+class EditEventViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to edit an event
+    def test_redirect_if_not_logged_in(self):
+        event = self.global_event
+        response = self.client.get(reverse('edit-event', args=[str(event.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/events/{0}/edit'.format(event.id))
+
+    #Test to ensure user is not redirected if logged in and they are host of event
+    def test_no_redirect_if_logged_in_host(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('edit-event', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but they are not the host
+    def test_redirect_if_logged_in_not_host(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('edit-event', args=[str(event.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('edit-event', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'events/edit_event.html')
+
+    #Test to ensure that event is successfully updated
+    def test_successful_event_update(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('edit-event', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-event', args=[str(event.id)]),
+            data={'title': "My Rad Event", 'context': "It will be rad, please come",
+                'date': "2020-11-06 15:00", 'location': "SUNY Potsdam"})
+        self.assertEqual(post_response.status_code, 302)
+        edited_event = Event.objects.get(id=event.id)
+        self.assertEqual(edited_event.title, "My Rad Event")
+        self.assertEqual(edited_event.context, "It will be rad, please come")
+        self.assertEqual(edited_event.location, "SUNY Potsdam")
