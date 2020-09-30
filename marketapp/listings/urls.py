@@ -43,4 +43,5 @@ urlpatterns = [
     #path('wishlist/create-wishlist', views.create_wishlist, name='create-wishlist'),
     path('events/', views.EventListView.as_view(), name='events'),
     path('events/create-event', views.create_event, name='create-event'),
+    path('events/<int:pk>', views.EventDetailView.as_view(), name='event-detail'),
 ]

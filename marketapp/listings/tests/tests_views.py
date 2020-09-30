@@ -87,6 +87,13 @@ class MyTestCase(TestCase):
         self.global_auction_listing2.items.add(self.global_item1)
         self.global_auction_listing2.save
 
+        #Crete a global event
+        self.global_event = Event.objects.create(host=self.global_user1,
+            title="My Awesome Event", context="Please come to my event.",
+            date="2020-11-06 15:00", location="1234 Sesame Street")
+        self.global_event.participants.add(self.global_user2)
+        self.global_event.save
+
 class ImagesViewTest(MyTestCase):
     def setUp(self):
         super(ImagesViewTest, self).setUp()
@@ -2876,6 +2883,54 @@ class EventListViewTest(MyTestCase):
         response = self.client.get(reverse('events'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['events']), self.number_of_events_user3)
+
+class EventDetailViewTest(MyTestCase):
+    def setUp(self):
+        super(EventDetailViewTest, self).setUp()
+
+        #Create a user that cant access the event
+        user1 = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+    #Test to ensure that a user must be logged in to view an event
+    def test_redirect_if_not_logged_in(self):
+        event = self.global_event
+        response = self.client.get(reverse('event-detail', args=[str(event.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they are the host
+    def test_no_redirect_if_logged_in_host(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('event-detail', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in if they are a participant
+    def test_no_redirect_if_logged_in_participant(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('event-detail', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if they are part of the event
+    def test_redirect_if_logged_in_not_host_or_participant(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('event-detail', args=[str(event.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('event-detail', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'events/event_detail.html')
 
 class CreateEventViewTest(MyTestCase):
     def setUp(self):

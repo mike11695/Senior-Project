@@ -1,0 +1,29 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block">
+    <div class="center-block" style="text-align: center;">
+      <div class="event-header col-lg-8 center-block">
+        <h1>{{ event.title }}</h1>
+        <h3>
+          {{ event.location }}<br>
+          @ {{ event.date }}
+        </h3>
+      </div>
+      <h5 class="event-context">
+        {{ event.context }}
+      </h5>
+    </div>
+    <div class="participants-container center-block">
+      <h5>Participants</h5>
+      {% if event.participants.count > 0 %}
+        {% for participant in event.participants.all %}
+          <b>{{ forloop.counter }}: </b>
+          <a href="">{{ participant.first_name }} {{ participant.last_name }}</a><br>
+        {% endfor %}
+      {% else %}
+        This event does not have any participants yet.
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

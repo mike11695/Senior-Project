@@ -1006,6 +1006,21 @@ class EventListView(LoginRequiredMixin, generic.ListView):
         participant_events = Event.objects.filter(participants__id=self.request.user.id)
         return host_events.union(participant_events).order_by('id')
 
+#Detail view of an event only the host and participants can see
+class EventDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Event
+    template_name = "events/event_detail.html"
+
+    #Checks to ensure that only the user that created the event or accepted
+    #invite can see detail view
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.host == self.request.user:
+            return super(EventDetailView, self).dispatch(request, *args, **kwargs)
+        elif self.request.user in obj.participants.all():
+            return super(EventDetailView, self).dispatch(request, *args, **kwargs)
+        return redirect('index')
+
 #Form view for creating an event
 @login_required(login_url='/accounts/login/')
 def create_event(request):
