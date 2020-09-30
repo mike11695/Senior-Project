@@ -1,9 +1,9 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
-    AuctionListingForm, OfferForm, CreateBidForm, EventForm)
+    AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event)
+    AuctionListing, Offer, Bid, Event, Invitation)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1145,3 +1145,77 @@ class EventFormTest(MyTestCase):
     def test_event_location_help_text(self):
         form = EventForm()
         self.assertEqual(form.fields['location'].help_text, "Address Where Event is Held.")
+
+class InvitationFormTest(MyTestCase):
+    def setUp(self):
+        super(InvitationFormTest, self).setUp()
+
+        #Create some users to submit for the invitation form
+        self.user1 = User.objects.create(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        self.user2 = User.objects.create(username="mikel", password="example",
+            email="examplel@text.com", paypalEmail="examplel@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        self.user3 = User.objects.create(username="mikes", password="example",
+            email="examples@text.com", paypalEmail="examples@text.com",
+            invitesOpen=False, inquiriesOpen=True)
+        self.user4 = User.objects.create(username="mikea", password="example",
+            email="examplea@text.com", paypalEmail="examplea@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+
+        #Create an event that users will receive invitstion to
+        self.event = Event.objects.create(host=self.global_user1,
+            title="My Awesome Event", context="Please come to my event.",
+            date="2020-11-06 15:00", location="1234 Sesame Street")
+
+        #Create an invitation for user4
+        Invitation.objects.create(event=self.event, recipient=self.user4)
+
+    #Test to ensure a user is able to submit invitation form providing all fields
+    def test_valid_invitation_form_submission(self):
+        event = self.event
+        data = {'users': [str(self.user1.id), str(self.user2.id)]}
+        form = InvitationForm(data=data, instance=event, initial={'event': event})
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to submit invitation form if users ar enot given
+    def test_invalid_invitation_form_submission_no_users_selected(self):
+        event = self.event
+        data = {}
+        form = InvitationForm(data=data, instance=event, initial={'event': event})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to submit invitation form if user is not accepting invites
+    def test_invalid_invitation_form_submission_user_not_accepting_invites(self):
+        event = self.event
+        data = {'users': [str(self.user3.id)]}
+        form = InvitationForm(data=data, instance=event, initial={'event': event})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to submit invitation form if one user is not accepting invites
+    def test_invalid_invitation_form_submission_one_user_not_accepting_invites(self):
+        event = self.event
+        data = {'users': [str(self.user1.id), str(self.user3.id)]}
+        form = InvitationForm(data=data, instance=event, initial={'event': event})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to submit invitation form if user already received an invite
+    def test_invalid_invitation_form_user_already_has_invitation(self):
+        event = self.event
+        data = {'users': [str(self.user4.id)]}
+        form = InvitationForm(data=data, instance=event, initial={'event': event})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that users field label is correct
+    def test_invitation_form_users_label(self):
+        event = self.event
+        form = InvitationForm(instance=event)
+        self.assertEqual(form.fields['users'].label, "Users to Invite")
+
+    #Test to ensure that users field help text is correct
+    def test_invitation_form_users_help_text(self):
+        event = self.event
+        form = InvitationForm(instance=event)
+        self.assertEqual(form.fields['users'].help_text, "Users You Would Like to Invite to Event.")

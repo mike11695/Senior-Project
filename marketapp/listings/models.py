@@ -231,17 +231,19 @@ class Event(models.Model):
         return f'{self.title}'
 
 #Model for Invitations, so hosts can invite participants to events
-#Fields needed: Sender, receipients, event, topic, context
-"""class Invitation(models.Model):
+#Fields needed: Event, receipient
+class Invitation(models.Model):
     #Fields for Invitation
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, related_name="event")
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="invitation_recipient")
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Invitation.
-        return reverse('ModelName-detail', args=[str(self.id)])
+        return reverse('invite-detail', args=[str(self.id)])
 
     def __str__(self):
         #String for representing the Invitation object.
-        return f'"Invitation to ", {self.event.title}'"""
+        return f'"Invitation to ", {self.event.title}'
 
 #Model for Reports, when users want admins to take notice of something against
 #TOS or is inappropriate

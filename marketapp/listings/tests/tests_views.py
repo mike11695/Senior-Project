@@ -1,6 +1,6 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event)
+    AuctionListing, Offer, Bid, Event, Invitation)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -3090,3 +3090,66 @@ class EventDeleteViewTest(MyTestCase):
         post_response = self.client.post(reverse('delete-event', args=[str(event.id)]))
         self.assertRedirects(post_response, reverse('events'))
         self.assertFalse(Event.objects.filter(id=self.event_id).exists())
+
+class InvitationListViewTest(MyTestCase):
+    def setUp(self):
+        super(InvitationListViewTest, self).setUp()
+
+        #Create a user to host an event
+        user1 = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        self.number_of_events1 = 5
+        self.number_of_events2 = 3
+
+        #Create the events invitations for the 1st user
+        for num in range(self.number_of_events1):
+            event = Event.objects.create(host=user1,
+                title="My Awesome Event", context="Please come to my event.",
+                date="2020-11-06 15:00", location="1234 Sesame Street")
+            Invitation.objects.create(event=event, recipient=self.global_user1)
+            Invitation.objects.create(event=event, recipient=self.global_user2)
+
+        #Create the events for the 2nd user
+        for num in range(self.number_of_events2):
+            event = Event.objects.create(host=user1,
+                title="My Cool Event", context="Please come to my event.",
+                date="2020-11-06 15:00", location="1234 Sesame Street")
+            Invitation.objects.create(event=event, recipient=self.global_user1)
+
+    #Test to ensure that a user must be logged in to view invitations
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('invitations'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/invitations/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('invitations'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('invitations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'events/invitations.html')
+
+    #Test to ensure that the user only sees invitations they've received for user1
+    def test_list_only_invitations_for_user1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('invitations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['invitations']), 8)
+
+    #Test to ensure that the user only sees invitations they've received for user2
+    def test_list_only_invitations_for_user2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('invitations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['invitations']), 5)

@@ -8,7 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 
-from listings.models import Image, Item, Listing, OfferListing, AuctionListing, Offer, Bid, Event
+from listings.models import (Image, Item, Listing, OfferListing, AuctionListing,
+    Offer, Bid, Event, Invitation)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm)
@@ -1078,3 +1079,14 @@ class EventDeleteView(LoginRequiredMixin, generic.DeleteView):
         if obj.host != self.request.user:
             return redirect('index')
         return super(EventDeleteView, self).dispatch(request, *args, **kwargs)
+
+#View for a user to see a list of invitations they have received
+class InvitationListView(LoginRequiredMixin, generic.ListView):
+    model = Invitation
+    context_object_name = 'invitations'
+    template_name = "events/invitations.html"
+
+    #Filters the list of invitations to only show those that belong to the
+    #current logged in user
+    def get_queryset(self):
+        return Invitation.objects.filter(recipient=self.request.user)

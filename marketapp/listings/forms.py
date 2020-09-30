@@ -2,7 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event)
+    AuctionListing, Offer, Bid, Event, Invitation)
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -457,3 +457,34 @@ class EventForm(ModelForm):
         model = Event
         fields = ['title', 'context', 'date', 'location']
         exclude = ['host', 'participants']
+
+#Form for a user to select users to invite to an event
+class InvitationForm(forms.Form):
+    def clean(self):
+        cleaned_data = super().clean()
+        clean_users = cleaned_data.get('users')
+        clean_event = cleaned_data.get('event')
+
+        if clean_users:
+            #Check for each user invited if they already received an invitation,
+            #and see if they are accepting invitations
+            for user in clean_users:
+                if user.invitesOpen == False:
+                    raise ValidationError("User {0} is not accepting invitations to events.".format(user))
+                elif Invitation.objects.filter(event=clean_event, recipient=user).exists():
+                    raise ValidationError("User {0} already has an invitation to this event.".format(user))
+            return
+        else:
+            raise ValidationError("At least one user must be selected to invite.")
+
+    users = forms.ModelMultipleChoiceField(queryset=User.objects.all(), label="Users to Invite",
+        help_text="Users You Would Like to Invite to Event.")
+    event = forms.ModelChoiceField(queryset=Event.objects.all(), required=False,
+        disabled=True)
+
+    #Set the queryset for users to only be ones that have not accepted an invite to event
+    def __init__(self, *args, **kwargs):
+       event = kwargs.pop('instance')
+       super(InvitationForm, self).__init__(*args, **kwargs)
+       existing_participants_ids = [user.id for user in event.participants.all()]
+       self.fields['users'].queryset = User.objects.exclude(id__in=existing_participants_ids)
