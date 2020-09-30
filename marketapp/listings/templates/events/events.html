@@ -21,7 +21,7 @@
               <div class="event-buttons">
                 <a href=""><span class="btn btn-green event-invite-btn">INVITE</span></a>
                 <a href="{% url 'edit-event' pk=event.pk %}"><span class="btn btn-blue event-edit-btn">EDIT</span></a>
-                <a href=""><span class="btn btn-red event-delete-btn">DELETE</span></a>
+                <a href="{% url 'delete-event' pk=event.pk %}"><span class="btn btn-red event-delete-btn">DELETE</span></a>
               </div>
             </div>
             <div>{{ event.context }}</div>

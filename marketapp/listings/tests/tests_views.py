@@ -3037,3 +3037,56 @@ class EditEventViewTest(MyTestCase):
         self.assertEqual(edited_event.title, "My Rad Event")
         self.assertEqual(edited_event.context, "It will be rad, please come")
         self.assertEqual(edited_event.location, "SUNY Potsdam")
+
+class EventDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(EventDeleteViewTest, self).setUp()
+
+        #Create an event object to test for deletion
+        self.event_to_delete = Event.objects.create(host=self.global_user1,
+            title="My Dumb Event", context="Don't come I regret this.",
+            date="2020-11-06 15:00", location="1234 Sesame Street")
+        self.event_id = self.event_to_delete.id
+
+        #Add invitations to this later to ensure they are deleted as well
+
+    #Test to ensure that a user must be logged in to delete an event
+    def test_redirect_if_not_logged_in(self):
+        event = self.event_to_delete
+        response = self.client.get(reverse('delete-event', args=[str(event.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they are hosting the event
+    def test_no_redirect_if_logged_in_host(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.event_to_delete
+        response = self.client.get(reverse('delete-event', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they are not hosting event
+    def test_redirect_if_logged_in_not_host(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.event_to_delete
+        response = self.client.get(reverse('delete-event', args=[str(event.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.event_to_delete
+        response = self.client.get(reverse('delete-event', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'events/event_delete.html')
+
+    #Test to ensure object is deleted if user confirms
+    #Once invitations are implemented, check to ensure invitations are deleted as well
+    def test_succesful_deletion(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.event_to_delete
+        post_response = self.client.post(reverse('delete-event', args=[str(event.id)]))
+        self.assertRedirects(post_response, reverse('events'))
+        self.assertFalse(Event.objects.filter(id=self.event_id).exists())

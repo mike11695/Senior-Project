@@ -1064,3 +1064,17 @@ def edit_event(request, pk):
         return render(request, 'events/edit_event.html', {'form': form})
     else:
         return redirect('index')
+
+#View for a user to delete an event that they are hosting
+class EventDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = Event
+    success_url = reverse_lazy('events')
+    template_name = "events/event_delete.html"
+    context_object_name = 'event'
+
+    #Checks to make sure owner of listing clicked to delete, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.host != self.request.user:
+            return redirect('index')
+        return super(EventDeleteView, self).dispatch(request, *args, **kwargs)
