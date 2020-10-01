@@ -488,6 +488,10 @@ class InvitationForm(forms.Form):
     def __init__(self, *args, **kwargs):
        event = kwargs.pop('instance')
        super(InvitationForm, self).__init__(*args, **kwargs)
-       existing_participants_ids = [user.id for user in event.participants.all()]
-       existing_participants_ids.append(event.host.id)
-       self.fields['users'].queryset = User.objects.exclude(id__in=existing_participants_ids)
+       excluded_ids = [user.id for user in event.participants.all()]
+       existing_invites = Invitation.objects.filter(event=event)
+       existing_recipient_ids = [invite.recipient.id for invite in existing_invites]
+       for id in existing_recipient_ids:
+           excluded_ids.append(id)
+       excluded_ids.append(event.host.id)
+       self.fields['users'].queryset = User.objects.exclude(id__in=excluded_ids)
