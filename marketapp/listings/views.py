@@ -1117,3 +1117,38 @@ def create_invitations(request, pk):
         return render(request, 'events/create_invitations.html', {'form': form})
     else:
         return redirect('index')
+
+#Method for accepting an invitation for an event
+@login_required(login_url='/accounts/login/')
+def accept_invitation(request, pk):
+    current_invitation = get_object_or_404(Invitation, pk=pk)
+
+    #Redirect if current user is not the recipient
+    if request.user != current_invitation.recipient:
+            return redirect('index')
+    else:
+        #Add the user as a participant to the event
+        event = Event.objects.get(id=current_invitation.event.id)
+        event.participants.add(request.user)
+        event.save()
+
+        #Delete the invitation after accepting the invite
+        current_invitation.delete()
+
+        #Redirect to the event afterwards
+        return redirect('event-detail', pk=event.pk)
+
+#Method for declining an invitation for an event
+@login_required(login_url='/accounts/login/')
+def decline_invitation(request, pk):
+    current_invitation = get_object_or_404(Invitation, pk=pk)
+
+    #Redirect if current user is not the recipient
+    if request.user != current_invitation.recipient:
+            return redirect('index')
+    else:
+        #Delete the invitation as user declined invite
+        current_invitation.delete()
+
+        #Redirect to invitation list view after
+        return redirect('invitations')

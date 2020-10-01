@@ -18,8 +18,14 @@
             <b>Location: {{ invitation.event.location }} on {{ invitation.event.date }}</b>
           </div>
           <div class="invitation-buttons">
-            <a href=""><span class="btn btn-blue accept-btn">ACCEPT</span></a>
-            <a href=""><span class="btn btn-red reject-btn">DECLINE</span></a>
+            <a onclick="return confirm('Are you sure you want to accept this invitation?')"
+              href="{% url 'accept-invitation' pk=invitation.pk %}">
+              <span class="btn btn-blue accept-btn">ACCEPT</span>
+            </a>
+            <a onclick="return confirm('Are you sure you want to decline this invitation?  You will not be able to accept it afterwards.')" 
+              href="{% url 'decline-invitation' pk=invitation.pk %}">
+              <span class="btn btn-red reject-btn">DECLINE</span>
+            </a>
           </div>
         </div>
       {% endfor %}

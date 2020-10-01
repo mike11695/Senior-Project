@@ -3223,3 +3223,116 @@ class CreateInvitationsViewTest(MyTestCase):
             data={'users': [str(self.user1.id), str(self.user2.id), str(self.user3.id)]})
         self.assertEqual(post_response.status_code, 302)
         self.assertRedirects(post_response, '/listings/events/{0}'.format(event.id))
+
+class AcceptInvitationViewTest(MyTestCase):
+    def setUp(self):
+        super(AcceptInvitationViewTest, self).setUp()
+
+        #Create user to test with
+        self.user1 = User.objects.create_user(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #create an invitation for testing
+        self.invitation = Invitation.objects.create(event=self.global_event,
+            recipient=self.user1)
+
+    #Test to ensure that a user must be logged in to accept an invitation
+    def test_redirect_if_not_logged_in(self):
+        invitation = self.invitation
+        response = self.client.get(reverse('accept-invitation', args=[str(invitation.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/invitations/{0}/accept'.format(invitation.id))
+
+    #Test to ensure user if logged in is redirected to event after accepting if they are recipient
+    def test_redirect_to_event_if_logged_in_recipient(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        invitation = self.invitation
+        event = invitation.event
+        response = self.client.get(reverse('accept-invitation', args=[str(invitation.id)]))
+        self.assertRedirects(response, '/listings/events/{0}'.format(event.id))
+
+    #Test to ensure user is redirected if they are not the recipient of the invitation
+    def test_redirect_if_logged_in_not_recipient(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        invitation = self.invitation
+        response = self.client.get(reverse('accept-invitation', args=[str(invitation.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that the event's participants are updated with the user that accepted
+    def test_user_is_added_to_event(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        invitation = self.invitation
+        event = invitation.event
+        post_response = self.client.post(reverse('accept-invitation', args=[str(invitation.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        updated_event = Event.objects.get(id=event.id)
+        self.assertTrue(event.participants.filter(pk=self.user1.pk).exists())
+
+    #Test to ensure that the invitation is destroyed after user accepts it
+    def test_invitation_destroyed_after_acceptance(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        invitation = self.invitation
+        invitation_id = invitation.id
+        post_response = self.client.post(reverse('accept-invitation', args=[str(invitation.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(Invitation.objects.filter(id=invitation_id).exists())
+
+class DeclineInvitationViewTest(MyTestCase):
+    def setUp(self):
+        super(DeclineInvitationViewTest, self).setUp()
+
+        #Create user to test with
+        self.user1 = User.objects.create_user(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #create an invitation for testing
+        self.invitation = Invitation.objects.create(event=self.global_event,
+            recipient=self.user1)
+
+    #Test to ensure that a user must be logged in to decline an invitation
+    def test_redirect_if_not_logged_in(self):
+        invitation = self.invitation
+        response = self.client.get(reverse('decline-invitation', args=[str(invitation.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/invitations/{0}/decline'.format(invitation.id))
+
+    #Test to ensure user if logged in is redirected to invitations after rejecting invite
+    def test_redirect_to_invitations_if_logged_in_recipient(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        invitation = self.invitation
+        post_response = self.client.post(reverse('decline-invitation', args=[str(invitation.id)]))
+        self.assertRedirects(post_response, '/listings/invitations/')
+
+    #Test to ensure user is redirected if they are not the recipient of the invitation
+    def test_redirect_if_logged_in_not_recipient(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        invitation = self.invitation
+        response = self.client.get(reverse('decline-invitation', args=[str(invitation.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that the user is not added to event after declining
+    def test_user_is_not_added_to_event(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        invitation = self.invitation
+        event = invitation.event
+        post_response = self.client.post(reverse('decline-invitation', args=[str(invitation.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        refreshed_event = Event.objects.get(id=event.id)
+        self.assertFalse(event.participants.filter(pk=self.user1.pk).exists())
+
+    #Test to ensure that the invitation is destroyed after user declines it
+    def test_invitation_destroyed_after_declining(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        invitation = self.invitation
+        invitation_id = invitation.id
+        post_response = self.client.post(reverse('decline-invitation', args=[str(invitation.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(Invitation.objects.filter(id=invitation_id).exists())

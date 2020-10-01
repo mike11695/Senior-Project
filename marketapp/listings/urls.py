@@ -49,4 +49,6 @@ urlpatterns = [
     path('events/<int:pk>/create-invitations', views.create_invitations, name='create-invitations'),
     path('events/<int:pk>/delete', views.EventDeleteView.as_view(), name='delete-event'),
     path('invitations/', views.InvitationListView.as_view(), name='invitations'),
+    path('invitations/<int:pk>/accept', views.accept_invitation, name='accept-invitation'),
+    path('invitations/<int:pk>/decline', views.decline_invitation, name='decline-invitation'),
 ]
