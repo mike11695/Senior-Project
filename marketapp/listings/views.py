@@ -12,7 +12,7 @@ from listings.models import (Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
-    EventForm)
+    EventForm, InvitationForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1085,8 +1085,35 @@ class InvitationListView(LoginRequiredMixin, generic.ListView):
     model = Invitation
     context_object_name = 'invitations'
     template_name = "events/invitations.html"
+    paginate_by = 20
 
     #Filters the list of invitations to only show those that belong to the
     #current logged in user
     def get_queryset(self):
         return Invitation.objects.filter(recipient=self.request.user)
+
+#Form view for creating invitations for an event
+@login_required(login_url='/accounts/login/')
+def create_invitations(request, pk):
+    #Get the event object the invitations are being created for
+    current_event = get_object_or_404(Event, pk=pk)
+
+    #Check to ensure the host is the one creating the invitations
+    if request.user == current_event.host:
+        if request.method == 'POST':
+            form = InvitationForm(data=request.POST, instance=current_event, initial={'event': current_event})
+            if form.is_valid():
+                #Get the list of users from the form
+                users = form.cleaned_data.get('users')
+
+                #For each user, create an invitation for them
+                for user in users:
+                    Invitation.objects.create(event=current_event, recipient=user)
+
+                #Return to the event detail page
+                return redirect('event-detail', pk=current_event.pk)
+        else:
+            form = InvitationForm(instance=current_event, initial={'event': current_event})
+        return render(request, 'events/create_invitations.html', {'form': form})
+    else:
+        return redirect('index')

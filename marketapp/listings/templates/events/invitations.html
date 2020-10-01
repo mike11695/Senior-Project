@@ -1,5 +1,47 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  h
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>My Invitations</h1>
+      </div>
+    </div>
+  </div>
+  {% if invitations %}
+    <div class="center-block col-lg-6">
+      {% for invitation in invitations %}
+        <div class="invitation-container">
+          <h2 class="event-title">{{ invitation.event.title }}</h2>
+          <div>{{ invitation.event.context }}</div>
+          <div class="event-details">
+            <b>Location: {{ invitation.event.location }} on {{ invitation.event.date }}</b>
+          </div>
+          <div class="invitation-buttons">
+            <a href=""><span class="btn btn-blue accept-btn">ACCEPT</span></a>
+            <a href=""><span class="btn btn-red reject-btn">DECLINE</span></a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p style="text-align: center;">You do not have any invitations currently.</p>
+  {% endif %}
 {% endblock %}

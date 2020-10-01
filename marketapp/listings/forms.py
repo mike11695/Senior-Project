@@ -469,6 +469,8 @@ class InvitationForm(forms.Form):
             #Check for each user invited if they already received an invitation,
             #and see if they are accepting invitations
             for user in clean_users:
+                if user == clean_event.host:
+                    raise ValidationError("You cannot invite yourself to your own event.")
                 if user.invitesOpen == False:
                     raise ValidationError("User {0} is not accepting invitations to events.".format(user))
                 elif Invitation.objects.filter(event=clean_event, recipient=user).exists():
@@ -487,4 +489,5 @@ class InvitationForm(forms.Form):
        event = kwargs.pop('instance')
        super(InvitationForm, self).__init__(*args, **kwargs)
        existing_participants_ids = [user.id for user in event.participants.all()]
+       existing_participants_ids.append(event.host.id)
        self.fields['users'].queryset = User.objects.exclude(id__in=existing_participants_ids)

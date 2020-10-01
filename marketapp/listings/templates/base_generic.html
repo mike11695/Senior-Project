@@ -41,7 +41,12 @@
                 <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'auction-listings' %}">Auctions</a>
               </div>
             </div>
-            <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'events' %}">Events</a></li>
+            <div class="dropdown">
+              <div class="site-nav-url dropbtn" style="margin-left: -3px;"><a href="{% url 'events' %}">Events</a></div>
+              <div class="dropdown-content events-dropdown">
+                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'invitations' %}">Invites</a>
+              </div>
+            </div>
             <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'faq' %}">FAQ</a></li>
             <li class="site-nav-url" style="margin-left: -4px;"><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
           {% else %}

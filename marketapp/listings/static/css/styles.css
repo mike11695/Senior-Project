@@ -78,6 +78,10 @@
   width: 95px;
 }
 
+.events-dropdown a {
+  width: 66px;
+}
+
 .btn-blue {
   background-color: blue !important;
   color: white !important;
@@ -445,7 +449,7 @@ a:hover {
   font-weight: bold;
 }
 
-.my-offer-container, .my-bid-container {
+.my-offer-container, .my-bid-container, .invitation-container {
   background: white;
   border: 3px solid grey;
   border-radius: 25px;
@@ -454,7 +458,8 @@ a:hover {
   text-align: center;
 }
 
-.my-offer-container:nth-child(even), .my-bid-container:nth-child(even) {
+.my-offer-container:nth-child(even), .my-bid-container:nth-child(even),
+  .invitation-container:nth-child(even) {
   background: #CCC;
 }
 
@@ -545,4 +550,8 @@ a:hover {
   width: 75px;
   height: 30px;
   padding: 1px 0px 0px 0px;
+}
+
+.invitation-buttons {
+  margin-top: 10px;
 }

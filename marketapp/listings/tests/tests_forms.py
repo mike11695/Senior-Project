@@ -1208,6 +1208,13 @@ class InvitationFormTest(MyTestCase):
         form = InvitationForm(data=data, instance=event, initial={'event': event})
         self.assertFalse(form.is_valid())
 
+    #Test to ensure a user is not able to submit invitation form if they invite themselves
+    def test_invalid_invitation_form_submission_host_cant_invite_self(self):
+        event = self.event
+        data = {'users': [str(self.global_user1.id)]}
+        form = InvitationForm(data=data, instance=event, initial={'event': event})
+        self.assertFalse(form.is_valid())
+
     #Test to ensure that users field label is correct
     def test_invitation_form_users_label(self):
         event = self.event

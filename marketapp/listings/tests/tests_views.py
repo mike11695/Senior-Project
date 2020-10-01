@@ -3153,3 +3153,73 @@ class InvitationListViewTest(MyTestCase):
         response = self.client.get(reverse('invitations'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['invitations']), 5)
+
+class CreateInvitationsViewTest(MyTestCase):
+    def setUp(self):
+        super(CreateInvitationsViewTest, self).setUp()
+        self.user1 = User.objects.create(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        self.user2 = User.objects.create(username="mikel", password="example",
+            email="examplel@text.com", paypalEmail="examplel@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        self.user3 = User.objects.create(username="mikes", password="example",
+            email="examples@text.com", paypalEmail="examples@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+    #Test to ensure that a user must be logged in to create invitations
+    def test_redirect_if_not_logged_in(self):
+        event = self.global_event
+        response = self.client.get(reverse('create-invitations', args=[str(event.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/events/{0}/create-invitations'.format(event.id))
+
+    #Test to ensure user is not redirected if logged in and are the host of the event
+    def test_no_redirect_if_logged_in_host(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('create-invitations', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but are not the host of the event
+    def test_redirect_if_logged_in_not_host(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('create-invitations', args=[str(event.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('create-invitations', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'events/create_invitations.html')
+
+    #Test to ensure that a user is able to create invitations for all users
+    def test_invitations_are_created(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('create-invitations', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-invitations', args=[str(event.id)]),
+            data={'users': [str(self.user1.id), str(self.user2.id), str(self.user3.id)]})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(Invitation.objects.filter(event=event, recipient=self.user1).exists())
+        self.assertTrue(Invitation.objects.filter(event=event, recipient=self.user2).exists())
+        self.assertTrue(Invitation.objects.filter(event=event, recipient=self.user3).exists())
+
+    #Test to ensure user is redirected to event detail if form was valid
+    def test_image_is_created_redirect(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('create-invitations', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-invitations', args=[str(event.id)]),
+            data={'users': [str(self.user1.id), str(self.user2.id), str(self.user3.id)]})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertRedirects(post_response, '/listings/events/{0}'.format(event.id))
