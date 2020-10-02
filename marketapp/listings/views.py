@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 
-from listings.models import (Image, Item, Listing, OfferListing, AuctionListing,
+from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
@@ -1064,6 +1064,37 @@ def edit_event(request, pk):
             form = EventForm(instance=current_event)
         return render(request, 'events/edit_event.html', {'form': form})
     else:
+        return redirect('index')
+
+#Method for removing a user from an event
+@login_required(login_url='/accounts/login/')
+def remove_participant(request, event_pk, user_pk):
+    current_event = get_object_or_404(Event, pk=event_pk)
+    user = get_object_or_404(User, pk=user_pk)
+
+    #Redirect if current user is the host or a participant
+    if request.user == current_event.host:
+        #Host may remove any participant
+        current_event.participants.remove(user)
+        current_event.save()
+
+        #Redirect to the event detail page
+        return redirect('event-detail', pk=current_event.pk)
+    elif current_event.participants.filter(pk=request.user.pk).exists():
+        print("Participant removing themselves")
+        #Check to ensure participant is removing themself from the event
+        if request.user == user:
+            #Remove user from event
+            current_event.participants.remove(user)
+            current_event.save()
+
+            #Redirect to events list view page
+            return redirect('events')
+        else:
+            #Redirect to index page if current user does not match user to be removed
+            return redirect('index')
+    else:
+        print("User not part of event")
         return redirect('index')
 
 #View for a user to delete an event that they are hosting

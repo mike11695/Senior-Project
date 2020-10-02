@@ -2936,7 +2936,7 @@ class EventDetailViewTest(MyTestCase):
         response = self.client.get(reverse('event-detail', args=[str(event.id)]))
         self.assertEqual(response.status_code, 200)
 
-    #Test to ensure user is redirected if they are part of the event
+    #Test to ensure user is redirected if they are not part of the event
     def test_redirect_if_logged_in_not_host_or_participant(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
@@ -3037,6 +3037,80 @@ class EditEventViewTest(MyTestCase):
         self.assertEqual(edited_event.title, "My Rad Event")
         self.assertEqual(edited_event.context, "It will be rad, please come")
         self.assertEqual(edited_event.location, "SUNY Potsdam")
+
+class RemoveParticipantViewTest(MyTestCase):
+    def setUp(self):
+        super(RemoveParticipantViewTest, self).setUp()
+
+        #Create a user to add to event
+        self.user1 = User.objects.create_user(username="mike", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        self.global_event.participants.add(self.user1)
+        self.global_event.save()
+
+        self.user12 = User.objects.create_user(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+    #Test to ensure that a user must be logged in to remove a participant
+    def test_redirect_if_not_logged_in(self):
+        event = self.global_event
+        response = self.client.get(reverse('remove-participant', args=[str(event.id), str(self.user1.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/events/{0}/remove-participant/{1}'.format(event.id, self.user1.id))
+
+    #Test to ensure user is redirected to event detail page if logged in if they are the host after removing participant
+    def test_redirect_to_event_if_logged_in_host(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('remove-participant', args=[str(event.id), str(self.user1.id)]))
+        self.assertRedirects(response, '/listings/events/{0}'.format(event.id))
+
+    #Test to ensure user is redirected to events list view if logged in if they are a participant
+    #after removing themselves
+    def test_no_redirect_if_logged_in_participant(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('remove-participant', args=[str(event.id), str(self.global_user2.id)]))
+        self.assertRedirects(response, '/listings/events/')
+
+    #Test to ensure user is redirected if they are not part of the event
+    def test_redirect_if_logged_in_not_host_or_participant(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('remove-participant', args=[str(event.id), str(self.global_user2.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if they are trying to remove a different user
+    def test_redirect_if_logged_in_not_host_or_participant(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('remove-participant', args=[str(event.id), str(self.user1.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that the host can remove a participant from the event
+    def test_user_is_removed_by_host(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        post_response = self.client.post(reverse('remove-participant', args=[str(event.id), str(self.user1.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        updated_event = Event.objects.get(id=event.id)
+        self.assertFalse(event.participants.filter(pk=self.user1.pk).exists())
+
+    #Test to ensure that a participant can remove themselves from the event
+    def test_user_can_remove_themselves(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        post_response = self.client.post(reverse('remove-participant', args=[str(event.id), str(self.global_user2.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        updated_event = Event.objects.get(id=event.id)
+        self.assertFalse(event.participants.filter(pk=self.global_user2.pk).exists())
 
 class EventDeleteViewTest(MyTestCase):
     def setUp(self):

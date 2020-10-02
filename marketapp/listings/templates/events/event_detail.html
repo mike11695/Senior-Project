@@ -20,11 +20,24 @@
       {% if event.participants.count > 0 %}
         {% for participant in event.participants.all %}
           <b>{{ forloop.counter }}: </b>
-          <a href="">{{ participant.first_name }} {{ participant.last_name }}</a><br>
+          <a href="">{{ participant.first_name }} {{ participant.last_name }}</a>
+          {% if request.user == event.host %}
+            <a onclick="return confirm('Are you sure you want to remove this user from the event?')"
+              href="{% url 'remove-participant' event_pk=event.pk user_pk=participant.pk %}">
+              <span class="btn btn-red remove-btn">REMOVE</span>
+            </a>
+          {% endif %}
+          <br>
         {% endfor %}
       {% else %}
         This event does not have any participants yet.
       {% endif %}
     </div>
+    {% if request.user != event.host %}
+      <a onclick="return confirm('Are you sure you want to drop out from the event?')"
+        href="{% url 'remove-participant' event_pk=event.pk user_pk=request.user.pk %}">
+        <span class="btn btn-red center-block" style="width: 120px; margin-top: 20px;">Leave Event</span>
+      </a>
+    {% endif %}
   </div>
 {% endblock %}

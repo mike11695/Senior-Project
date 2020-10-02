@@ -401,6 +401,13 @@ a:hover {
   font-size: 14px;
 }
 
+.remove-btn {
+  width: 55px;
+  height: 17px;
+  padding: 0px;
+  font-size: 10px;
+}
+
 .bids-container {
   text-align: center;
   margin-bottom: 20px;
