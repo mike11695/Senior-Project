@@ -1,0 +1,44 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block" style="border-bottom: 1px solid grey;">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>{{ wishlist.title }}</h1>
+        <h3>Owned by: {{ wishlist.owner }}</h3>
+      </div>
+      <div style="margin-top: 20px;">{{ wishlist.description }}</div>
+      <div class="add-button">
+        <a href="">
+          <div class="btn btn-blue" style="margin-top: 20px; margin-bottom: 20px;">
+            Edit Wishlist
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% if wishlist.items.count > 0 %}
+  <div class="container-fluid center-block col-lg-8 wishlist-items">
+    {% for item in wishlist.items.all %}
+      <a href="{{ item.get_absolute_url }}">
+        <div class="item-list-display">
+          {% if item.images %}
+            {% with item.images.all|first as image %}
+              <div class="item-image"><img src="{{ image.image.url }}"
+                style="width: 175px; height: 175px; border: 2px solid black"></img>
+              </div>
+            {% endwith %}
+          {% endif %}
+          <div class="item-list-item-name"><h5>{{ item.name|truncatechars:15 }}</h5></div>
+          <div class="center-block" style="text-align: center;">
+            <a class="btn btn-blue wishlist-button" href="">LIST</a>
+            <a class="btn btn-red wishlist-button" href="">REMOVE</a>
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p style="text-align: center;">There are no wishlist items currently.</p>
+  {% endif %}
+{% endblock %}

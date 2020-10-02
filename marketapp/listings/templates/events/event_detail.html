@@ -20,7 +20,7 @@
       {% if event.participants.count > 0 %}
         {% for participant in event.participants.all %}
           <b>{{ forloop.counter }}: </b>
-          <a href="">{{ participant.first_name }} {{ participant.last_name }}</a>
+          <a href="">{{ participant.first_name }} {{ participant.last_name }} ({{ participant.username }})</a>
           {% if request.user == event.host %}
             <a onclick="return confirm('Are you sure you want to remove this user from the event?')"
               href="{% url 'remove-participant' event_pk=event.pk user_pk=participant.pk %}">

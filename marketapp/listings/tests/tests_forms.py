@@ -1,9 +1,10 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
-    AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm)
+    AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
+    WishlistForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event, Invitation)
+    AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1226,3 +1227,100 @@ class InvitationFormTest(MyTestCase):
         event = self.event
         form = InvitationForm(instance=event)
         self.assertEqual(form.fields['users'].help_text, "Users You Would Like to Invite to Event.")
+
+class WishlistFormTest(MyTestCase):
+    #Test to ensure a user is able to create a wishlist providing all fields
+    def test_valid_wishlist_creation(self):
+        user = self.global_user1
+        title = "My Test Wishlist"
+        description = "Stuff I want"
+        data = {'title': title, 'description': description, 'items': [str(self.global_item1.id)]}
+        form = WishlistForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is able to create a wishlist without an item
+    def test_valid_wishlist_creation_no_items(self):
+        user = self.global_user1
+        title = "My Test Wishlist"
+        description = "Stuff I want"
+        data = {'title': title, 'description': description}
+        form = WishlistForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist using an item they don't own
+    def test_invalid_wishlist_creation_item_not_owned(self):
+        user = self.global_user1
+        title = "My Test Wishlist"
+        description = "Stuff I want"
+        data = {'title': title, 'description': description, 'items': [str(self.global_item2.id)]}
+        form = WishlistForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist if title is missing
+    def test_invalid_wishlist_creation_no_title(self):
+        user = self.global_user1
+        title = "My Test Wishlist"
+        description = "Stuff I want"
+        data = {'description': description, 'items': [str(self.global_item1.id)]}
+        form = WishlistForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist if title is too long
+    def test_invalid_wishlist_creation_title_too_long(self):
+        user = self.global_user1
+        title = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        description = "Stuff I want"
+        data = {'title': title, 'description': description, 'items': [str(self.global_item1.id)]}
+        form = WishlistForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist if description is missing
+    def test_invalid_wishlist_creation_no_description(self):
+        user = self.global_user1
+        title = "My Test Wishlist"
+        description = "Stuff I want"
+        data = {'title': title, 'items': [str(self.global_item1.id)]}
+        form = WishlistForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist if description is too long
+    def test_invalid_wishlist_creation_description_too_long(self):
+        user = self.global_user1
+        title = "My Test Wishlist"
+        description = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'title': title, 'description': description, 'items': [str(self.global_item1.id)]}
+        form = WishlistForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that title field help text is correct
+    def test_wishlist_creation_title_help_text(self):
+        user = self.global_user1
+        form = WishlistForm(user=user)
+        self.assertEqual(form.fields['title'].help_text, "Title of Wishlist.")
+
+    #Test to ensure that description field help text is correct
+    def test_wishlist_creation_description_help_text(self):
+        user = self.global_user1
+        form = WishlistForm(user=user)
+        self.assertEqual(form.fields['description'].help_text, ("Description for Wishlist" +
+            " (what it contains, how you want to accuire the items, etc.)"))
+
+    #Test to ensure that items field label is correct
+    def test_wishlist_creation_items_help_text(self):
+        user = self.global_user1
+        form = WishlistForm(user=user)
+        self.assertEqual(form.fields['items'].label, "Wishlist Items")
+
+    #Test to ensure that items field help text is correct
+    def test_wishlist_creation_items_help_text(self):
+        user = self.global_user1
+        form = WishlistForm(user=user)
+        self.assertEqual(form.fields['items'].help_text, "Items That You Are Seeking.")

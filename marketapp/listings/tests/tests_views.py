@@ -1,6 +1,6 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event, Invitation)
+    AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -93,6 +93,12 @@ class MyTestCase(TestCase):
             date="2020-11-06 15:00", location="1234 Sesame Street")
         self.global_event.participants.add(self.global_user2)
         self.global_event.save
+
+        #Create a global wishlist
+        self.global_wishlist = Wishlist.objects.create(owner=self.global_user1,
+            title="My Wishlist", description="Stuff I would love to trade for")
+        self.global_wishlist.items.add(self.global_item1)
+        self.global_wishlist.save
 
 class ImagesViewTest(MyTestCase):
     def setUp(self):
@@ -3410,3 +3416,35 @@ class DeclineInvitationViewTest(MyTestCase):
         post_response = self.client.post(reverse('decline-invitation', args=[str(invitation.id)]))
         self.assertEqual(post_response.status_code, 302)
         self.assertFalse(Invitation.objects.filter(id=invitation_id).exists())
+
+class WishlistDetailViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to view wishlists
+    def test_redirect_if_not_logged_in(self):
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('wishlist-detail', args=[str(wishlist.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/wishlists/{0}'.format(wishlist.id))
+
+    #Test to ensure owner is not redirected if logged in
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('wishlist-detail', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure non owner is not redirected if logged in
+    def test_no_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('wishlist-detail', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('wishlist-detail', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/wishlist_detail.html')

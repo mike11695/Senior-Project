@@ -322,6 +322,15 @@ a:hover {
   padding: 1px 0px 0px 0px;
 }
 
+.drop-out-btn {
+  right: 0px;
+  position: absolute;
+  border-radius: 10px 15px 10px 10px;
+  width: 100px;
+  height: 30px;
+  padding: 1px 0px 0px 0px;
+}
+
 .listing-prices {
   font-weight: bold;
   margin-top: -5px;
@@ -406,6 +415,13 @@ a:hover {
   height: 17px;
   padding: 0px;
   font-size: 10px;
+}
+
+.wishlist-button {
+  width: 65px;
+  height: 25px;
+  padding: 0px;
+  font-size: 14px;
 }
 
 .bids-container {
@@ -561,4 +577,10 @@ a:hover {
 
 .invitation-buttons {
   margin-top: 10px;
+}
+
+.wishlist-items {
+  margin-top: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
 }

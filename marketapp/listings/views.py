@@ -9,7 +9,7 @@ from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
-    Offer, Bid, Event, Invitation)
+    Offer, Bid, Event, Invitation, Wishlist)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm)
@@ -1183,3 +1183,8 @@ def decline_invitation(request, pk):
 
         #Redirect to invitation list view after
         return redirect('invitations')
+
+#Detail view for a user's wishlist
+class WishlistDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Wishlist
+    template_name = "wishlists/wishlist_detail.html"

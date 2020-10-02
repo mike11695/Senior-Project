@@ -2,7 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event, Invitation)
+    AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -495,3 +495,23 @@ class InvitationForm(forms.Form):
            excluded_ids.append(id)
        excluded_ids.append(event.host.id)
        self.fields['users'].queryset = User.objects.exclude(id__in=excluded_ids)
+
+#Form for a user to create a wishlist
+class WishlistForm(ModelForm):
+    title = forms.CharField(max_length=50, required=True, help_text="Title of Wishlist.")
+    description = forms.CharField(max_length=250, required=True, help_text=("Description for Wishlist" +
+        " (what it contains, how you want to accuire the items, etc.)"))
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
+        help_text="Items That You Are Seeking.", label="Wishlist Items",
+        required=False)
+
+    class Meta:
+        model = Wishlist
+        fields = ['title', 'description', 'items']
+        exclude = ['owner']
+
+    #Initializes the items dropdown with items that only relate to the current user
+    def __init__(self, *args, **kwargs):
+       self.user = kwargs.pop('user')
+       super(WishlistForm, self).__init__(*args, **kwargs)
+       self.fields['items'].queryset = Item.objects.filter(owner=self.user)
