@@ -9,6 +9,7 @@ urlpatterns = [
     path('FAQ/items', views.faq_items, name='faq-items'),
     path('FAQ/listings', views.faq_listings, name='faq-listings'),
     path('FAQ/events', views.faq_events, name='faq-events'),
+    path('FAQ/wishlists', views.faq_events, name='faq-wishlists'),
     path('images/', views.ImageListView.as_view(), name='images'),
     path('images/add', views.add_image, name='images-add'),
     path('images/<int:pk>', views.ImageDetailView.as_view(), name='image-detail'),

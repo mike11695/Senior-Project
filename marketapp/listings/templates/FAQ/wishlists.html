@@ -1,0 +1,23 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to Create a Wishlist</h1>
+    <p>Users have the option of creating a wishlist to organize items that they are searching for
+      onto one page.  In order to create your wishlist, go to the navigation bar in the top right
+      and click on "Wishlist".  If you haven't made a wishlist yet, you'll be taken to the form
+      where you can make a wishlist.  You will need to give your wishlist a title and a description,
+      but you are not obligated to add items to it right away.  Once you have added a title, description
+      and items if you choose to add them now, click on "Create" to finish creating your wishlist.
+      You'll then be taken to your wishlist's detail page, which you can then access later on by
+      clicking on "Wishlist" in the navigation bar.</p>
+    <p>Please note that you can only make one wishlist per user account.  All wishlist items
+      you have will exist on the same wishlist.</p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Wishlists</h1>
+    <h3 class="faq-question">How many wishlists can I have?</h3>
+    <p>Each user may only have one wishlist.</p>
+  </div>
+{% endblock %}

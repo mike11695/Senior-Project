@@ -500,7 +500,8 @@ class InvitationForm(forms.Form):
 class WishlistForm(ModelForm):
     title = forms.CharField(max_length=50, required=True, help_text="Title of Wishlist.")
     description = forms.CharField(max_length=250, required=True, help_text=("Description for Wishlist" +
-        " (what it contains, how you want to accuire the items, etc.)"))
+        " (what it contains, how you want to accuire the items, etc.)"),
+        widget=forms.Textarea)
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
         help_text="Items That You Are Seeking.", label="Wishlist Items",
         required=False)
