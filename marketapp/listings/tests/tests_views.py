@@ -3448,3 +3448,57 @@ class WishlistDetailViewTest(MyTestCase):
         response = self.client.get(reverse('wishlist-detail', args=[str(wishlist.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wishlists/wishlist_detail.html')
+
+class CreateWishlistViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to create a wishlist
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('create-wishlist'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/wishlists/create-wishlist')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/create_wishlist.html')
+
+    #Test to ensure that a user is able to create a wishlist and have it relate to them
+    def test_wishlist_is_created(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist'),
+            data={'title': "My Wishlist", 'description': "I want this stuff.",
+                'items': [str(self.global_item2.id)]})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist = Wishlist.objects.last()
+        self.assertEqual(new_wishlist.owner, post_response.wsgi_request.user)
+
+    #Test to ensure user is redirected to wishlist detail view if form was valid
+    def test_wishlist_is_created_redirect(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist'),
+            data={'title': "My Wishlist", 'description': "I want this stuff.",
+                'items': [str(self.global_item2.id)]})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist = Wishlist.objects.last()
+        self.assertRedirects(post_response, '/listings/wishlists/{0}'.format(new_wishlist.id))
+
+    #Test to ensure that a user is redirected if they already have a wishlist
+    def test_redirect_if_user_has_already_made_wishlist(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist'))
+        self.assertRedirects(response, '/listings/')

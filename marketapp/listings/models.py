@@ -40,6 +40,7 @@ class User(AbstractUser):
         verbose_name="Allow Users to Contact You Through Profile",
         help_text="Leave this field checked if you are interested in being contacted by users through your profile.  If unchecked, users will only be able to contact you after you accept their offer or bid or you contact them.")
 
+
 #model for Portfolios, where users can learn about one another and leave feedback
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

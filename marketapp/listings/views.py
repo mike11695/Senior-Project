@@ -12,7 +12,7 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
     Offer, Bid, Event, Invitation, Wishlist)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
-    EventForm, InvitationForm)
+    EventForm, InvitationForm, WishlistForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1056,10 +1056,10 @@ def edit_event(request, pk):
         if request.method == 'POST':
             form = EventForm(data=request.POST, instance=current_event)
             if form.is_valid():
-                created_event = form.save(commit=False)
+                updated_event = form.save(commit=False)
 
-                created_event.save()
-                return redirect('event-detail', pk=created_event.pk)
+                updated_event.save()
+                return redirect('event-detail', pk=updated_event.pk)
         else:
             form = EventForm(instance=current_event)
         return render(request, 'events/edit_event.html', {'form': form})
@@ -1188,3 +1188,38 @@ def decline_invitation(request, pk):
 class WishlistDetailView(LoginRequiredMixin, generic.DetailView):
     model = Wishlist
     template_name = "wishlists/wishlist_detail.html"
+
+#Form view to create a wishlist for a user
+@login_required(login_url='/accounts/login/')
+def create_wishlist(request):
+    #check to see if user already has made a wishlist, if so redirect to index
+    try:
+        wishlist = request.user.wishlist
+    except Wishlist.DoesNotExist:
+        wishlist = None
+
+    if wishlist != None:
+        return redirect('index')
+    else:
+        if request.method == 'POST':
+            print("Post")
+            form = WishlistForm(data=request.POST, user=request.user)
+            if form.is_valid():
+                print("Form is valid")
+                created_wishlist = form.save()
+
+                #Add items from the form to the new wishlist, if any
+                clean_items = form.cleaned_data.get('items')
+                if clean_items:
+                    for item in clean_items:
+                        created_wishlist.items.add(item)
+
+                #Set wishlist owner as current user
+                created_wishlist.owner = request.user
+                created_wishlist.save()
+
+                #redirect to the new wishlist's detail view
+                return redirect('wishlist-detail', pk=created_wishlist.pk)
+        else:
+            form = WishlistForm(user=request.user)
+        return render(request, 'wishlists/create_wishlist.html', {'form': form})
