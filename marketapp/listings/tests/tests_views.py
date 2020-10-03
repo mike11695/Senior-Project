@@ -3523,3 +3523,50 @@ class CreateWishlistViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('create-wishlist'))
         self.assertRedirects(response, '/listings/')
+
+class EditWishlistViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to edit their wishlist
+    def test_redirect_if_not_logged_in(self):
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('edit-wishlist', args=[str(wishlist.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/wishlists/{0}/edit'.format(wishlist.id))
+
+    #Test to ensure user is not redirected if logged in and owns the wishlist
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('edit-wishlist', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but does not own the wishlist
+    def test_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('edit-wishlist', args=[str(wishlist.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('edit-wishlist', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/edit_wishlist.html')
+
+    #Test to ensure that a user is able to edit the wishlist successfully
+    def test_wishlist_is_updated(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('edit-wishlist', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-wishlist', args=[str(wishlist.id)]),
+            data={'title': "My Cool Wishlist", 'description': "Stuff I would love to buy"})
+        self.assertEqual(post_response.status_code, 302)
+        edited_wishlist = Wishlist.objects.get(id=wishlist.id)
+        self.assertEqual(edited_wishlist.title, 'My Cool Wishlist')
+        self.assertEqual(edited_wishlist.description, 'Stuff I would love to buy')
+        self.assertEqual(edited_wishlist.items.count(), 0)

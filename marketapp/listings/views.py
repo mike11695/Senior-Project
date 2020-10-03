@@ -1208,10 +1208,8 @@ def create_wishlist(request):
         return redirect('index')
     else:
         if request.method == 'POST':
-            print("Post")
             form = WishlistForm(data=request.POST, user=request.user)
             if form.is_valid():
-                print("Form is valid")
                 created_wishlist = form.save()
 
                 #Add items from the form to the new wishlist, if any
@@ -1229,3 +1227,42 @@ def create_wishlist(request):
         else:
             form = WishlistForm(user=request.user)
         return render(request, 'wishlists/create_wishlist.html', {'form': form})
+
+#Form view to edit a wishlist
+@login_required(login_url='/accounts/login/')
+def edit_wishlist(request, pk):
+    #get wishlist object being edited
+    current_wishlist = get_object_or_404(Wishlist, pk=pk)
+
+    #check to see if user already has made a wishlist, if so redirect to index
+    """try:
+        wishlist = request.user.wishlist
+    except Wishlist.DoesNotExist:
+        wishlist = None"""
+
+    #Check to make sure the wishlist's owner is the one editing, if not redirect
+    if current_wishlist.owner != request.user:
+        return redirect('index')
+    else:
+        if request.method == 'POST':
+            form = WishlistForm(data=request.POST, user=request.user, instance=current_wishlist)
+            if form.is_valid():
+                updated_wishlist = form.save(commit=False)
+
+                #Clear the existing items from the wishlist
+                updated_wishlist.items.clear()
+
+                #Add items from the form to the new wishlist, if any
+                clean_items = form.cleaned_data.get('items')
+                if clean_items:
+                    for item in clean_items:
+                        updated_wishlist.items.add(item)
+
+                #Save the updated wishlist
+                updated_wishlist.save()
+
+                #redirect to the wishlist's detail view
+                return redirect('wishlist-detail', pk=updated_wishlist.pk)
+        else:
+            form = WishlistForm(user=request.user, instance=current_wishlist)
+        return render(request, 'wishlists/edit_wishlist.html', {'form': form})
