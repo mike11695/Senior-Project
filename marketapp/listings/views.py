@@ -1078,7 +1078,7 @@ def remove_participant(request, event_pk, user_pk):
     current_event = get_object_or_404(Event, pk=event_pk)
     user = get_object_or_404(User, pk=user_pk)
 
-    #Redirect if current user is the host or a participant
+    #Redirect if current user is not the host or a participant
     if request.user == current_event.host:
         #Host may remove any participant
         current_event.participants.remove(user)
@@ -1087,7 +1087,6 @@ def remove_participant(request, event_pk, user_pk):
         #Redirect to the event detail page
         return redirect('event-detail', pk=current_event.pk)
     elif current_event.participants.filter(pk=request.user.pk).exists():
-        print("Participant removing themselves")
         #Check to ensure participant is removing themself from the event
         if request.user == user:
             #Remove user from event
@@ -1100,7 +1099,6 @@ def remove_participant(request, event_pk, user_pk):
             #Redirect to index page if current user does not match user to be removed
             return redirect('index')
     else:
-        print("User not part of event")
         return redirect('index')
 
 #View for a user to delete an event that they are hosting
@@ -1266,3 +1264,24 @@ def edit_wishlist(request, pk):
         else:
             form = WishlistForm(user=request.user, instance=current_wishlist)
         return render(request, 'wishlists/edit_wishlist.html', {'form': form})
+
+#Method for removing an item quickly from a wishlist
+@login_required(login_url='/accounts/login/')
+def remove_wishlist_item(request, wishlist_pk, item_pk):
+    #Get the wishlist and item to remove
+    current_wishlist = get_object_or_404(Wishlist, pk=wishlist_pk)
+    item_to_remove = get_object_or_404(Item, pk=item_pk)
+
+    #Redirect if current user is not the owner
+    if request.user == current_wishlist.owner:
+        #Check to make sure item is in wishlist
+        if current_wishlist.items.filter(id=item_to_remove.id).exists():
+            current_wishlist.items.remove(item_to_remove)
+            current_wishlist.save()
+
+            #Redirect to the event detail page
+            return redirect('wishlist-detail', pk=current_wishlist.pk)
+        else:
+            return redirect('index')
+    else:
+        return redirect('index')

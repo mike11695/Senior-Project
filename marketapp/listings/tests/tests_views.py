@@ -3570,3 +3570,56 @@ class EditWishlistViewTest(MyTestCase):
         self.assertEqual(edited_wishlist.title, 'My Cool Wishlist')
         self.assertEqual(edited_wishlist.description, 'Stuff I would love to buy')
         self.assertEqual(edited_wishlist.items.count(), 0)
+
+class RemoveWishlistItemViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to remove an tem from wishlist
+    def test_redirect_if_not_logged_in(self):
+        wishlist = self.global_wishlist
+        item = self.global_item1
+        response = self.client.get(reverse('remove-wishlist-item',
+            args=[str(wishlist.id), str(item.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/wishlists/{0}/remove-wishlist-item/{1}'.format(wishlist.id, item.id))
+
+    #Test to ensure user is redirected to wishlist detail page if logged in if
+    #they are the owner after removing an item
+    def test_redirect_to_event_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        item = self.global_item1
+        response = self.client.get(reverse('remove-wishlist-item',
+            args=[str(wishlist.id), str(item.id)]))
+        self.assertRedirects(response, '/listings/wishlists/{0}'.format(wishlist.id))
+
+    #Test to ensure user is redirected if they do not own the wishlist
+    def test_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        item = self.global_item1
+        response = self.client.get(reverse('remove-wishlist-item',
+            args=[str(wishlist.id), str(item.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that the user can remove an item succesfully from wishlist
+    def test_item_is_removed_succesfully(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        item = self.global_item1
+        post_response = self.client.post(reverse('remove-wishlist-item',
+            args=[str(wishlist.id), str(item.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        updated_wishlist = Wishlist.objects.get(id=wishlist.id)
+        self.assertFalse(wishlist.items.filter(pk=item.id).exists())
+
+    #Test to ensure that removal fails if user tries to remove an item that is not in wihslist
+    def test_invalid_removal_item_does_not_exist(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        item = self.global_item2
+        post_response = self.client.post(reverse('remove-wishlist-item',
+            args=[str(wishlist.id), str(item.id)]))
+        self.assertRedirects(post_response, '/listings/')

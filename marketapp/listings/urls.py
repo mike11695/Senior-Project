@@ -56,6 +56,8 @@ urlpatterns = [
     path('wishlists/create-wishlist', views.create_wishlist, name='create-wishlist'),
     path('wishlists/<int:pk>', views.WishlistDetailView.as_view(), name='wishlist-detail'),
     path('wishlists/<int:pk>/edit', views.edit_wishlist, name='edit-wishlist'),
+    path('wishlists/<int:wishlist_pk>/remove-wishlist-item/<int:item_pk>',
+        views.remove_wishlist_item, name='remove-wishlist-item'),
 
     #Events
     path('events/', views.EventListView.as_view(), name='events'),
@@ -64,7 +66,8 @@ urlpatterns = [
     path('events/<int:pk>/edit', views.edit_event, name='edit-event'),
     path('events/<int:pk>/create-invitations', views.create_invitations, name='create-invitations'),
     path('events/<int:pk>/delete', views.EventDeleteView.as_view(), name='delete-event'),
-    path('events/<int:event_pk>/remove-participant/<int:user_pk>', views.remove_participant, name='remove-participant'),
+    path('events/<int:event_pk>/remove-participant/<int:user_pk>', views.remove_participant,
+        name='remove-participant'),
 
     #Invitations
     path('invitations/', views.InvitationListView.as_view(), name='invitations'),
