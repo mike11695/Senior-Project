@@ -9,7 +9,7 @@ from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
-    Offer, Bid, Event, Invitation, Wishlist)
+    Offer, Bid, Event, Invitation, Wishlist, WishlistListing)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm)
@@ -1285,3 +1285,14 @@ def remove_wishlist_item(request, wishlist_pk, item_pk):
             return redirect('index')
     else:
         return redirect('index')
+
+#List view for a user to see all of the wishlist listings they have
+class WishlistListingListView(LoginRequiredMixin, generic.ListView):
+    model = WishlistListing
+    context_object_name = 'wishlistlistings'
+    template_name = "wishlists/wishlist_listings.html"
+    paginate_by = 10
+
+    #Filters the list of wishlist listings to only show those that belong to the current logged in user
+    def get_queryset(self):
+        return WishlistListing.objects.filter(owner=self.request.user).order_by('endTime').reverse()

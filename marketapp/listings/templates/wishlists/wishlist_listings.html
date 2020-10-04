@@ -1,0 +1,123 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>My Wishlist Listings</h1>
+      </div>
+      <div class="add-button">
+        <a href=""><div class="btn btn-green">Add Wishlist Listing</div></a>
+      </div>
+    </div>
+  </div>
+  {% if wishlistlistings %}
+    <div class="center-block col-lg-8">
+      {% for listing in wishlistlistings %}
+        {% if listing.listingEnded == False %}
+          <div class="wishlist-listing-container">
+            <div class="wishlist-listing-header center-block col-lg-11">
+              <a href="">
+                <h3 class="wishlist-listing-name">{{ listing.name }}</h3>
+              </a>
+              <h5>Searching for...</h5>
+            </div>
+            <div class="center-block col-lg-11 wishlist-listing-items-container">
+              {% for item in listing.items.all %}
+                {% with item.images.all|first as image %}
+                  <div class="wishlist-listing-image-container">
+                    <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                  </div>
+                {% endwith %}
+              {% endfor %}
+            </div>
+            <div class="center-block col-lg-11 wishlist-listing-offer-container">
+              <h5>Offering...</h5>
+              {% if listing.itemsOffer.count > 0 %}
+                {% for item in listing.itemsOffer.all %}
+                  {% with item.images.all|first as image %}
+                    <div class="wishlist-listing-image-container">
+                      <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                    </div>
+                  {% endwith %}
+                {% endfor %}
+              {% endif %}
+              {% if listing.moneyOffer and listing.moneyOffer > 0.00 %}
+                <div class="wishlist-amount-offered"><h4>${{ listing.moneyOffer }}</h4></div>
+              {% endif %}
+              {% if listing.notes %}
+                <div class="wishlist-notes">{{ listing.notes }}</div>
+              {% endif %}
+            </div>
+            <div class="center-block" style="text-align: center;">
+              <a href="">
+                <div class="btn btn-blue" style="margin-top: 15px;
+                  display: inline-block;">
+                  EDIT
+                </div>
+              </a>
+              <a href="">
+                <div class="btn btn-red"
+                  style="margin-top: 15px; display: inline-block; margin-left: 5px;">
+                  DELETE
+                </div>
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <div class="wishlist-listing-ended-container">
+            <div class="wishlist-listing-header center-block col-lg-11">
+              <a href="">
+                <h3 class="wishlist-listing-name">{{ listing.name }}</h3>
+              </a>
+              <h5>Searching for...</h5>
+            </div>
+            <div class="center-block col-lg-11 wishlist-listing-items-container">
+              {% for item in listing.items.all %}
+                {% with item.images.all|first as image %}
+                  <div class="wishlist-listing-image-container">
+                    <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                  </div>
+                {% endwith %}
+              {% endfor %}
+            </div>
+            <div class="center-block col-lg-11 wishlist-listing-offer-container">
+              <h5>Offering...</h5>
+              {% if listing.itemsOffer.count > 0 %}
+                {% for item in listing.itemsOffer.all %}
+                  {% with item.images.all|first as image %}
+                    <div class="wishlist-listing-image-container">
+                      <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                    </div>
+                  {% endwith %}
+                {% endfor %}
+              {% endif %}
+              {% if listing.moneyOffer and listing.moneyOffer > 0.00 %}
+                <div class="wishlist-amount-offered"><h4>${{ listing.moneyOffer }}</h4></div>
+              {% endif %}
+              {% if listing.notes %}
+                <div class="wishlist-notes">{{ listing.notes }}</div>
+              {% endif %}
+            </div>
+            <div class="center-block" style="text-align: center;">
+              <a href="">
+                <div class="btn btn-blue" style="margin-top: 15px;
+                  display: inline-block;">
+                  RELIST
+                </div>
+              </a>
+              <a href="">
+                <div class="btn btn-red"
+                  style="margin-top: 15px; display: inline-block; margin-left: 5px;">
+                  DELETE
+                </div>
+              </a>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="text-align: center;">You don't have any wishlist listings currently.</p>
+  {% endif %}
+{% endblock %}

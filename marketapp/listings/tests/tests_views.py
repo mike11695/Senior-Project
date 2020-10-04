@@ -1,6 +1,6 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
+    AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -3623,3 +3623,66 @@ class RemoveWishlistItemViewTest(MyTestCase):
         post_response = self.client.post(reverse('remove-wishlist-item',
             args=[str(wishlist.id), str(item.id)]))
         self.assertRedirects(post_response, '/listings/')
+
+class WishlistListingsViewTest(MyTestCase):
+    def setUp(self):
+        super(WishlistListingsViewTest, self).setUp()
+
+        #Set number of listings for each user
+        number_of_listings_user1 = 6
+        number_of_listings_user2 = 9
+
+        #Get the current date and time for testing and create active endTimes
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        for num in range(number_of_listings_user1):
+            listing = WishlistListing.objects.create(owner=self.global_user1,
+                name='My Wishlist Listing #{0}'.format(num), endTime=date_active,
+                moneyOffer=5.00, notes="Just a test")
+            listing.items.add(self.global_item1)
+            listing.itemsOffer.add(self.global_item1)
+            listing.save
+
+        for num in range(number_of_listings_user2):
+            listing = WishlistListing.objects.create(owner=self.global_user2,
+                name='My Wishlist Listing #{0}'.format(num), endTime=date_active,
+                moneyOffer=15.00, notes="Just a test")
+            listing.items.add(self.global_item2)
+            listing.itemsOffer.add(self.global_item2)
+            listing.save
+
+    #Test to ensure that a user must be logged in to view their wishlist listings
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('wishlist-listings'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/wishlists/wishlist-listings')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('wishlist-listings'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('wishlist-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/wishlist_listings.html')
+
+    #Test to ensure that the user only sees wishlist listings they've uploaded for user1
+    def test_list_only_current_users_listings_user1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('wishlist-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['wishlistlistings']) == 6)
+
+    #Test to ensure that the user only sees wishlist listings they've uploaded for user2
+    def test_list_only_current_users_listings_user2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('wishlist-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['wishlistlistings']) == 9)

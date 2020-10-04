@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.models import AbstractUser, User
 from listings.models import (User, Profile, Rating, Warning, Conversation,
     Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
-    Item)
+    Item, WishlistListing)
 
 # Register your models here.
 #admin.site.register(User)
@@ -15,7 +15,7 @@ admin.site.register(Image)
 admin.site.register(Tag)
 admin.site.register(Wishlist)
 admin.site.register(Event)
-#admin.site.register(Listing)
+admin.site.register(WishlistListing)
 admin.site.register(OfferListing)
 admin.site.register(AuctionListing)
 admin.site.register(Item)

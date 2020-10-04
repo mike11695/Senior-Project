@@ -347,10 +347,26 @@ class OfferListing(Listing):
         #String for representing the OfferListing object.
         return f'{self.name}'
 
-#Subclass for SearchListing, a listing that is looking for item(s)
-#Fields needed: PriceOffer, itemsOffer, notes
-"""class SearchListing(Listing):
-    #Fields for SearchListing"""
+#Subclass for WishlistListing, a listing that is looking for item(s)
+#Fields needed: MoneyOffer, ItemsOffer, notes
+class WishlistListing(Listing):
+    #Fields for WishlistListing
+    moneyOffer = models.DecimalField(max_digits=9, decimal_places=2,
+        verbose_name="Money Offer",
+        help_text="Amount that you are offering for the items you're seeking.")
+    itemsOffer = models.ManyToManyField(Item, verbose_name="Items You're Offering",
+        help_text="Items that you would like to offer for the items you're seeking.")
+    notes = models.TextField(max_length=500,
+        help_text="Include here any details about the item(s) you're seeking.")
+
+    def get_absolute_url(self):
+        #Returns the url to access a particular instance of WishlistListing.
+        return reverse('wishlist-listing-detail', args=[str(self.id)])
+
+    def __str__(self):
+        #String for representing the WishlistListing object.
+        return f'{self.name}'
+
 
 #Subclass for AuctionListing, a listing that is interested in bids (should this contain Item field?)
 #Fields needed: StartingBid, minimumIncrement, autobuy

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Profile, Rating, Warning, Conversation,
     Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
-    Item, Offer, Bid)
+    Item, Offer, Bid, WishlistListing)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import datetime
 from django.utils.timezone import make_aware
@@ -397,42 +397,6 @@ class WishlistModelTest(MyTestCase):
         help_text = wishlist._meta.get_field('description').help_text
         self.assertEqual(help_text, "A brief description of your wishlist and what it contains.")
 
-#Tests for WishlistItem Class
-"""class WishlistItemModelTest(MyTestCase):
-    def setUp(self):
-        #Set up wishlist item record for testing
-        super(WishlistItemModelTest, self).setUp()
-        self.wishlist = Wishlist.objects.create(owner=self.global_user1,
-            title="My Boring Wishlist", description="Nothing.")
-        self.wishlist_item = WishlistItem.objects.create(wishlist=self.wishlist,
-            name="My Boring Wishlist Item", description="Nothing.")
-        self.wishlist_item.images.add = self.global_image
-        self.wishlist_item.save
-
-    #Checks to ensure that WishlistItem name length is correct
-    def test_wishlist_item_name_max_length(self):
-        wishlist_item = self.wishlist_item
-        max_length = wishlist_item._meta.get_field('name').max_length
-        self.assertEqual(max_length, 50)
-
-    #Checks to ensure that WishlistItem name verbose text is correct
-    def test_wishlist_item_name_label(self):
-        wishlist_item = self.wishlist_item
-        verbose_name = wishlist_item._meta.get_field('name').verbose_name
-        self.assertEqual(verbose_name, "Item Name")
-
-    #Checks to ensure that WishlistItem description length is correct
-    def test_wishlist_item_description_max_length(self):
-        wishlist_item = self.wishlist_item
-        max_length = wishlist_item._meta.get_field('description').max_length
-        self.assertEqual(max_length, 250)
-
-    #Checks to ensure that WishlistItem name help text is correct
-    def test_wishlist_item_description_help_text(self):
-        wishlist_item = self.wishlist_item
-        help_text = wishlist_item._meta.get_field('description').help_text
-        self.assertEqual(help_text, "A brief description of the item in the image(s).")"""
-
 #Tests for Event Class
 class EventModelTest(MyTestCase):
     def setUp(self):
@@ -489,9 +453,6 @@ class EventModelTest(MyTestCase):
         verbose_name = event._meta.get_field('location').verbose_name
         self.assertEqual(verbose_name, "Address where Event is Held")
 
-
-#Test for Invitation Class
-
 #Tests for Report Class
 
 #Tests for ListingReport subclass
@@ -535,19 +496,26 @@ class ItemModelTest(MyTestCase):
 #Tests for Listing Class
 class ListingsModelTest(MyTestCase):
     def setUp(self):
-        #Set up records for OfferListing and AuctionListing for testing
-        #SearchListing tests will be added later
+        #Set up records for OfferListing, AuctionListing and WishlistListing for testing
         super(ListingsModelTest, self).setUp()
         date = datetime.today()
         settings.TIME_ZONE
         aware_date = make_aware(date)
         self.offerListing = self.global_offer_listing
+
         self.auctionListing = AuctionListing.objects.create(owner=self.global_user1,
             name="My Items for Bids", description="A few items up for bids",
             startingBid=5.00, minimumIncrement=1.00, autobuy=50.00,
             endTime=aware_date)
         self.auctionListing.items.add = self.global_item
         self.auctionListing.save
+
+        self.wishlistListing = WishlistListing.objects.create(owner=self.global_user1,
+            name="Stuff I Want", moneyOffer=5.00, notes="I really want this stuff.",
+            endTime=aware_date)
+        self.wishlistListing.items.add = self.global_item
+        self.wishlistListing.itemsOffer.add = self.global_item
+        self.wishlistListing.save
 
     #Checks to ensure that Listing name max length is correct
     def test_listing_name_max_length(self):
@@ -735,7 +703,49 @@ class ListingsModelTest(MyTestCase):
         help_text = auction_listing._meta.get_field('autobuy').help_text
         self.assertEqual(help_text, "If a user bids the amount you set in this field, the auction will close and they will win the auction.")
 
-#Tests for SearchListing subclass
+    #Checks to ensure that WishlistListing moneyOffer max digits is correct
+    def test_wishlist_listing_money_offer_digits(self):
+        wishlist_listing = self.wishlistListing
+        max_digits = wishlist_listing._meta.get_field('moneyOffer').max_digits
+        self.assertEqual(max_digits, 9)
+
+    #Checks to ensure that WishlistListing moneyOffer decimal places is correct
+    def test_wishlist_listing_money_offer_decimals(self):
+        wishlist_listing = self.wishlistListing
+        decimal_places = wishlist_listing._meta.get_field('moneyOffer').decimal_places
+        self.assertEqual(decimal_places, 2)
+
+    #Checks to ensure that WishlistListing moneyOffer verbose name is correct
+    def test_wishlist_listing_money_offer_verbose_name(self):
+        wishlist_listing = self.wishlistListing
+        verbose_name = wishlist_listing._meta.get_field('moneyOffer').verbose_name
+        self.assertEqual(verbose_name, "Money Offer")
+
+    #Checks to ensure that WishlistListing moneyOffer help text is correct
+    def test_wishlist_listing_money_offer_help_text(self):
+        wishlist_listing = self.wishlistListing
+        help_text = wishlist_listing._meta.get_field('moneyOffer').help_text
+        self.assertEqual(help_text, "Amount that you are offering for the items you're seeking.")
+
+    #Checks to ensure that WishlistListing itemsOffer verbose name is correct
+    def test_wishlist_listing_items_offer_verbose_name(self):
+        wishlist_listing = self.wishlistListing
+        verbose_name = wishlist_listing._meta.get_field('itemsOffer').verbose_name
+        self.assertEqual(verbose_name, "Items You're Offering")
+
+    #Checks to ensure that WishlistListing itemsOffer help text is correct
+    def test_wishlist_listing_items_offer_help_text(self):
+        wishlist_listing = self.wishlistListing
+        help_text = wishlist_listing._meta.get_field('itemsOffer').help_text
+        self.assertEqual(help_text, "Items that you would like to offer for the items you're seeking.")
+
+    #Checks to ensure that WishlistListing notes help text is correct
+    def test_wishlist_listing_notes_help_text(self):
+        wishlist_listing = self.wishlistListing
+        help_text = wishlist_listing._meta.get_field('notes').help_text
+        self.assertEqual(help_text, "Include here any details about the item(s) you're seeking.")
+
+#Tests for WishlistListing subclass
 
 #Tests for Offer class
 class OfferModelTest(MyTestCase):
