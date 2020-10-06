@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
-    WishlistForm)
+    WishlistForm, WishlistListingForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
@@ -14,14 +14,17 @@ from django.conf import settings
 # Create your tests here.
 class MyTestCase(TestCase):
     def setUp(self):
-        user1 = User.objects.create(username="mike", password="example",
-            email="example@text.com", paypalEmail="example@text.com",
+        #Create global users for testing
+        user1 = User.objects.create_user(username="mike2", password="example",
+            email="example4@text.com", paypalEmail="example4@text.com",
             invitesOpen=True, inquiriesOpen=True) #profile is created when the user is created
-        user2 = User.objects.create(username="mike3", password="example",
+        user2 = User.objects.create_user(username="mike3", password="example",
             email="example3@text.com", paypalEmail="example3@text.com",
             invitesOpen=True, inquiriesOpen=True)
         self.global_user1 = user1
         self.global_user2 = user2
+
+        #Greate global images and a tag for testing
         test_image1 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
         self.global_image1 = Image.objects.create(owner=self.global_user1,
             image=test_image1, name="Test Image")
@@ -33,6 +36,10 @@ class MyTestCase(TestCase):
             image=test_image2, name="Test Image 2")
         self.global_image2.tags.add(self.tag)
         self.global_image2.save
+        self.global_test_image1 = test_image1
+        self.global_test_image2 = test_image2
+
+        #Create a global item for each user for testing
         self.global_item1 = Item.objects.create(name="Global Item",
             description="A global item for testing", owner=self.global_user1)
         self.global_item1.images.add(self.global_image1)
@@ -41,6 +48,16 @@ class MyTestCase(TestCase):
             description="Another global item for testing", owner=self.global_user2)
         self.global_item2.images.add(self.global_image2)
         self.global_item2.save
+        self.global_non_wishlist_item = Item.objects.create(name="Global Item",
+            description="A global item not in wishlist for testing", owner=self.global_user1)
+        self.global_non_wishlist_item.images.add(self.global_image1)
+        self.global_non_wishlist_item.save
+
+        #Create a global wishlist
+        self.global_wishlist = Wishlist.objects.create(owner=self.global_user1,
+            title="My Wishlist", description="Stuff I would love to trade for")
+        self.global_wishlist.items.add(self.global_item1)
+        self.global_wishlist.save
 
 class SignUpFormTest(TestCase):
     #Test to ensure a user is able to sign up providing all fields
@@ -1324,3 +1341,253 @@ class WishlistFormTest(MyTestCase):
         user = self.global_user1
         form = WishlistForm(user=user)
         self.assertEqual(form.fields['items'].help_text, "Items That You Are Seeking.")
+
+class WishlistListingFormTest(MyTestCase):
+    #Test to ensure a user is able to create an wishlist listing providing all fields
+    def test_valid_wishlist_listing_creation(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item1.id)],'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is able to create an wishlist listing without offering money
+    #but offering items
+    def test_valid_wishlist_listing_creation_no_money_offered(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'itemsOffer': [str(self.global_item1.id)],
+            'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is able to create an wishlist listing without offering items
+    #but offering money
+    def test_valid_wishlist_listing_creation_no_items_offered(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing using item not owned
+    #as wishlist item
+    def test_invalid_wishlist_listing_creation_item_not_owned_for_wishlist_item(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item2.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item1.id)],'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing using item not on
+    #wishlist as wishlist item
+    def test_invalid_wishlist_listing_creation_item_not_in_wishlist(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_non_wishlist_item.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item1.id)],'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing using item not
+    #owned for item offer
+    def test_invalid_wishlist_listing_creation_item_not_owned_to_offer(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item2.id)],'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing if wishlist items
+    #are not selected
+    def test_invalid_wishlist_listing_creation_no_wishlist_items(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'endTimeChoices': end_time_choice,
+            'moneyOffer': money_offer, 'itemsOffer': [str(self.global_item1.id)],
+            'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is able to create an wishlist listing if name is not given
+    def test_valid_wishlist_listing_creation_no_name_given(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item1.id)],'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing if end time
+    #is not selected
+    def test_invalid_wishlist_listing_creation_no_end_time(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'moneyOffer': money_offer, 'itemsOffer': [str(self.global_item1.id)],
+            'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing if money
+    #offer and offer items are not given
+    def test_invalid_wishlist_listing_creation_no_money_or_items_offered(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing if notes
+    #are not included
+    def test_invalid_wishlist_listing_creation_no_notes(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item1.id)]}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing if name is
+    #too long
+    def test_invalid_wishlist_listing_creation_name_too_long(self):
+        user = self.global_user1
+        name = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item1.id)],'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing if amount offered
+    #is negative
+    def test_invalid_wishlist_listing_creation_negative_amount_offered(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = -6.00
+        notes = "Please I really want this"
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item1.id)],'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create an wishlist listing if notes
+    #are too long
+    def test_invalid_wishlist_listing_creation_notes_too_long(self):
+        user = self.global_user1
+        name = "My Wishlist Listing"
+        end_time_choice = '1h'
+        money_offer = 6.00
+        notes = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'name': name, 'items': [str(self.global_item1.id)],
+            'endTimeChoices': end_time_choice, 'moneyOffer': money_offer,
+            'itemsOffer': [str(self.global_item1.id)],'notes': notes}
+        form = WishlistListingForm(data=data, user=user)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that name field help text is correct
+    def test_wishlist_listing_name_help_text(self):
+        user = self.global_user1
+        form = WishlistListingForm(user=user)
+        self.assertEqual(form.fields['name'].help_text, "Name for listing is required.")
+
+    #Test to ensure that items field help text is correct
+    def test_wishlist_listing_items_help_text(self):
+        user = self.global_user1
+        form = WishlistListingForm(user=user)
+        self.assertEqual(form.fields['items'].help_text, ("At least one " +
+            "wishlist item must be selected."))
+
+    #Test to ensure that items field label is correct
+    def test_wishlist_listing_items_label(self):
+        user = self.global_user1
+        form = WishlistListingForm(user=user)
+        self.assertEqual(form.fields['items'].label, "Wishlist Items")
+
+    #Test to ensure that itemsOffer field help text is correct
+    def test_wishlist_listing_items_offer_help_text(self):
+        user = self.global_user1
+        form = WishlistListingForm(user=user)
+        self.assertEqual(form.fields['itemsOffer'].help_text, ("Items you " +
+            "would exchange for wishlist items."))
+
+    #Test to ensure that itemsOffer field label is correct
+    def test_wishlist_listing_items_offer_label(self):
+        user = self.global_user1
+        form = WishlistListingForm(user=user)
+        self.assertEqual(form.fields['itemsOffer'].label, "Items Being Offered")
+
+    #Test to ensure that moneyOffer field help text is correct
+    def test_wishlist_listing_money_offer_help_text(self):
+        user = self.global_user1
+        form = WishlistListingForm(user=user)
+        self.assertEqual(form.fields['moneyOffer'].help_text, ("Monetary " +
+            "amount you would exchange for wishlist items."))
+
+    #Test to ensure that moneyOffer field label is correct
+    def test_wishlist_listing_money_offer_label(self):
+        user = self.global_user1
+        form = WishlistListingForm(user=user)
+        self.assertEqual(form.fields['moneyOffer'].label, "Money Being Offered")
