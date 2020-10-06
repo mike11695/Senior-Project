@@ -529,10 +529,10 @@ class WishlistListingForm(ModelForm):
             if clean_money_offer:
                 #Check to ensure amount offered is not negative
                 if clean_money_offer < 0.00:
-                    raise ValidationError("Monetary amount offered cannot be negative.")
+                    raise forms.ValidationError("Monetary amount offered cannot be negative.")
             return
         else:
-            raise ValidationError("At least a monetary amount or an item must" +
+            raise forms.ValidationError("At least a monetary amount or an item must" +
                 " be offered in listing.")
 
     itemsOffer = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=False,
@@ -541,14 +541,14 @@ class WishlistListingForm(ModelForm):
     moneyOffer = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Monetary amount you would exchange for wishlist items.",
         label="Money Being Offered")
+    name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
 
     class Meta:
         model = WishlistListing
         fields = ['name', 'items', 'endTimeChoices', 'moneyOffer', 'itemsOffer',
             'notes']
         exclude = ['owner', 'description', 'endTime', 'listingEnded']
-        help_texts = {'name': "Name for listing is required.",
-            'items': "At least one wishlist item must be selected.",
+        help_texts = {'items': "At least one wishlist item must be selected.",
             'notes': ("Any extra info about the wishlist items and what" +
                 "you're offering should go here")}
         labels = {'items': "Wishlist Items"}

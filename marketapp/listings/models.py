@@ -353,7 +353,8 @@ class WishlistListing(Listing):
     #Fields for WishlistListing
     moneyOffer = models.DecimalField(max_digits=9, decimal_places=2,
         verbose_name="Money Offer",
-        help_text="Amount that you are offering for the items you're seeking.")
+        help_text="Amount that you are offering for the items you're seeking.",
+        null=True)
     itemsOffer = models.ManyToManyField(Item, verbose_name="Items You're Offering",
         help_text="Items that you would like to offer for the items you're seeking.")
     notes = models.TextField(max_length=500,

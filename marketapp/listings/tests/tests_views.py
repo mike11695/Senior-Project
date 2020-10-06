@@ -45,6 +45,10 @@ class MyTestCase(TestCase):
             description="Another global item for testing", owner=self.global_user2)
         self.global_item2.images.add(self.global_image2)
         self.global_item2.save
+        self.global_non_wishlist_item = Item.objects.create(name="Global Item",
+            description="A global item not in wishlist for testing", owner=self.global_user1)
+        self.global_non_wishlist_item.images.add(self.global_image1)
+        self.global_non_wishlist_item.save
         self.global_test_image1 = test_image1
         self.global_test_image2 = test_image2
 
@@ -3686,3 +3690,225 @@ class WishlistListingsViewTest(MyTestCase):
         response = self.client.get(reverse('wishlist-listings'))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['wishlistlistings']) == 9)
+
+class CreateWishlistListingViewTest(MyTestCase):
+    def setUp(self):
+        super(CreateWishlistListingViewTest, self).setUp()
+
+    #Test to ensure that a user must be logged in to create wishlist listing
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/wishlists/wishlist-listings/create-wishlist-listing')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but have not made a wishlist
+    def test_redirect_if_logged_in_no_wishlist(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/create_wishlist_listing.html')
+
+    #Test to ensure that a user is able to create an wishlist listing and have it relate to them
+    def test_wishlist_listing_is_created(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "1h",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        self.assertEqual(new_wishlist_listing.owner, post_response.wsgi_request.user)
+
+    #Test to ensure that a user is able to create an wishlist listing and have it
+    #end in 1 hour if endtime choice is 1h
+    def test_wishlist_listing_is_created_correct_1h(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "1h",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=1)
+        to_tz = timezone.get_default_timezone()
+        new_wishlist_listing_endtime = new_wishlist_listing.endTime
+        new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
+        self.assertEqual(new_wishlist_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that a user is able to create an wishlist listing and have it
+    #end in 2 hours if endtime choice is 2h
+    def test_wishlist_listing_is_created_correct_2h(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "2h",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=2)
+        to_tz = timezone.get_default_timezone()
+        new_wishlist_listing_endtime = new_wishlist_listing.endTime
+        new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
+        self.assertEqual(new_wishlist_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that a user is able to create an wishlist listing and have it
+    #end in 4 hours if endtime choice is 4h
+    def test_wishlist_listing_is_created_correct_4h(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "4h",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=4)
+        to_tz = timezone.get_default_timezone()
+        new_wishlist_listing_endtime = new_wishlist_listing.endTime
+        new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
+        self.assertEqual(new_wishlist_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that a user is able to create an wishlist listing and have it
+    #end in 8 hours if endtime choice is 8h
+    def test_wishlist_listing_is_created_correct_8h(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "8h",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=8)
+        to_tz = timezone.get_default_timezone()
+        new_wishlist_listing_endtime = new_wishlist_listing.endTime
+        new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
+        self.assertEqual(new_wishlist_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that a user is able to create an wishlist listing and have it
+    #end in 12 hours if endtime choice is 12h
+    def test_wishlist_listing_is_created_correct_12h(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "12h",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=12)
+        to_tz = timezone.get_default_timezone()
+        new_wishlist_listing_endtime = new_wishlist_listing.endTime
+        new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
+        self.assertEqual(new_wishlist_listing_endtime.hour, end_time_check.hour)
+
+    #Test to ensure that a user is able to create an wishlist listing and have it
+    #end in 1 day if endtime choice is 1d
+    def test_wishlist_listing_is_created_correct_1d(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "1d",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(days=1)
+        to_tz = timezone.get_default_timezone()
+        new_wishlist_listing_endtime = new_wishlist_listing.endTime
+        new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
+        self.assertEqual(new_wishlist_listing_endtime.day, end_time_check.day)
+
+    #Test to ensure that a user is able to create an wishlist listing and have it
+    #end in 3 days if endtime choice is 3d
+    def test_wishlist_listing_is_created_correct_3d(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "3d",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(days=3)
+        to_tz = timezone.get_default_timezone()
+        new_wishlist_listing_endtime = new_wishlist_listing.endTime
+        new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
+        self.assertEqual(new_wishlist_listing_endtime.day, end_time_check.day)
+
+    #Test to ensure that a user is able to create an wishlist listing and have it
+    #end in 7 days if endtime choice is 7d
+    def test_wishlist_listing_is_created_correct_7d(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "7d",
+                'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        end_time_check = timezone.localtime(timezone.now()) + timedelta(days=7)
+        to_tz = timezone.get_default_timezone()
+        new_wishlist_listing_endtime = new_wishlist_listing.endTime
+        new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
+        self.assertEqual(new_wishlist_listing_endtime.day, end_time_check.day)
+
+    #Test to ensure that a user is able to create an wishlist listing and if moneyOffer
+    #is left blank, it becomes $0.00
+    def test_wishlist_listing_is_created_no_money_offer(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-wishlist-listing'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-wishlist-listing'),
+            data={'name': "My Wishlist Listing", 'endTimeChoices': "1h",
+                'items': [str(self.global_item1.id)],
+                'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Only looking for items that haven't been used."})
+        self.assertEqual(post_response.status_code, 302)
+        new_wishlist_listing = WishlistListing.objects.last()
+        self.assertEqual(new_wishlist_listing.moneyOffer, 0.00)
