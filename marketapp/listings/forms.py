@@ -226,24 +226,25 @@ class OfferForm(ModelForm):
         clean_listing = cleaned_data.get('offerListing')
 
         if timezone.localtime(timezone.now()) > clean_listing.endTime:
-            raise ValidationError("Listing has ended, no offers can be made.")
+            raise forms.ValidationError("Listing has ended, no offers can be made.")
         else:
             if clean_amount:
                 if clean_listing.openToMoneyOffers:
                     if (clean_amount < clean_listing.minRange) and clean_amount != 0.00:
                         #Check to see that the amount offered is not less than the listing's minimum range
-                        raise ValidationError("Amount offered is less than the minimum range of ${0}".format(clean_listing.minRange))
-                    elif clean_amount > clean_listing.maxRange:
-                        #Check to see that the amount offered is not more than the listing's maximum range
-                        raise ValidationError("Amount offered is more than the maximum range of ${0}".format(clean_listing.maxRange))
+                        raise forms.ValidationError("Amount offered is less than the minimum range of ${0}".format(clean_listing.minRange))
+                    elif clean_listing.maxRange:
+                        if clean_amount > clean_listing.maxRange:
+                            #Check to see that the amount offered is not more than the listing's maximum range
+                            raise forms.ValidationError("Amount offered is more than the maximum range of ${0}".format(clean_listing.maxRange))
                 else:
-                    raise ValidationError("Listing is not accepting money offers.")
+                    raise forms.ValidationError("Listing is not accepting money offers.")
             else:
                 clean_items = cleaned_data.get('items')
                 if clean_items:
                     pass
                 else:
-                    raise ValidationError("An item must be offered.")
+                    raise forms.ValidationError("An item must be offered.")
 
         return
 
@@ -379,7 +380,7 @@ class CreateBidForm(ModelForm):
                             raise ValidationError("You already have the current bid.")
                         elif clean_amount > (current_bid.amount + (clean_listing.minimumIncrement * 3)):
                             #Amount bid is greater than the maximum that can be bid
-                            highest_bid = clean_listing.amount + (clean_listing.minimumIncrement * 3)
+                            highest_bid = current_bid.amount + (clean_listing.minimumIncrement * 3)
                             raise ValidationError("Maximum bid that can be placed is ${0}".format(highest_bid))
                         elif clean_amount < (current_bid.amount + clean_listing.minimumIncrement):
                             #Amount bid is less than the minimum bid that can currently be bid

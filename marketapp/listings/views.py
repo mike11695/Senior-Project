@@ -628,10 +628,25 @@ class MyBidsListView(LoginRequiredMixin, generic.ListView):
     paginate_by = 10
 
     #Filters the list of bids to only show those that belong to the current logged in user
+    #Only gets the last bid user made for each listing
     def get_queryset(self):
-        bid_ids = [bid.id for bid in Bid.objects.all() if bid.auctionListing.listingEnded == False or
-            bid.auctionListing.listingEnded and bid.winningBid]
-        return Bid.objects.filter(id__in=bid_ids, bidder=self.request.user).order_by('id')
+        #Get all the auctions on site that have a bid related to current user
+        auction_ids = [auction.id for auction in AuctionListing.objects.all() if
+            auction.bids.filter(bidder=self.request.user).exists()]
+
+        #Initiate an empty list of bids
+        bid_ids = []
+
+        #For each auction, get the last bid the user made on it and append to
+        #list of bid ids
+        for auction_id in auction_ids:
+            auction = AuctionListing.objects.get(id=auction_id)
+            latest_bid = Bid.objects.filter(auctionListing=auction, bidder=self.request.user).last()
+            bid_ids.append(latest_bid.id)
+
+        #bid_ids = [bid.id for bid in Bid.objects.all() if bid.auctionListing.listingEnded == False or
+            #bid.auctionListing.listingEnded and bid.winningBid]
+        return Bid.objects.filter(id__in=bid_ids).order_by('id')
 
 #Form view for creating an auction listing
 @login_required(login_url='/accounts/login/')
