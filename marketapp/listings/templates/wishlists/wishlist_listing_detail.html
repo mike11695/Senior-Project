@@ -1,0 +1,70 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="col-lg-10 center-block wishlist-listing-header">
+    <h2>{{ wishlistlisting.name }}</h2>
+  </div>
+  <div class="listing-item-container col-lg-10 center-block">
+    <h4>{{ wishlistlisting.owner }} is searching for the following items...</h4>
+    <br>
+    {% if wishlistlisting.items %}
+      <div class="center-block col-lg-8">
+        {% for item in wishlistlisting.items.all %}
+          <a href="{{ item.get_absolute_url }}">
+            <div class="item-display">
+              {% if item.images %}
+                {% with item.images.all|first as image %}
+                  <div class="item-image">
+                    <img src="{{ image.image.url }}"
+                      style="width: 150px; height: 150px;">
+                    </img>
+                  </div>
+                {% endwith %}
+              {% endif %}
+              <div class="item-name"><h5>{{ item.name }}</h5></div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+  <div class="listing-offer-container col-lg-10 center-block">
+    <h4>{{ wishlistlisting.owner }} is offering the following for the items above...</h4>
+    <br>
+    {% if wishlistlisting.itemsOffer %}
+      <div class="center-block col-lg-8">
+        {% for item in wishlistlisting.itemsOffer.all %}
+          <a href="{{ item.get_absolute_url }}">
+            <div class="item-display">
+              {% if item.images %}
+                {% with item.images.all|first as image %}
+                  <div class="item-image">
+                    <img src="{{ image.image.url }}"
+                      style="width: 150px; height: 150px;">
+                    </img>
+                  </div>
+                {% endwith %}
+              {% endif %}
+              <div class="item-name"><h5>{{ item.name }}</h5></div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <br>
+    {% if wishlistlisting.moneyOffer and wishlistlisting.moneyOffer > 0.00 %}
+      <h3>Money Offer:</h3>
+      <div class="wishlist-amount-offered">
+        <h4>${{ wishlistlisting.moneyOffer }}</h4>
+      </div>
+    {% endif %}
+    <div class="detail">Notes: {{ wishlistlisting.notes }}</div><br>
+    {% if wishlistlisting.listingEnded != True %}
+      {% if request.user != wishlistlisting.owner %}
+        <a href="">
+          <div class="btn btn-blue listing-btn center-block" style="margin-bottom: 20px;">Message</div>
+        </a>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}

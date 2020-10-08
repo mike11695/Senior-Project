@@ -1312,6 +1312,12 @@ class WishlistListingListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return WishlistListing.objects.filter(owner=self.request.user).order_by('endTime').reverse()
 
+#Detail view for a wishlist listing
+class WishlistListingDetailView(LoginRequiredMixin, generic.DetailView):
+    model = WishlistListing
+    context_object_name = 'wishlistlisting'
+    template_name = "wishlists/wishlist_listing_detail.html"
+
 #Form view to create a wishlist for a user
 @login_required(login_url='/accounts/login/')
 def create_wishlist_listing(request):

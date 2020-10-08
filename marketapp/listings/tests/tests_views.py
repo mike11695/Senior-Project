@@ -3691,6 +3691,52 @@ class WishlistListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['wishlistlistings']) == 9)
 
+class WishlistListingDetailViewTest(MyTestCase):
+    def setUp(self):
+        super(WishlistListingDetailViewTest, self).setUp()
+
+        #Get the current date and time for testing and create active endTimes
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Wishlist listing to test with
+        self.listing = WishlistListing.objects.create(owner=self.global_user1,
+            name='My Wishlist Listing', endTime=date_active,
+            moneyOffer=5.00, notes="Just a test")
+        self.listing.items.add(self.global_item1)
+        self.listing.save
+
+    #Test to ensure that a user must be logged in to view wishlist listings
+    def test_redirect_if_not_logged_in(self):
+        listing = self.listing
+        response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/wishlists/wishlist-listings/{0}'.format(listing.id))
+
+    #Test to ensure owner is not redirected if logged in
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.listing
+        response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure non owner is not redirected if logged in
+    def test_no_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.listing
+        response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.listing
+        response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/wishlist_listing_detail.html')
+
 class CreateWishlistListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateWishlistListingViewTest, self).setUp()
