@@ -12,7 +12,7 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
-    EventForm, InvitationForm, WishlistForm, WishlistListingForm)
+    EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1318,7 +1318,7 @@ class WishlistListingDetailView(LoginRequiredMixin, generic.DetailView):
     context_object_name = 'wishlistlisting'
     template_name = "wishlists/wishlist_listing_detail.html"
 
-#Form view to create a wishlist for a user
+#Form view to create a wishlist listing for a user
 @login_required(login_url='/accounts/login/')
 def create_wishlist_listing(request):
     #check to see if user has made a wishlist before making a listing,
@@ -1395,3 +1395,93 @@ def create_wishlist_listing(request):
         else:
             form = WishlistListingForm(user=request.user)
         return render(request, 'wishlists/create_wishlist_listing.html', {'form': form})
+
+#Form view to quickly create a wishlist listing with the item selected for a user
+@login_required(login_url='/accounts/login/')
+def quick_wishlist_listing(request, pk):
+    #Get the item that was selected by user
+    current_item = get_object_or_404(Item, pk=pk)
+
+    #check to see if user has made a wishlist before making a listing,
+    #if not redirect to index
+    try:
+        wishlist = request.user.wishlist
+    except Wishlist.DoesNotExist:
+        wishlist = None
+
+    if wishlist == None:
+        print("No wishlist found")
+        return redirect('index')
+    else:
+        #Check to ensure that the user owns the item they want to make listing with
+        #If not redirect to index
+        if current_item.owner != request.user:
+            return redirect('index')
+        else:
+            if request.method == 'POST':
+                #Initialize form with item selected
+                form = QuickWishlistListingForm(data=request.POST, user=request.user,
+                    initial={'items': Item.objects.filter(pk=current_item.pk)})
+                if form.is_valid():
+                    created_wishlist_listing = form.save()
+
+                    #Get the end time choice from form and set end time accordingly
+                    clean_choice = form.cleaned_data.get('endTimeChoices')
+                    if clean_choice == '1h':
+                        #Set end time to 1 hour from current time if choice was 1h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=1)
+                    elif clean_choice == '2h':
+                        #Set end time to 2 hours from current time if choice was 2h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=2)
+                    elif clean_choice == '4h':
+                        #Set end time to 4 hours from current time if choice was 4h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=4)
+                    elif clean_choice == '8h':
+                        #Set end time to 8 hours from current time if choice was 8h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=8)
+                    elif clean_choice == '12h':
+                        #Set end time to 12 hours from current time if choice was 12h
+                        date = timezone.localtime(timezone.now()) + timedelta(hours=12)
+                    elif clean_choice == '1d':
+                        #Set end time to 1 day from current time if choice was 1d
+                        date = timezone.localtime(timezone.now()) + timedelta(days=1)
+                    elif clean_choice == '3d':
+                        #Set end time to 3 days from current time if choice was 3ds
+                        date = timezone.localtime(timezone.now()) + timedelta(days=3)
+                    else:
+                        #Set end time to 7 days from current time
+                        date = timezone.localtime(timezone.now()) + timedelta(days=7)
+
+                    #Set the endTime for the listing with the calculated date
+                    created_wishlist_listing.endTime = date
+
+                    #Check to see if moneyOffer was left blank in form
+                    clean_money_offer = form.cleaned_data.get('moneyOffer')
+                    if clean_money_offer:
+                        pass
+                    else:
+                        #set moneyOffer to $0.00 if no money was offered
+                        created_wishlist_listing.moneyOffer = 0.00
+
+                    #Set the listing owner to be the current user
+                    created_wishlist_listing.owner = request.user
+
+                    #Add items from the form to the listing for wishlist items
+                    clean_wishlist_items = form.cleaned_data.get('items')
+                    for item in clean_wishlist_items:
+                        created_wishlist_listing.items.add(item)
+
+                    #Add items from the form to the listing for offered items
+                    clean_offered_items = form.cleaned_data.get('itemsOffer')
+                    for item in clean_offered_items:
+                        created_wishlist_listing.itemsOffer.add(item)
+
+                    #Save the wishlist listing
+                    created_wishlist_listing.save()
+
+                    #redirect to the list view for a user's wishlist listings
+                    return redirect('wishlist-listings')
+            else:
+                form = QuickWishlistListingForm(user=request.user,
+                    initial={'items': [str(current_item.id)]})
+            return render(request, 'wishlists/quick_wishlist_listing.html', {'form': form})

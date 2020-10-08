@@ -59,10 +59,12 @@ urlpatterns = [
     path('wishlists/<int:wishlist_pk>/remove-wishlist-item/<int:item_pk>',
         views.remove_wishlist_item, name='remove-wishlist-item'),
     path('wishlists/wishlist-listings', views.WishlistListingListView.as_view(), name='wishlist-listings'),
-    path('wishlists/wishlist-listings/create-wishlist-listing', views.create_wishlist_listing,
-        name='create-wishlist-listing'),
     path('wishlists/wishlist-listings/<int:pk>', views.WishlistListingDetailView.as_view(),
         name='wishlist-listing-detail'),
+    path('wishlists/wishlist-listings/create-wishlist-listing', views.create_wishlist_listing,
+        name='create-wishlist-listing'),
+    path('wishlists/wishlist-listings/<int:pk>/quick-wishlist-listing', views.quick_wishlist_listing,
+        name='quick-wishlist-listing'),
 
     #Events
     path('events/', views.EventListView.as_view(), name='events'),

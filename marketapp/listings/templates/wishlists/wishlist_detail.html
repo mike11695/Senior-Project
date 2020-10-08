@@ -31,7 +31,8 @@
           {% endif %}
           <div class="item-list-item-name"><h5>{{ item.name|truncatechars:15 }}</h5></div>
           <div class="center-block" style="text-align: center;">
-            <a class="btn btn-blue wishlist-button" href="">LIST</a>
+            <a class="btn btn-blue wishlist-button"
+              href="{% url 'quick-wishlist-listing' pk=item.pk %}">LIST</a>
             <a class="btn btn-red wishlist-button"
               onclick="return confirm('Are you sure you want to remove this item?')"
               href="{% url 'remove-wishlist-item' wishlist_pk=wishlist.pk item_pk=item.pk %}">REMOVE</a>
