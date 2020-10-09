@@ -535,6 +535,8 @@ class WishlistListingForm(ModelForm):
             raise forms.ValidationError("At least a monetary amount or an item must" +
                 " be offered in listing.")
 
+        return
+
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=True,
         help_text="At least one wishlist item must be selected.",
         label="Wishlist Items")
@@ -558,6 +560,53 @@ class WishlistListingForm(ModelForm):
     def __init__(self, *args, **kwargs):
        self.user = kwargs.pop('user')
        super(WishlistListingForm, self).__init__(*args, **kwargs)
+       wishlist = Wishlist.objects.get(owner=self.user)
+       self.fields['items'].queryset = wishlist.items
+       self.fields['itemsOffer'].queryset = Item.objects.filter(owner=self.user)
+
+#Form for a user to edit a wishlist listing
+class EditWishlistListingForm(ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        clean_money_offer = cleaned_data.get('moneyOffer')
+        clean_items_offer = cleaned_data.get('itemsOffer')
+
+        #Check to ensure at least money or item(s) were included in listing
+        if clean_money_offer or clean_items_offer:
+            if clean_money_offer:
+                #Check to ensure amount offered is not negative
+                if clean_money_offer < 0.00:
+                    raise forms.ValidationError("Monetary amount offered cannot be negative.")
+        else:
+            raise forms.ValidationError("At least a monetary amount or an item must" +
+                " be offered in listing.")
+
+        return
+
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=True,
+        help_text="At least one wishlist item must be selected.",
+        label="Wishlist Items")
+    itemsOffer = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=False,
+        help_text="Items you would exchange for wishlist items.",
+        label="Items Being Offered")
+    moneyOffer = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
+        help_text="Monetary amount you would exchange for wishlist items.",
+        label="Money Being Offered")
+    name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
+
+    class Meta:
+        model = WishlistListing
+        fields = ['name', 'items', 'moneyOffer', 'itemsOffer',
+            'notes']
+        exclude = ['owner', 'description', 'endTime', 'listingEnded',
+            'endTimeChoices']
+        help_texts = {'notes': ("Any extra info about the wishlist items and what" +
+                "you're offering should go here")}
+
+    #Initializes the items dropdown with items that only relate to the current user
+    def __init__(self, *args, **kwargs):
+       self.user = kwargs.pop('user')
+       super(EditWishlistListingForm, self).__init__(*args, **kwargs)
        wishlist = Wishlist.objects.get(owner=self.user)
        self.fields['items'].queryset = wishlist.items
        self.fields['itemsOffer'].queryset = Item.objects.filter(owner=self.user)

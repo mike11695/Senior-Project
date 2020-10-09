@@ -12,7 +12,8 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
-    EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm)
+    EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
+    EditWishlistListingForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1411,6 +1412,68 @@ def create_wishlist_listing(request):
         else:
             form = WishlistListingForm(user=request.user)
         return render(request, 'wishlists/create_wishlist_listing.html', {'form': form})
+
+#Form view to edit a wishlist listing for a user
+@login_required(login_url='/accounts/login/')
+def edit_wishlist_listing(request, pk):
+    #Get the listing to be editing
+    current_listing = get_object_or_404(WishlistListing, pk=pk)
+
+    #check to see if user has made a wishlist before editing a listing,
+    #if not redirect to index
+    try:
+        wishlist = request.user.wishlist
+    except Wishlist.DoesNotExist:
+        wishlist = None
+
+    if wishlist == None:
+        return redirect('index')
+    else:
+        #Check to make sure that the owner of listing is editing
+        #Redirect if not
+        if current_listing.owner == request.user:
+            #Check to make sure the listing is still active, if not redirect
+            if current_listing.listingEnded != True:
+                if request.method == 'POST':
+                    form = EditWishlistListingForm(data=request.POST, user=request.user,
+                        instance=current_listing)
+                    if form.is_valid():
+                        updated_listing = form.save(commit=False)
+
+                        #Check to see if moneyOffer was left blank in form
+                        clean_money_offer = form.cleaned_data.get('moneyOffer')
+                        if clean_money_offer:
+                            pass
+                        else:
+                            #set moneyOffer to $0.00 if no money was offered
+                            updated_listing.moneyOffer = 0.00
+
+                        #Clear current wishlist items from listing and add items from the
+                        #form to the listing for wishlist items
+                        updated_listing.items.clear()
+                        clean_wishlist_items = form.cleaned_data.get('items')
+                        for item in clean_wishlist_items:
+                            updated_listing.items.add(item)
+
+                        #Clear current offer items from listing and add items from the
+                        #form to the listing for wishlist items
+                        updated_listing.itemsOffer.clear()
+                        clean_offered_items = form.cleaned_data.get('itemsOffer')
+                        for item in clean_offered_items:
+                            updated_listing.itemsOffer.add(item)
+
+                        #Save the wishlist listing
+                        updated_listing.save()
+
+                        #redirect to the list view for a user's wishlist listings
+                        return redirect('wishlist-listing-detail', pk=updated_listing.pk)
+                else:
+                    form = EditWishlistListingForm(user=request.user, instance=current_listing)
+                return render(request, 'wishlists/edit_wishlist_listing.html', {'form': form})
+            else:
+                return redirect('wishlist-detail', pk=request.user.wishlist.id)
+        else:
+            return redirect('index')
 
 #Form view to quickly create a wishlist listing with the item selected for a user
 @login_required(login_url='/accounts/login/')

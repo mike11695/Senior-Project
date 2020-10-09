@@ -4277,3 +4277,83 @@ class QuickWishlistListingViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         new_wishlist_listing = WishlistListing.objects.last()
         self.assertEqual(new_wishlist_listing.moneyOffer, 0.00)
+
+class EditWishlistListingViewTest(MyTestCase):
+    def setUp(self):
+        super(EditWishlistListingViewTest, self).setUp()
+
+        #Get the current date and time for testing and create active and
+        #inactive endTimes
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+        date_ended = timezone.localtime(timezone.now()) - timedelta(days=1)
+
+        #Wishlist listings to test with
+        self.listing = WishlistListing.objects.create(owner=self.global_user1,
+            name='My Wishlist Listing', endTime=date_active,
+            moneyOffer=5.00, notes="Just a test")
+        self.listing.items.add(self.global_item1)
+        self.listing.save
+
+        self.expired_listing = WishlistListing.objects.create(owner=self.global_user1,
+            name='My Wishlist Listing', endTime=date_ended,
+            moneyOffer=5.00, notes="Just a test")
+        self.expired_listing.items.add(self.global_item1)
+        self.expired_listing.save
+
+    #Test to ensure that a user must be logged in to edit a  wishlist listings
+    def test_redirect_if_not_logged_in(self):
+        listing = self.listing
+        response = self.client.get(reverse('edit-wishlist-listing', args=[str(listing.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/wishlists/wishlist-listings/{0}/edit'.format(listing.id))
+
+    #Test to ensure owner is not redirected if logged in
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.listing
+        response = self.client.get(reverse('edit-wishlist-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure non owner is redirected if logged in
+    def test_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.listing
+        response = self.client.get(reverse('edit-wishlist-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure owner is redirected if listing has expired
+    def test_redirect_if_logged_in_owner_listing_expired(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.expired_listing
+        response = self.client.get(reverse('edit-wishlist-listing', args=[str(listing.id)]))
+        self.assertRedirects(response,
+            '/listings/wishlists/{0}'.format(self.global_user1.wishlist.id))
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.listing
+        response = self.client.get(reverse('edit-wishlist-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/edit_wishlist_listing.html')
+
+    #Test to ensure that a user is able to edit a wishlist listing sucessfully
+    def test_wishlist_listing_is_edited_sucessfully(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.listing
+        response = self.client.get(reverse('edit-wishlist-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-wishlist-listing', args=[str(listing.id)]),
+            data={'name': "My Awesome Wishlist Listing",  'items': [str(self.global_item1.id)],
+                'moneyOffer': 10.00, 'itemsOffer': [str(self.global_non_wishlist_item.id)],
+                'notes': "Just a simple update"})
+        self.assertEqual(post_response.status_code, 302)
+        updated_wishlist_listing = WishlistListing.objects.get(id=listing.id)
+        self.assertEqual(updated_wishlist_listing.name, "My Awesome Wishlist Listing")
+        self.assertEqual(updated_wishlist_listing.moneyOffer, 10.00)
+        self.assertEqual(updated_wishlist_listing.notes, "Just a simple update")
