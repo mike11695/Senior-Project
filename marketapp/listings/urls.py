@@ -59,6 +59,7 @@ urlpatterns = [
     path('wishlists/<int:wishlist_pk>/remove-wishlist-item/<int:item_pk>',
         views.remove_wishlist_item, name='remove-wishlist-item'),
     path('wishlists/wishlist-listings', views.WishlistListingListView.as_view(), name='wishlist-listings'),
+    path('wishlists/wishlist-listings/all', views.AllWishlistListingsListView.as_view(), name='all-wishlist-listings'),
     path('wishlists/wishlist-listings/<int:pk>', views.WishlistListingDetailView.as_view(),
         name='wishlist-listing-detail'),
     path('wishlists/wishlist-listings/create-wishlist-listing', views.create_wishlist_listing,

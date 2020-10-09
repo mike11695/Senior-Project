@@ -329,7 +329,8 @@ class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
     template_name = "listings/all_offer_listings.html"
     paginate_by = 10
 
-    #Filters the list of offer listings to only show those that belong to the current logged in user
+    #Filters the list of offer listings to only show those that have not
+    #ended yet
     def get_queryset(self):
         listings_ids = [listing.id for listing in OfferListing.objects.all() if listing.listingEnded == False
             and listing.listingCompleted == False]
@@ -604,7 +605,8 @@ class AllAuctionListingsListView(LoginRequiredMixin, generic.ListView):
     template_name = "listings/all_auction_listings.html"
     paginate_by = 10
 
-    #Filters the list of offer listings to only show those that belong to the current logged in user
+    #Filters the list of auction listings to only show those that have not
+    #ended yet
     def get_queryset(self):
         listings_ids = [listing.id for listing in AuctionListing.objects.all() if listing.listingEnded == False]
         queryset = AuctionListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
@@ -1317,6 +1319,20 @@ class WishlistListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = WishlistListing
     context_object_name = 'wishlistlisting'
     template_name = "wishlists/wishlist_listing_detail.html"
+
+#List view for a user to see all of the wishlists listings that are active on site
+class AllWishlistListingsListView(LoginRequiredMixin, generic.ListView):
+    model = WishlistListing
+    context_object_name = 'wishlistlistings'
+    template_name = "wishlists/all_wishlist_listings.html"
+    paginate_by = 10
+
+    #Filters the list of wishlist listings to only show those that
+    #Have not ended yet
+    def get_queryset(self):
+        listings_ids = [listing.id for listing in WishlistListing.objects.all()
+            if listing.listingEnded == False]
+        return WishlistListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
 
 #Form view to create a wishlist listing for a user
 @login_required(login_url='/accounts/login/')

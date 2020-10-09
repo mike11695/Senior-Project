@@ -3737,6 +3737,77 @@ class WishlistListingDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wishlists/wishlist_listing_detail.html')
 
+class AllWishlistListingsViewTest(MyTestCase):
+    def setUp(self):
+        super(AllWishlistListingsViewTest, self).setUp()
+
+        #Create a variety of listings to test with
+        #Number of active listings should be 9
+        number_of_active_listings_user1 = 3
+        number_of_active_listings_user2 = 6
+        number_of_inactive_listings_user1 = 7
+
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        for num in range(number_of_active_listings_user1):
+            listing = WishlistListing.objects.create(owner=self.global_user1,
+                name='My Wishlist Listing #{0}'.format(num), endTime=date_active,
+                moneyOffer=5.00, notes="Just a test")
+            listing.items.add(self.global_item1)
+            listing.itemsOffer.add(self.global_non_wishlist_item)
+            listing.save
+
+        for num in range(number_of_active_listings_user2):
+            listing = WishlistListing.objects.create(owner=self.global_user2,
+                name='My Wishlist Listing #{0}'.format(num), endTime=date_active,
+                moneyOffer=5.00, notes="Just a test")
+            listing.items.add(self.global_item2)
+            listing.save
+
+        for num in range(number_of_inactive_listings_user1):
+            listing = WishlistListing.objects.create(owner=self.global_user1,
+                name='My Wishlist Listing #{0}'.format(num), endTime=date_ended,
+                moneyOffer=5.00, notes="Just a test")
+            listing.items.add(self.global_item1)
+            listing.save
+
+    #Test to ensure that a user must be logged in to view listings
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('all-wishlist-listings'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/wishlists/wishlist-listings/all')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-wishlist-listings'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-wishlist-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/all_wishlist_listings.html')
+
+    #Test to ensure that a user sees the correct amount of active listings
+    def test_list_only_active_listings_page_1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-wishlist-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['wishlistlistings']), 9)
+
+    #Test to ensure that different user sees the correct amount of active listings
+    def test_list_only_active_listings_new_user_page_1(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('all-wishlist-listings'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['wishlistlistings']), 9)
+
 class CreateWishlistListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateWishlistListingViewTest, self).setUp()

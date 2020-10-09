@@ -146,7 +146,7 @@
   width: 200px;
   height: 215px;
   box-shadow: 5px 5px 10px 0px;
-  margin-left: 15px;
+  margin-left: 20px;
 }
 
 .item-count {
@@ -609,6 +609,10 @@ a:hover {
   border-radius: 25px;
   margin-bottom: 15px;
   padding: 15px;
+}
+
+.wishlist-listing-container:nth-child(even) {
+  background: #CCC;
 }
 
 .wishlist-listing-ended-container {

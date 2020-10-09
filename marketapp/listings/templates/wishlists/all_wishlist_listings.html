@@ -1,0 +1,71 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>All Wishlist Listings</h1>
+      </div>
+    </div>
+  </div>
+  {% if wishlistlistings %}
+    <div class="center-block col-lg-8">
+      {% for listing in wishlistlistings %}
+        <div class="wishlist-listing-container">
+          <div class="wishlist-listing-header center-block col-lg-11">
+            <a href="{% url 'wishlist-listing-detail' pk=listing.pk %}">
+              <h3 class="wishlist-listing-name">{{ listing.name }}</h3>
+            </a>
+            <h5>{{ listing.owner }} is searching for...</h5>
+          </div>
+          <div class="center-block col-lg-11 wishlist-listing-items-container">
+            {% for item in listing.items.all %}
+              {% with item.images.all|first as image %}
+                <div class="wishlist-listing-image-container">
+                  <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endfor %}
+          </div>
+          <div class="center-block col-lg-11 wishlist-listing-offer-container">
+            <h5>{{ listing.owner }} is offering...</h5>
+            {% if listing.itemsOffer.count > 0 %}
+              {% for item in listing.itemsOffer.all %}
+                {% with item.images.all|first as image %}
+                  <div class="wishlist-listing-image-container">
+                    <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                  </div>
+                {% endwith %}
+              {% endfor %}
+            {% endif %}
+            {% if listing.moneyOffer and listing.moneyOffer > 0.00 %}
+              <div class="wishlist-amount-offered"><h4>${{ listing.moneyOffer }}</h4></div>
+            {% endif %}
+            {% if listing.notes %}
+              <div class="wishlist-notes">{{ listing.notes }}</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p style="text-align: center;">There are no wishlist listings currently.</p>
+  {% endif %}
+{% endblock %}
