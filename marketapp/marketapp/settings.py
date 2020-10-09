@@ -83,7 +83,7 @@ WSGI_APPLICATION = 'marketapp.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'marketapp',
+        'NAME': 'MySQL',
         'USER': 'mikethecoder',
         'PASSWORD': 'mylittletimmy36',
         'HOST': '127.0.0.1',

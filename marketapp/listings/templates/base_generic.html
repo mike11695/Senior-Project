@@ -39,7 +39,9 @@
               <div class="dropdown-content mystuff-dropdown-listing">
                 <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'offer-listings' %}">Offers</a>
                 <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'auction-listings' %}">Auctions</a>
-                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'wishlist-listings' %}">Wishlist</a>
+                {% if request.user.wishlist %}
+                  <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'wishlist-listings' %}">Wishlist</a>
+                {% endif %}
               </div>
             </div>
             <div class="dropdown">
