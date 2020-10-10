@@ -1475,6 +1475,98 @@ def edit_wishlist_listing(request, pk):
         else:
             return redirect('index')
 
+#Form view to relist an expired wishlist listing for a user
+@login_required(login_url='/accounts/login/')
+def relist_wishlist_listing(request, pk):
+    #Get the listing to be relisted
+    current_listing = get_object_or_404(WishlistListing, pk=pk)
+
+    #check to see if user has made a wishlist before relistng a listing,
+    #if not redirect to index
+    try:
+        wishlist = request.user.wishlist
+    except Wishlist.DoesNotExist:
+        wishlist = None
+
+    if wishlist == None:
+        return redirect('index')
+    else:
+        #Check to make sure that the owner of listing is relisting
+        #Redirect if not
+        if current_listing.owner == request.user:
+            #Check to make sure the listing has ended, if not redirect
+            if current_listing.listingEnded:
+                if request.method == 'POST':
+                    form = WishlistListingForm(data=request.POST, user=request.user,
+                        instance=current_listing)
+                    if form.is_valid():
+                        relisted_listing = form.save(commit=False)
+
+                        #Get the end time choice from form and set end time accordingly
+                        clean_choice = form.cleaned_data.get('endTimeChoices')
+                        if clean_choice == '1h':
+                            #Set end time to 1 hour from current time if choice was 1h
+                            date = timezone.localtime(timezone.now()) + timedelta(hours=1)
+                        elif clean_choice == '2h':
+                            #Set end time to 2 hours from current time if choice was 2h
+                            date = timezone.localtime(timezone.now()) + timedelta(hours=2)
+                        elif clean_choice == '4h':
+                            #Set end time to 4 hours from current time if choice was 4h
+                            date = timezone.localtime(timezone.now()) + timedelta(hours=4)
+                        elif clean_choice == '8h':
+                            #Set end time to 8 hours from current time if choice was 8h
+                            date = timezone.localtime(timezone.now()) + timedelta(hours=8)
+                        elif clean_choice == '12h':
+                            #Set end time to 12 hours from current time if choice was 12h
+                            date = timezone.localtime(timezone.now()) + timedelta(hours=12)
+                        elif clean_choice == '1d':
+                            #Set end time to 1 day from current time if choice was 1d
+                            date = timezone.localtime(timezone.now()) + timedelta(days=1)
+                        elif clean_choice == '3d':
+                            #Set end time to 3 days from current time if choice was 3ds
+                            date = timezone.localtime(timezone.now()) + timedelta(days=3)
+                        else:
+                            #Set end time to 7 days from current time
+                            date = timezone.localtime(timezone.now()) + timedelta(days=7)
+
+                        #Set the endTime for the listing with the calculated date
+                        relisted_listing.endTime = date
+
+                        #Check to see if moneyOffer was left blank in form
+                        clean_money_offer = form.cleaned_data.get('moneyOffer')
+                        if clean_money_offer:
+                            pass
+                        else:
+                            #set moneyOffer to $0.00 if no money was offered
+                            relisted_listing.moneyOffer = 0.00
+
+                        #Clear current wishlist items from listing and add items from the
+                        #form to the listing for wishlist items
+                        relisted_listing.items.clear()
+                        clean_wishlist_items = form.cleaned_data.get('items')
+                        for item in clean_wishlist_items:
+                            relisted_listing.items.add(item)
+
+                        #Clear current offer items from listing and add items from the
+                        #form to the listing for wishlist items
+                        relisted_listing.itemsOffer.clear()
+                        clean_offered_items = form.cleaned_data.get('itemsOffer')
+                        for item in clean_offered_items:
+                            relisted_listing.itemsOffer.add(item)
+
+                        #Save the wishlist listing
+                        relisted_listing.save()
+
+                        #redirect to the list view for a user's wishlist listings
+                        return redirect('wishlist-listing-detail', pk=relisted_listing.pk)
+                else:
+                    form = WishlistListingForm(user=request.user, instance=current_listing)
+                return render(request, 'wishlists/relist_wishlist_listing.html', {'form': form})
+            else:
+                return redirect('wishlist-detail', pk=request.user.wishlist.id)
+        else:
+            return redirect('index')
+
 #Form view to quickly create a wishlist listing with the item selected for a user
 @login_required(login_url='/accounts/login/')
 def quick_wishlist_listing(request, pk):

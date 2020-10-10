@@ -68,6 +68,8 @@ urlpatterns = [
         name='quick-wishlist-listing'),
     path('wishlists/wishlist-listings/<int:pk>/edit', views.edit_wishlist_listing,
         name='edit-wishlist-listing'),
+    path('wishlists/wishlist-listings/<int:pk>/relist', views.relist_wishlist_listing,
+        name='relist-wishlist-listing'),
 
     #Events
     path('events/', views.EventListView.as_view(), name='events'),
