@@ -13,10 +13,10 @@
   <div class="container-fluid">
     <div class="row site-nav-container">
       <div class="col-md-4 header-title">
-        <h2>Market Place Image</h2>
+        <a href="{% url 'index' %}"><h2>Market Place Image</h2></a>
       </div>
         <ul class="col-md-8 site-nav">
-          <li class="site-nav-url"><a href="{% url 'index' %}">Home</a></li>
+          <li class="site-nav-url"><a href="">Profile</a></li>
           {% if user.is_authenticated %}
             <div class="dropdown">
               <div class="site-nav-url dropbtn" style="margin-left: -4px;">All Listings</div>
