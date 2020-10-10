@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
+from django.core.files.base import ContentFile
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing)
@@ -1676,3 +1677,52 @@ class WishlistListingDeleteView(LoginRequiredMixin, generic.DeleteView):
         if obj.owner != self.request.user:
             return redirect('index')
         return super(WishlistListingDeleteView, self).dispatch(request, *args, **kwargs)
+
+#Method to quickly add an item, owned or unowned, to a user's wishlist
+@login_required(login_url='/accounts/login/')
+def quick_add_item_to_wishlist(request, pk):
+    #Get the item to be added to the wishlist
+    item_to_add = get_object_or_404(Item, pk=pk)
+
+    #check to see if user has made a wishlist before adding an item,
+    #if not redirect to index
+    try:
+        wishlist = request.user.wishlist
+    except Wishlist.DoesNotExist:
+        wishlist = None
+
+    if wishlist == None:
+        return redirect('index')
+    else:
+        #check to make sure item is not on wishlist already
+        users_wishlist = request.user.wishlist
+        if users_wishlist.items.filter(id=item_to_add.id).exists():
+            #Don't add to wishlist
+            return redirect('item-detail', pk=item_to_add.pk)
+        else:
+            #Check to see if the item is owner or unowned by current user
+            users_items = request.user.items
+            if users_items.filter(id=item_to_add.id).exists():
+                #Simply add the item to the user's wishlist
+                users_wishlist.items.add(item_to_add)
+                users_wishlist.save()
+
+                #Redirect to the user's wishlist
+                return redirect('wishlist-detail', pk=users_wishlist.pk)
+            else:
+                #Make a copy of the item for the current user to own
+                item_copy = Item.objects.create(owner=request.user,
+                    name=item_to_add.name, description=item_to_add.description)
+                for image in item_to_add.images.all():
+                    #image_copy = ContentFile(image.image.read())
+                    image_copy = Image.objects.get(id=image.id)
+                    print(image_copy)
+                    item_copy.images.add(image_copy)
+                item_copy.save()
+
+                #Add the item to the user's wishlist
+                users_wishlist.items.add(item_copy)
+                users_wishlist.save()
+
+                #Redirect to the user's wishlist
+                return redirect('wishlist-detail', pk=users_wishlist.pk)

@@ -3598,7 +3598,7 @@ class RemoveWishlistItemViewTest(MyTestCase):
 
     #Test to ensure user is redirected to wishlist detail page if logged in if
     #they are the owner after removing an item
-    def test_redirect_to_event_if_logged_in_owner(self):
+    def test_redirect_to_wishlist_if_logged_in_owner(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         wishlist = self.global_wishlist
@@ -4525,3 +4525,68 @@ class WishlistListingDeleteViewTest(MyTestCase):
         post_response = self.client.post(reverse('delete-wishlist-listing', args=[str(listing.id)]))
         self.assertRedirects(post_response, reverse('wishlist-listings'))
         self.assertFalse(WishlistListing.objects.filter(id=listing_id).exists())
+
+class QuickAddItemToWishlistViewTest(MyTestCase):
+    def setUp(self):
+        super(QuickAddItemToWishlistViewTest, self).setUp()
+
+        #Create an item for testing with
+        self.owned_item = Item.objects.create(name="Owned Item",
+            description="An item for testing", owner=self.global_user1)
+        self.owned_item.images.add(self.global_image1)
+        self.owned_item.save
+
+        self.unowned_item = self.global_item2
+
+    #Test to ensure that a user must be logged in to quickly add item to wishlist
+    def test_redirect_if_not_logged_in(self):
+        item = self.owned_item
+        response = self.client.get(reverse('quick-add-item-to-wishlist',
+            args=[str(item.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/wishlists/{0}/quick-add'.format(item.id))
+
+    #Test to ensure user is redirected to wishlist if logged in and item was
+    #added succesfully
+    def test_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.owned_item
+        response = self.client.get(reverse('quick-add-item-to-wishlist',
+            args=[str(item.id)]))
+        self.assertRedirects(response,
+            '/listings/wishlists/{0}'.format(self.global_user1.wishlist.id))
+
+    #Test to ensure user is redirected if logged in but they dont have wishlist
+    def test_redirect_if_logged_in_no_wishlist(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        item = self.owned_item
+        response = self.client.get(reverse('quick-add-item-to-wishlist',
+            args=[str(item.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that the user can add an item they own succesfully to wishlist
+    def test_owned_item_is_added_successfully(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.owned_item
+        post_response = self.client.post(reverse('quick-add-item-to-wishlist',
+            args=[str(item.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        wishlist = Wishlist.objects.get(id=self.global_user1.wishlist.id)
+        self.assertTrue(wishlist.items.filter(pk=item.id).exists())
+
+    #Test to ensure that the user can add an item they do not own
+    #succesfully to wishlist
+    def test_unowned_item_is_added_successfully(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.owned_item
+        post_response = self.client.post(reverse('quick-add-item-to-wishlist',
+            args=[str(item.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        wishlist = Wishlist.objects.get(id=self.global_user1.wishlist.id)
+        new_item = Item.objects.last()
+        self.assertTrue(wishlist.items.filter(pk=new_item.id).exists())
+        self.assertTrue(self.global_user1.items.filter(pk=new_item.id).exists())

@@ -72,7 +72,7 @@ class Profile(models.Model):
 
     def __str__(self):
         """String for representing the Profile object."""
-        return f'{self.user}, "s Profile"'
+        return f"{self.user}'s Profile"
 
 #Model for Ratings, where users can leave feedback for other users after exchanges
 class Rating(models.Model):
@@ -179,7 +179,7 @@ class Image(models.Model):
 #Fields needed: User, images, name, description
 class Item(models.Model):
     #Fields for Item
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="items")
     images = models.ManyToManyField(Image)
     name = models.TextField(max_length=50, verbose_name="Item Name")
     description = models.TextField(max_length=250,

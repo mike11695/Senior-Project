@@ -56,6 +56,8 @@ urlpatterns = [
     path('wishlists/create-wishlist', views.create_wishlist, name='create-wishlist'),
     path('wishlists/<int:pk>', views.WishlistDetailView.as_view(), name='wishlist-detail'),
     path('wishlists/<int:pk>/edit', views.edit_wishlist, name='edit-wishlist'),
+    path('wishlists/<int:pk>/quick-add', views.quick_add_item_to_wishlist,
+        name='quick-add-item-to-wishlist'),
     path('wishlists/<int:wishlist_pk>/remove-wishlist-item/<int:item_pk>',
         views.remove_wishlist_item, name='remove-wishlist-item'),
     path('wishlists/wishlist-listings', views.WishlistListingListView.as_view(), name='wishlist-listings'),
