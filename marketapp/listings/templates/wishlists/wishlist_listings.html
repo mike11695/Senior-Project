@@ -56,7 +56,7 @@
                   EDIT
                 </div>
               </a>
-              <a href="">
+              <a href="{% url 'delete-wishlist-listing' pk=listing.id %}">
                 <div class="btn btn-red"
                   style="margin-top: 15px; display: inline-block; margin-left: 5px;">
                   DELETE
@@ -106,7 +106,7 @@
                   RELIST
                 </div>
               </a>
-              <a href="">
+              <a href="{% url 'delete-wishlist-listing' pk=listing.id %}">
                 <div class="btn btn-red"
                   style="margin-top: 15px; display: inline-block; margin-left: 5px;">
                   DELETE

@@ -4453,3 +4453,75 @@ class QuickWishlistListingViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         new_wishlist_listing = WishlistListing.objects.last()
         self.assertEqual(new_wishlist_listing.moneyOffer, 0.00)
+
+class WishlistListingDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(WishlistListingDeleteViewTest, self).setUp()
+        #Get the current date and time for testing and create active and
+        #inactive endTimes
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+        date_ended = timezone.localtime(timezone.now()) - timedelta(days=1)
+
+        #Create active and inactive wishlist listing objects to test for deletion
+        self.active_listing = WishlistListing.objects.create(owner=self.global_user1,
+            name='My Wishlist Listing', endTime=date_active,
+            moneyOffer=5.00, notes="Just a test")
+        self.active_listing.items.add(self.global_item1)
+        self.active_listing.save
+
+        self.expired_listing = WishlistListing.objects.create(owner=self.global_user1,
+            name='My Wishlist Listing', endTime=date_ended,
+            moneyOffer=5.00, notes="Just a test")
+        self.expired_listing.items.add(self.global_item1)
+        self.expired_listing.save
+
+    #Test to ensure that a user must be logged in to delete a wishlist listing
+    def test_redirect_if_not_logged_in(self):
+        listing = self.active_listing
+        response = self.client.get(reverse('delete-wishlist-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they own the listing
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.active_listing
+        response = self.client.get(reverse('delete-wishlist-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they do not own the listing
+    def test_no_redirect_if_logged_in_not_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.active_listing
+        response = self.client.get(reverse('delete-wishlist-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.active_listing
+        response = self.client.get(reverse('delete-wishlist-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'wishlists/wishlist_listing_delete.html')
+
+    #Test to ensure an active listing can be deleted if user confirms
+    def test_succesful_deletion_active_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.active_listing
+        listing_id = listing.id
+        post_response = self.client.post(reverse('delete-wishlist-listing', args=[str(listing.id)]))
+        self.assertRedirects(post_response, reverse('wishlist-listings'))
+        self.assertFalse(WishlistListing.objects.filter(id=listing_id).exists())
+
+    #Test to ensure an inactive listing can be deleted if user confirms
+    def test_succesful_deletion_inactive_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.expired_listing
+        listing_id = listing.id
+        post_response = self.client.post(reverse('delete-wishlist-listing', args=[str(listing.id)]))
+        self.assertRedirects(post_response, reverse('wishlist-listings'))
+        self.assertFalse(WishlistListing.objects.filter(id=listing_id).exists())

@@ -1662,3 +1662,17 @@ def quick_wishlist_listing(request, pk):
                 form = QuickWishlistListingForm(user=request.user,
                     initial={'items': [str(current_item.id)]})
             return render(request, 'wishlists/quick_wishlist_listing.html', {'form': form})
+
+#View for a user to delete an wishlist listing that they own
+class WishlistListingDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = WishlistListing
+    success_url = reverse_lazy('wishlist-listings')
+    template_name = "wishlists/wishlist_listing_delete.html"
+    context_object_name = 'wishlistlisting'
+
+    #Checks to make sure owner of listing clicked to delete, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.owner != self.request.user:
+            return redirect('index')
+        return super(WishlistListingDeleteView, self).dispatch(request, *args, **kwargs)
