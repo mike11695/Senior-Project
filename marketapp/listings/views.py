@@ -221,11 +221,11 @@ class ItemDeleteView(LoginRequiredMixin, generic.DeleteView):
         return super(ItemDeleteView, self).dispatch(request, *args, **kwargs)
 
     #Get listings that contain item to be deleted and delete them if they contain the item
-    #Add wishlists and search listings to this once implemented
     def delete(self, request, *args, **kwargs):
        self.object = self.get_object()
        offer_listings = OfferListing.objects.filter(owner=self.object.owner)
        auction_listings = AuctionListing.objects.filter(owner=self.object.owner)
+       wishlist_listings = WishlistListing.objects.filter(owner=self.object.owner)
        if self.object.owner == self.request.user:
            if offer_listings:
                for listing in offer_listings:
@@ -237,6 +237,12 @@ class ItemDeleteView(LoginRequiredMixin, generic.DeleteView):
                for listing in auction_listings:
                    if self.object in listing.items.all():
                        #Deletes auction listing if it contained the item
+                       listing.delete()
+
+           if wishlist_listings:
+               for listing in wishlist_listings:
+                   if self.object in listing.items.all() or self.object in listing.itemsOffer.all():
+                       #Deletes wishlist listing if it contained the item
                        listing.delete()
 
            self.object.delete()

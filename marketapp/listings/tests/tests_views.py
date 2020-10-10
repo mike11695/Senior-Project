@@ -671,6 +671,8 @@ class ItemDeleteViewTest(MyTestCase):
         self.item.images.add = self.global_image1
         self.item.save
         self.item_id = self.item.id
+        self.global_wishlist.items.add(self.item)
+        self.global_wishlist.save
 
         date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
 
@@ -689,6 +691,14 @@ class ItemDeleteViewTest(MyTestCase):
         self.auction_listing.items.add(self.item)
         self.auction_listing.save
         self.auction_listing_id = self.auction_listing.id
+
+        #Create a wishlist listing to test for deletion
+        self.wishlist_listing = WishlistListing.objects.create(owner=self.global_user1,
+            name='My Wishlist Listing', endTime=date_active,
+            moneyOffer=5.00, notes="Just a test")
+        self.wishlist_listing.items.add(self.item)
+        self.wishlist_listing.save
+        self.wishlist_listing_id = self.wishlist_listing.id
 
     #Test to ensure that a user must be logged in to delete an item
     def test_redirect_if_not_logged_in(self):
@@ -731,6 +741,7 @@ class ItemDeleteViewTest(MyTestCase):
         self.assertFalse(Item.objects.filter(id=self.item_id).exists())
         self.assertFalse(OfferListing.objects.filter(id=self.offer_listing_id).exists())
         self.assertFalse(AuctionListing.objects.filter(id=self.auction_listing_id).exists())
+        self.assertFalse(WishlistListing.objects.filter(id=self.wishlist_listing_id).exists())
         self.assertTrue(OfferListing.objects.filter(id=self.global_offer_listing1.id).exists())
         self.assertTrue(AuctionListing.objects.filter(id=self.global_auction_listing1.id).exists())
 
