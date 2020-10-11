@@ -5,6 +5,9 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('signup/', views.signup, name='signup'),
 
+    #Users
+    path('profile/<int:pk>', views.ProfileDetailView.as_view(), name='profile-detail'),
+
     #FAQ
     path('FAQ/', views.faq, name='faq'),
     path('FAQ/images', views.faq_images, name='faq-images'),

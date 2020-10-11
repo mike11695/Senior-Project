@@ -1,0 +1,172 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="profile-header center-block col-lg-10">
+    <h1 style="display: inline-block;">{{ profile.user }}'s Profile</h1>
+    <div class="profile-buttons">
+      {% if profile.user == request.user %}
+        <a href="">
+          <div class="btn btn-blue profile-btn">
+            Edit Account
+          </div>
+        </a>
+        <a href="">
+          <div class="btn btn-blue profile-btn">
+            Edit Profile
+          </div>
+        </a>
+      {% else %}
+        {% if profile.user.invitesOpen %}
+          <a href="">
+            <div class="btn btn-blue profile-btn">
+              Invite User
+            </div>
+          </a>
+        {% endif %}
+        {% if profile.user.inquiriesOpen %}
+          <a href="">
+            <div class="btn btn-blue profile-btn">
+              Message User
+            </div>
+          </a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="profile-info center-block col-lg-9">
+    <h4 class="profile-bio-header">BIO:</h4>
+    <div class="profile-bio">
+      {{ profile.bio }}
+    </div>
+    {% if offer_listings or auction_listings %}
+      <h4 class="profile-listings-header">{{ profile.user }}'s Listings:</h4>
+      {% if offer_listings %}
+        <h6>For Offers:</h6>
+        <div class="profile-listings-container">
+          {% for listing in offer_listings %}
+            <div class="all-listing-object">
+              {% with listing.items.all|first as item %}
+                {% with item.images.all|first as image %}
+                  <div class="listing-image-container">
+                    <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                  </div>
+                {% endwith %}
+              {% endwith %}
+              <div class="listing-details-container">
+                <div style="display: inline-block; width: 100%;">
+                  <div class="listing-listview-header">
+                    <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                      <h4 style="display: inline-block">{{ listing.name }}</h4>
+                    </a>
+                  </div>
+                  {% if listing.openToMoneyOffers %}
+                    <div class="listing-prices">
+                      {% if listing.maxRange > 0.00 %}
+                        Price Range: ${{ listing.minRange }} - ${{ listing.maxRange }}
+                      {% else %}
+                        Minimum Price: ${{ listing.minRange }}
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                  <div class="listing-date">Ends: {{ listing.endTime }}</div>
+                </div>
+                <div class="listing-desc">
+                  {{ listing.description }}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if auction_listings %}
+        <h6>For Bids:</h6>
+        <div class="profile-listings-container">
+          {% for listing in auction_listings %}
+          <div class="all-listing-object">
+            {% with listing.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+              <div class="listing-details-container">
+                <div style="display: inline-block; width: 100%;">
+                  <div class="listing-listview-header">
+                    <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                      <h4 style="display: inline-block">{{ listing.name }}</h4>
+                    </a>
+                  </div>
+                  <div class="listing-prices">
+                    {% if listing.bids.count > 0 %}
+                      {% for bid in listing.bids.all %}
+                        {% if bid.winningBid == True %}
+                          Current Bid: ${{ bid.amount }} | Minimum Increment: ${{ listing.minimumIncrement }}<br>
+                        {% endif %}
+                      {% endfor %}
+                      {% if listing.autobuy != 0.00 %}
+                        Autobuy: ${{ listing.autobuy }}
+                      {% endif %}
+                    {% else %}
+                      Starting Bid: ${{ listing.startingBid }} | Minimum Increment: ${{ listing.minimumIncrement }}<br>
+                      {% if listing.autobuy != 0.00 %}
+                        Autobuy: ${{ listing.autobuy }}
+                      {% endif %}
+                    {% endif %}
+                  </div>
+                  <div class="listing-date">Ends: {{ listing.endTime }}</div>
+                </div>
+                <div class="listing-desc">
+                  {{ listing.description }}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endif %}
+    {% if wishlist_listings %}
+      <h4 class="profile-listings-header">{{ profile.user }} is Searching For...</h4>
+      <div class="profile-listings-container">
+        {% for listing in wishlist_listings %}
+          <div class="wishlist-listing-container">
+            <div class="wishlist-listing-header center-block">
+              <a href="{% url 'wishlist-listing-detail' pk=listing.pk %}">
+                <h3 class="wishlist-listing-name">{{ listing.name }}</h3>
+              </a>
+              <h5>Wishlist Items</h5>
+            </div>
+            <div class="center-block wishlist-listing-items-container">
+              {% for item in listing.items.all %}
+                {% with item.images.all|first as image %}
+                  <div class="wishlist-listing-image-container">
+                    <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                  </div>
+                {% endwith %}
+              {% endfor %}
+            </div>
+            <div class="center-block col-lg-11 wishlist-listing-offer-container">
+              <h5>Offering:</h5>
+              {% if listing.itemsOffer.count > 0 %}
+                {% for item in listing.itemsOffer.all %}
+                  {% with item.images.all|first as image %}
+                    <div class="wishlist-listing-image-container">
+                      <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                    </div>
+                  {% endwith %}
+                {% endfor %}
+              {% endif %}
+              {% if listing.moneyOffer and listing.moneyOffer > 0.00 %}
+                <div class="wishlist-amount-offered"><h4>${{ listing.moneyOffer }}</h4></div>
+              {% endif %}
+              {% if listing.notes %}
+                <div class="wishlist-notes">{{ listing.notes }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <h4 class="profile-listings-header">RATINGS:</h4>
+  </div>
+{% endblock %}

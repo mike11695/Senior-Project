@@ -43,7 +43,7 @@ class User(AbstractUser):
 
 #model for Portfolios, where users can learn about one another and leave feedback
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     bio = models.TextField(max_length=1000, blank=True, verbose_name="Biography",
         help_text="A biography for your profile so others can know you better.", default="None")
     country = models.TextField(max_length=50, default="None") #ideally should be obtained when the user shares ther location

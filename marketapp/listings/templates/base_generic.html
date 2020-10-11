@@ -17,7 +17,7 @@
       </div>
         <ul class="col-md-8 site-nav">
           {% if user.is_authenticated %}
-            <li class="site-nav-url"><a href="">Profile</a></li>
+            <li class="site-nav-url"><a href="{% url 'profile-detail' pk=user.profile.pk %}">Profile</a></li>
             <div class="dropdown">
               <div class="site-nav-url dropbtn" style="margin-left: -4px;">All Listings</div>
               <div class="dropdown-content mystuff-dropdown-all-listings">

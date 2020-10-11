@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.core.files.base import ContentFile
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
-    Offer, Bid, Event, Invitation, Wishlist, WishlistListing)
+    Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -1714,9 +1714,12 @@ def quick_add_item_to_wishlist(request, pk):
                 item_copy = Item.objects.create(owner=request.user,
                     name=item_to_add.name, description=item_to_add.description)
                 for image in item_to_add.images.all():
-                    #image_copy = ContentFile(image.image.read())
-                    image_copy = Image.objects.get(id=image.id)
-                    print(image_copy)
+                    image_copy = Image.objects.create(owner=request.user,
+                        image=image.image, name=image.name)
+                    for tag in image.tags.all():
+                        image_copy.tags.add(tag)
+                    image_copy.save()
+
                     item_copy.images.add(image_copy)
                 item_copy.save()
 
@@ -1726,3 +1729,31 @@ def quick_add_item_to_wishlist(request, pk):
 
                 #Redirect to the user's wishlist
                 return redirect('wishlist-detail', pk=users_wishlist.pk)
+
+#Detail view for an user's profile
+class ProfileDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Profile
+    template_name = "profiles/profile_detail.html"
+
+    #Receive the most recent active listings (offer/auction/wishlist) of the
+    #user that owns the profile
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+
+        #Get the most recent offer listings
+        listings_ids = [listing.id for listing in OfferListing.objects.filter(owner=obj.user)
+            if listing.listingEnded == False]
+        context['offer_listings'] = OfferListing.objects.filter(id__in=listings_ids).order_by('-id')[:5]
+
+        #Get the most recent auction listings
+        listings_ids = [listing.id for listing in AuctionListing.objects.filter(owner=obj.user)
+            if listing.listingEnded == False]
+        context['auction_listings'] = AuctionListing.objects.filter(id__in=listings_ids).order_by('-id')[:5]
+
+        #Get the most recent wishlist listings
+        listings_ids = [listing.id for listing in WishlistListing.objects.filter(owner=obj.user)
+            if listing.listingEnded == False]
+        context['wishlist_listings'] = WishlistListing.objects.filter(id__in=listings_ids).order_by('-id')[:5]
+
+        return context

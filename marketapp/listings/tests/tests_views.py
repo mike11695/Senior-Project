@@ -4590,3 +4590,98 @@ class QuickAddItemToWishlistViewTest(MyTestCase):
         new_item = Item.objects.last()
         self.assertTrue(wishlist.items.filter(pk=new_item.id).exists())
         self.assertTrue(self.global_user1.items.filter(pk=new_item.id).exists())
+
+class ProfileDetailViewTest(MyTestCase):
+    def setUp(self):
+        super(ProfileDetailViewTest, self).setUp()
+
+        #Set number of listings for each user
+        #Must account for the global listings
+        number_of_offer_listings = 2
+        number_of_auction_listings = 3
+        number_of_wishlist_listings = 5
+
+        #Get the current date and time for testing and create active
+        #and inactive endTimes
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+        date_ended = timezone.localtime(timezone.now()) - timedelta(days=1)
+
+        #Create the offer listings
+        for num in range(number_of_offer_listings):
+            listing = OfferListing.objects.create(owner=self.global_user1,
+                name='Test Offer Listing #{0}'.format(num),
+                description="Just a test listing", openToMoneyOffers=True,
+                minRange=5.00, maxRange=10.00, notes="Just offer",
+                endTime=date_active)
+            listing.items.add(self.global_item1)
+            listing.save
+
+        #Create an inactive offer listing
+        OfferListing.objects.create(owner=self.global_user1,
+            name='Test Offer Listing #{0}'.format(num),
+            description="Just a test listing", openToMoneyOffers=True,
+            minRange=5.00, maxRange=10.00, notes="Just offer",
+            endTime=date_ended)
+
+        #Create the auction listings
+        for num in range(number_of_auction_listings):
+            listing = AuctionListing.objects.create(owner=self.global_user1,
+                name="Test Auction", description="Just a test auction",
+                startingBid=5.00, minimumIncrement=2.50, autobuy=50.00,
+                endTime=date_active)
+            listing.items.add(self.global_item1)
+            listing.save
+
+        #Create an inactive auction listing
+        AuctionListing.objects.create(owner=self.global_user1,
+            name="Test Auction", description="Just a test auction",
+            startingBid=5.00, minimumIncrement=2.50, autobuy=50.00,
+            endTime=date_ended)
+
+        #Create the wishlist listings
+        for num in range(number_of_wishlist_listings):
+            listing = WishlistListing.objects.create(owner=self.global_user1,
+                name='My Wishlist Listing #{0}'.format(num), endTime=date_active,
+                moneyOffer=5.00, notes="Just a test")
+            listing.items.add(self.global_item1)
+            listing.itemsOffer.add(self.global_item1)
+            listing.save
+
+        #create an inactive wishlist listing
+        WishlistListing.objects.create(owner=self.global_user1,
+            name='My Wishlist Listing', endTime=date_ended,
+            moneyOffer=5.00, notes="Just a test")
+
+    #Test to ensure that a user must be logged in to view a profile
+    def test_redirect_if_not_logged_in(self):
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/profile/{0}'.format(profile.id))
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'profiles/profile_detail.html')
+
+    #Test that a user can see the user that owns the profile's listings
+    def test_user_can_see_listings(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['offer_listings']) == 3)
+        self.assertTrue(len(response.context['auction_listings']) == 4)
+        self.assertTrue(len(response.context['wishlist_listings']) == 5)

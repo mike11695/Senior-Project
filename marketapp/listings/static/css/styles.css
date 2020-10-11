@@ -355,8 +355,13 @@ a:hover {
   margin-top: 15px;
 }
 
-.listing-desc, .item-desc {
+.item-desc {
   border-top: 1px solid black;
+}
+
+.listing-desc {
+  border-top: 1px solid grey;
+  width: 95%
 }
 
 .item-details {
@@ -655,4 +660,32 @@ a:hover {
 
 .wishlist-listing-offer-container {
   text-align: center;
+}
+
+.profile-header {
+  border-bottom: 3px double grey;
+  padding-bottom: 5px;
+}
+
+.profile-buttons {
+  float: right;
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.profile-info {
+  margin-top: 10px;
+}
+
+.profile-bio-header, .profile-listings-header {
+  border-bottom: 1px solid grey;
+  padding-bottom: 5px;
+}
+
+.profile-bio {
+  background-color: #d6d6d6;
+  border: 3px solid #a3a3a3;
+  border-radius: 15px;
+  padding: 10px;
+  margin-bottom: 20px;
 }
