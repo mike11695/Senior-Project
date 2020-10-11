@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'listings',
     'documents',
     'mathfilters',
+    'geoip2',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +142,5 @@ MEDIA_URL = '/media/'
 
 # Redirect to home URL after login (Default redirects to /accounts/profile/)
 LOGIN_REDIRECT_URL = '/'
+
+GEOIP_PATH = os.path.join('geoip')

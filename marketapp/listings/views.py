@@ -8,6 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.files.base import ContentFile
+from django.contrib.gis.geoip2 import GeoIP2
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile)
@@ -34,11 +35,32 @@ def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
             username = form.cleaned_data.get('username')
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(request, user)
+
+            #Get the person that is registering's IP address to get location
+            #information
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[0]
+            else:
+                ip = request.META.get('REMOTE_ADDR')
+
+            #Gets the user's location information when not in the test
+            #enviornment
+            if ip != '127.0.0.1':
+                geo = GeoIP2()
+                user_location = geo.city(ip)
+                user.profile.country = user_location["country_name"]
+                user.profile.city = user_location["city"]
+                user.profile.state = user_location["region"] #State the user is in
+                user.profile.zipCode = user_location["postal_code"]
+
+                user.profile.save()
+
             return redirect('index')
     else:
         form = SignUpForm()
