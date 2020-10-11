@@ -7,6 +7,7 @@ urlpatterns = [
 
     #Users
     path('profile/<int:pk>', views.ProfileDetailView.as_view(), name='profile-detail'),
+    path('profile/<int:pk>/edit', views.edit_profile, name='edit-profile'),
 
     #FAQ
     path('FAQ/', views.faq, name='faq'),

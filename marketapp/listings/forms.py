@@ -2,7 +2,8 @@ from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing)
+    AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
+    Profile)
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -669,3 +670,32 @@ class QuickWishlistListingForm(ModelForm):
        wishlist = Wishlist.objects.get(owner=self.user)
        self.fields['items'].queryset = wishlist.items
        self.fields['itemsOffer'].queryset = Item.objects.filter(owner=self.user)
+
+class ProfileForm(ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        clean_delivery = cleaned_data.get('delivery')
+        clean_delivery_address = cleaned_data.get('deliveryAddress')
+
+        if clean_delivery == True:
+            if clean_delivery_address:
+                pass
+            else:
+                raise forms.ValidationError("A delivery address must be included.")
+        else:
+            return
+
+    bio = forms.CharField(max_length=1000, required=True,
+        help_text="A biography for your profile so others can know you better.",
+        label="Biography", widget=forms.Textarea)
+    deliveryAddress = forms.CharField(max_length=100, required=False,
+        help_text=("Submit an delivery address that you pick up items from." +
+            "  Required if delivery check box is checked."),
+        label="Delivery Address")
+
+    class Meta:
+        model = Profile
+        fields = ['bio', 'delivery', 'deliveryAddress']
+        exclude = ['user', 'country', 'state', 'city', 'zipCode']
+        help_texts = {'delivery': "Check this if you are able to deliver items."}
+        labels = {'bio': "Biography"}

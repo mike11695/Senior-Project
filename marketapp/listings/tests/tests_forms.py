@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
-    WishlistForm, WishlistListingForm)
+    WishlistForm, WishlistListingForm, ProfileForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
@@ -1591,3 +1591,70 @@ class WishlistListingFormTest(MyTestCase):
         user = self.global_user1
         form = WishlistListingForm(user=user)
         self.assertEqual(form.fields['moneyOffer'].label, "Money Being Offered")
+
+class ProfileFormTest(MyTestCase):
+    #Test to ensure a user is able to submit profile form providing all fields
+    def test_valid_profile_submission(self):
+        bio = "My Biography"
+        delivery = True
+        delivery_address = "SUNY Potsdam"
+        data = {'bio': bio, 'delivery': delivery,
+            'deliveryAddress': delivery_address}
+        form = ProfileForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is able to submit profile form without a
+    #delivery address
+    def test_valid_profile_submission_no_address(self):
+        bio = "My Biography"
+        delivery = False
+        data = {'bio': bio, 'delivery': delivery}
+        form = ProfileForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to submit profile form if delivery
+    #is true and delivery address is missing
+    def test_invalid_profile_submission_delivery_true_no_address(self):
+        bio = "My Biography"
+        delivery = True
+        data = {'bio': bio, 'delivery': delivery}
+        form = ProfileForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to submit profile form if biography
+    #is missing
+    def test_invalid_profile_submission_no_bio(self):
+        delivery = True
+        delivery_address = "SUNY Potsdam"
+        data = {'delivery': delivery, 'deliveryAddress': delivery_address}
+        form = ProfileForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that bio field help text is correct
+    def test_profile_bio_help_text(self):
+        form = ProfileForm()
+        self.assertEqual(form.fields['bio'].help_text, ("A biography for " +
+            "your profile so others can know you better."))
+
+    #Test to ensure that bio field label is correct
+    def test_profile_bio_label(self):
+        form = ProfileForm()
+        self.assertEqual(form.fields['bio'].label, "Biography")
+
+    #Test to ensure that delivery field help text is correct
+    def test_profile_delivery_help_text(self):
+        form = ProfileForm()
+        self.assertEqual(form.fields['delivery'].help_text, ("Check this " +
+            "if you are able to deliver items."))
+
+    #Test to ensure that delivery address field help text is correct
+    def test_profile_delivery_address_help_text(self):
+        form = ProfileForm()
+        self.assertEqual(form.fields['deliveryAddress'].help_text, ("Submit " +
+            "an delivery address that you pick up items from.  Required if" +
+            " delivery check box is checked."))
+
+    #Test to ensure that delivery address field label is correct
+    def test_profile_delivery_address_label(self):
+        form = ProfileForm()
+        self.assertEqual(form.fields['deliveryAddress'].label, "Delivery Address")
