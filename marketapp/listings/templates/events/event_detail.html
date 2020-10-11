@@ -8,7 +8,9 @@
         <h3>
           {{ event.location }}<br>
           @ {{ event.date }}<br><br>
-          Hosted by <a href="">{{ event.host.first_name }} {{ event.host.last_name }}</a>
+          Hosted by <a href="{% url 'profile-detail' pk=event.host.profile.id %}">
+            {{ event.host.first_name }} {{ event.host.last_name }}
+          </a>
         </h3>
       </div>
       <h5 class="event-context">

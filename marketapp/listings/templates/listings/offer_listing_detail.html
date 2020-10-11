@@ -3,12 +3,21 @@
 {% block content %}
   <div class="col-lg-10 center-block listing-header">
     <h2>{{ offerlisting.name }}</h2>
-    <h6>Owner: {{ offerlisting.owner }}</h6>
+    <h6>Owner:
+      <a href="{% url 'profile-detail' pk=offerlisting.owner.profile.id %}">
+        {{ offerlisting.owner }}
+      </a>
+    </h6>
     {% if offerlisting.listingEnded and offerlisting.listingCompleted != True %}
       <h6 class="expired-listing">Ended: {{ offerlisting.endTime }}</h6>
     {% elif offerlisting.listingCompleted != True %}
       <h6>Ends: {{ offerlisting.endTime }}</h6>
     {% endif %}
+    <a href="{% url 'wishlist-detail' pk=offerlisting.owner.wishlist.id %}">
+      <div class="btn btn-blue" style="margin-top: 5px;">
+        {{ offerlisting.owner }}'s Wishlist
+      </div>
+    </a>
   </div>
   <div class="listing-item-container col-lg-10 center-block">
     <div class="listing-item-container-header"><h4>This listing contains:</h4></div>
@@ -58,7 +67,9 @@
         {% endif %}
       </div>
       <a href="{% url 'create-offer' pk=offerlisting.pk %}">
-        <div class="btn btn-blue listing-btn center-block" style="margin-bottom: 20px;">Make an Offer</div>
+        <div class="btn btn-green listing-btn center-block" style="margin-bottom: 20px;">
+          Make an Offer
+        </div>
       </a>
     {% endif %}
   {% endif %}
@@ -74,10 +85,20 @@
           {% for offer in offers %}
             <div class="offer-container center-block">
               <div class="offer-header">
-                <a href="{{ offer.get_absolute_url }}"><h5 style="display: inline-block;">Offer from {{ offer.owner }}:</h5></a>
+                <a href="{{ offer.get_absolute_url }}">
+                  <h5 style="display: inline-block;">
+                    Offer from {{ offer.owner }}:
+                  </h5>
+                </a>
                 {% if offer.offerListing.listingCompleted != True %}
-                  <a onclick="return confirm('Are you sure you want to accept this offer?')" class="btn btn-blue accept-button" href="{% url 'accept-offer' pk=offer.pk %}">Accept</a>
-                  <br><a class="btn btn-red decline-button" href="{% url 'delete-offer' pk=offer.pk %}">Decline</a>
+                  <a onclick="return confirm('Are you sure you want to accept this offer?')"
+                    class="btn btn-blue accept-button"
+                    href="{% url 'accept-offer' pk=offer.pk %}">
+                    Accept
+                  </a>
+                  <br>
+                  <a class="btn btn-red decline-button"
+                    href="{% url 'delete-offer' pk=offer.pk %}">Decline</a>
                 {% endif %}
                 {% if offer.amount > 0.00 %}
                   <div class="amount-offer">Amount Offered: ${{ offer.amount }}</div>
@@ -87,7 +108,10 @@
                     {% for item in offer.items.all %}
                       {% if item.images %}
                         {% with item.images.all|first as image %}
-                          <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="offer-image"></img></a>
+                          <a href="{{ item.get_absolute_url }}">
+                            <img src="{{ image.image.url }}" class="offer-image">
+                            </img>
+                          </a>
                           <div class="item-details">
                             <b>{{ item.name }}</b><br>
                             {{ item.description|truncatechars:100 }}

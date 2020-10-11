@@ -4,7 +4,11 @@
   <div class="container-fluid col-lg-10 center-block offer-detail-container">
     <div class="center-block" style="text-align: center;">
       <h1>Offer for Listing: <a href="{{ offer.offerListing.get_absolute_url }}">{{ offer.offerListing }}</a></h1>
-      <h4>Offer made by: <a href="">{{ offer.owner }}</a></h4>
+      <h4>Offer made by:
+        <a href="{% url 'profile-detail' pk=offer.owner.profile.id %}">
+          {{ offer.owner }}
+        </a>
+      </h4>
       {% if offer.amount > 0.00 %}
         Amount offered: <span class="amount-offered">${{ offer.amount }}</span></br>
       {% endif %}

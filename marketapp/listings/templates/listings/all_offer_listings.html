@@ -27,7 +27,7 @@
                   <h4 style="display: inline-block">{{ listing.name }}</h4>
                 </a>
                 <div class="listing-owner">
-                   Owned By: <a href="">{{ listing.owner }}</a>
+                   Owned By: <a href="{% url 'profile-detail' pk=listing.owner.profile.id %}">{{ listing.owner }}</a>
                 </div>
                 <div class="ending-soon">
                   Ending Soon!
@@ -65,7 +65,7 @@
                   <h4 style="display: inline-block">{{ listing.name }}</h4>
                 </a>
                 <div class="listing-owner">
-                   Owned By: <a href="">{{ listing.owner }}</a>
+                   Owned By: <a href="{% url 'profile-detail' pk=listing.owner.profile.id %}">{{ listing.owner }}</a>
                  </div>
               </div>
               {% if listing.openToMoneyOffers %}

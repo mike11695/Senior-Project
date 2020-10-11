@@ -42,6 +42,11 @@
             </div>
             <div>{{ event.context }}</div>
             <div class="event-details">
+              <b>Hosted By:
+                <a href="{% url 'profile-detail' pk=event.host.profile.id %}">
+                  {{ event.host.first_name }} {{ event.host.last_name }}
+                </a>
+              </b><br>
               <b>Location: {{ event.location }} on {{ event.date }}</b>
             </div>
           </div>

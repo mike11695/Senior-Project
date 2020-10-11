@@ -30,6 +30,11 @@
             </div>
           </a>
         {% endif %}
+        <a href="{% url 'wishlist-detail' pk=profile.user.wishlist.id %}">
+          <div class="btn btn-blue profile-btn">
+            {{ profile.user }}'s Wishlist
+          </div>
+        </a>
       {% endif %}
     </div>
   </div>

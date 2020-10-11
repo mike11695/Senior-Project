@@ -3,7 +3,11 @@
 {% block content %}
   <div class="col-lg-10 center-block listing-header">
     <h2>{{ auctionlisting.name }}</h2>
-    <h6>Owner: {{ auctionlisting.owner }}</h6>
+    <h6>Owner:
+      <a href="{% url 'profile-detail' pk=auctionlisting.owner.profile.id %}">
+        {{ auctionlisting.owner }}
+      </a>
+    </h6>
     {% if auctionlisting.listingEnded %}
       <h6 class="expired-listing">Ended: {{ auctionlisting.endTime }}</h6>
     {% else %}
@@ -84,11 +88,17 @@
       <h3>Latest Bids</h3>
       {% if auctionlisting.bids.count > 10 %}
         {% for bid in auctionlisting.bids.all|slice:":10" reversed %}
-          <b>{{ forloop.counter }}</b>: ${{ bid.amount }} - {{ bid.owner }}<br>
+          <b>{{ forloop.counter }}</b>: ${{ bid.amount }} -
+            <a href="{% url 'profile-detail' pk=bid.bidder.profile.id %}">
+              {{ bid.bidder }}
+            </a><br>
         {% endfor %}
       {% else %}
         {% for bid in auctionlisting.bids.all reversed %}
-          <b>{{ forloop.counter }}</b>: ${{ bid.amount }} - {{ bid.bidder }}<br>
+          <b>{{ forloop.counter }}</b>: ${{ bid.amount }} -
+            <a href="{% url 'profile-detail' pk=bid.bidder.profile.id %}">
+              {{ bid.bidder }}
+            <a><br>
         {% endfor %}
       {% endif %}
     </div>

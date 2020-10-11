@@ -15,6 +15,11 @@
           <h2 class="event-title">{{ invitation.event.title }}</h2>
           <div>{{ invitation.event.context }}</div>
           <div class="event-details">
+            <b>Hosted By:
+              <a href="{% url 'profile-detail' pk=invitation.event.host.profile.id %}">
+                {{ invitation.event.host.first_name }} {{ invitation.event.host.last_name }}
+              </a>
+            </b><br>
             <b>Location: {{ invitation.event.location }} on {{ invitation.event.date }}</b>
           </div>
           <div class="invitation-buttons">
@@ -22,7 +27,7 @@
               href="{% url 'accept-invitation' pk=invitation.pk %}">
               <span class="btn btn-blue accept-btn">ACCEPT</span>
             </a>
-            <a onclick="return confirm('Are you sure you want to decline this invitation?  You will not be able to accept it afterwards.')" 
+            <a onclick="return confirm('Are you sure you want to decline this invitation?  You will not be able to accept it afterwards.')"
               href="{% url 'decline-invitation' pk=invitation.pk %}">
               <span class="btn btn-red reject-btn">DECLINE</span>
             </a>
