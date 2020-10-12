@@ -1,6 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing)
+    AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
+    Profile)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -890,6 +891,27 @@ class FAQWishlistsViewTest(MyTestCase):
         response = self.client.get(reverse('faq-wishlists'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/wishlists.html')
+
+class FAQProfilesViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to view FAQ
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('faq-profiles'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/FAQ/profiles')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-profiles'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-profiles'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'faq/profiles.html')        
 
 class OfferListingsViewTest(MyTestCase):
     def setUp(self):
@@ -4685,3 +4707,52 @@ class ProfileDetailViewTest(MyTestCase):
         self.assertTrue(len(response.context['offer_listings']) == 3)
         self.assertTrue(len(response.context['auction_listings']) == 4)
         self.assertTrue(len(response.context['wishlist_listings']) == 5)
+
+class EditProfileViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to edit profile
+    def test_redirect_if_not_logged_in(self):
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('edit-profile', args=[str(profile.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/profile/{0}/edit'.format(profile.id))
+
+    #Test to ensure user is not redirected if logged in and is the user
+    #of the profile
+    def test_no_redirect_if_logged_in_profile_user(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('edit-profile', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is not the profile user
+    def test_redirect_if_logged_in_not_profile_user(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('edit-profile', args=[str(profile.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('edit-profile', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'profiles/edit_profile.html')
+
+    #Test to ensure that a user is able to edit their profile successfully
+    def test_profile_is_updated(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('edit-profile', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-profile', args=[str(profile.id)]),
+            data={'bio': "My Updated Profile", 'delivery': True,
+                'deliveryAddress': "SUNY Potsdam"})
+        self.assertEqual(post_response.status_code, 302)
+        edited_profile = Profile.objects.get(id=profile.id)
+        self.assertEqual(edited_profile.bio, 'My Updated Profile')
+        self.assertEqual(edited_profile.deliveryAddress, 'SUNY Potsdam')

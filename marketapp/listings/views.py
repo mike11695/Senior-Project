@@ -15,7 +15,7 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
-    EditWishlistListingForm)
+    EditWishlistListingForm, ProfileForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -305,9 +305,15 @@ def faq_events(request):
 
 #FAQ page for wishlists
 @login_required(login_url='/accounts/login/')
-def faq_events(request):
-    # Render the HTML template faq/events.html with the data in the context variable
+def faq_wishlists(request):
+    # Render the HTML template faq/wishlists.html with the data in the context variable
     return render(request, 'faq/wishlists.html')
+
+#FAQ page for profiles
+@login_required(login_url='/accounts/login/')
+def faq_profiles(request):
+    # Render the HTML template faq/profiles.html with the data in the context variable
+    return render(request, 'faq/profiles.html')
 
 #List view for a user to see all of the offer listings they have
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
@@ -1779,3 +1785,44 @@ class ProfileDetailView(LoginRequiredMixin, generic.DetailView):
         context['wishlist_listings'] = WishlistListing.objects.filter(id__in=listings_ids).order_by('-id')[:5]
 
         return context
+
+#Form view to edit a user's profile
+@login_required(login_url='/accounts/login/')
+def edit_profile(request, pk):
+    #Get the profile to be edited
+    current_profile = get_object_or_404(Profile, pk=pk)
+
+    #Check if the owner of item is editing the profile, if not redirect
+    if current_profile.user == request.user:
+        if request.method == 'POST':
+            form = ProfileForm(data=request.POST, instance=current_profile)
+            if form.is_valid():
+                edited_profile = form.save(commit=False)
+
+                #Update the user's location
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR')
+
+                #Gets the user's location information when not in the test
+                #enviornment
+                if ip != '127.0.0.1':
+                    geo = GeoIP2()
+                    user_location = geo.city(ip)
+                    edited_profile.country = user_location["country_name"]
+                    edited_profile.city = user_location["city"]
+                    edited_profile.state = user_location["region"] #State the user is in
+                    edited_profile.zipCode = user_location["postal_code"]
+
+                #Save profile
+                edited_profile.save()
+
+                #Redirect to the profile's detail view
+                return redirect('profile-detail', pk=edited_profile.pk)
+        else:
+            form = ProfileForm(instance=current_profile)
+        return render(request, 'profiles/edit_profile.html', {'form': form})
+    else:
+        return redirect('index')

@@ -1,0 +1,30 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to Edit Your Profile</h1>
+    <p>Users upon creating their account are made a profile.  You can view your
+      profile at any time by clicking on "Profile" in the top right navigation
+      bar.  A user's profile will initially appear empty until the user edits it.
+      On your profile detail page, there will be a button near the top right
+      that says "Edit Profile".  Clicking on it will take you to the edit form
+      for your profile.  As of now, you can add a biography and set your
+      delivery drop off address if you are willing to deliver items.  Once you
+      have edited your profile to your liking, click on "Update" to save the
+      changes.</p>
+    <p>Please note that when you update your profile, data will be saved
+      regarding your location so that the site is able to show you listings in
+      or around the area you live in.  This is also done when you sign up for
+      the first time.  If you ever change your location, simply go to the edit
+      form for profiles and click on "Update", and your location info will be
+      updated automatically.</p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Profiles</h1>
+    <h3 class="faq-question">Is there a way to change my location myself?</h3>
+    <p>No, there is no way to change your location by yourself.  This is to
+      avoid people abusing locations and creating false listings in areas they
+      don't reside in.</p>
+  </div>
+{% endblock %}
