@@ -911,7 +911,7 @@ class FAQProfilesViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('faq-profiles'))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'faq/profiles.html')        
+        self.assertTemplateUsed(response, 'faq/profiles.html')
 
 class OfferListingsViewTest(MyTestCase):
     def setUp(self):
@@ -3351,7 +3351,7 @@ class CreateInvitationsViewTest(MyTestCase):
         self.assertTrue(Invitation.objects.filter(event=event, recipient=self.user3).exists())
 
     #Test to ensure user is redirected to event detail if form was valid
-    def test_image_is_created_redirect(self):
+    def test_invitations_are_created_redirect(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         event = self.global_event

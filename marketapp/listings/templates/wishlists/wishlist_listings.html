@@ -67,7 +67,7 @@
         {% else %}
           <div class="wishlist-listing-ended-container">
             <div class="wishlist-listing-header center-block col-lg-11">
-              <a href="">
+              <a href="{% url 'wishlist-listing-detail' pk=listing.pk %}">
                 <h3 class="wishlist-listing-name">{{ listing.name }}</h3>
               </a>
               <h5>Searching for...</h5>

@@ -1196,7 +1196,8 @@ def create_invitations(request, pk):
 
                 #For each user, create an invitation for them
                 for user in users:
-                    Invitation.objects.create(event=current_event, recipient=user)
+                    if user.invitesOpen:
+                        Invitation.objects.create(event=current_event, recipient=user)
 
                 #Return to the event detail page
                 return redirect('event-detail', pk=current_event.pk)

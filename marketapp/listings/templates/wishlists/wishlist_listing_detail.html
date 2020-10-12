@@ -31,7 +31,7 @@
   <div class="listing-offer-container col-lg-10 center-block">
     <h4>{{ wishlistlisting.owner }} is offering the following for the items above...</h4>
     <br>
-    {% if wishlistlisting.itemsOffer %}
+    {% if wishlistlisting.itemsOffer.count > 0 %}
       <div class="center-block col-lg-8">
         {% for item in wishlistlisting.itemsOffer.all %}
           <a href="{{ item.get_absolute_url }}">
@@ -49,9 +49,8 @@
             </div>
           </a>
         {% endfor %}
-      </div>
+      </div><br>
     {% endif %}
-    <br>
     {% if wishlistlisting.moneyOffer and wishlistlisting.moneyOffer > 0.00 %}
       <h3>Money Offer:</h3>
       <div class="wishlist-amount-offered">

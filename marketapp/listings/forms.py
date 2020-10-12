@@ -495,6 +495,10 @@ class InvitationForm(forms.Form):
        existing_recipient_ids = [invite.recipient.id for invite in existing_invites]
        for id in existing_recipient_ids:
            excluded_ids.append(id)
+       not_accepting_invites_ids = [user.id for user in User.objects.all() if
+           user.invitesOpen == False]
+       for id in not_accepting_invites_ids:
+           excluded_ids.append(id)
        excluded_ids.append(event.host.id)
        self.fields['users'].queryset = User.objects.exclude(id__in=excluded_ids)
 
