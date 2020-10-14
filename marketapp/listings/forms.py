@@ -23,7 +23,25 @@ class SignUpForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'paypalEmail', 'password1', 'password2', )
+        fields = ('username', 'first_name', 'last_name', 'email', 'paypalEmail',
+            'password1', 'password2')
+
+#Form for user to edit their account
+class EditAccountForm(ModelForm):
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    paypalEmail = forms.EmailField(max_length=100, label="Paypal Email",
+        help_text='Enter a valid Paypal e-mail address')
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'paypalEmail',
+            'invitesOpen', 'inquiriesOpen')
+        exclude = ['username', 'email', 'password1', 'password2']
+        labels = {'invitesOpen': "Open to Invitations?",
+            'inquiriesOpen': "Open to Inquiries?"}
+        help_texts = {'invitesOpen': "Check if you want to be invited to events",
+            'inquiriesOpen': "Check if you want users to message you"}
 
 #Form for a user to upload an image to the site
 class AddImageForm(ModelForm):

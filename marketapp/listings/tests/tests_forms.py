@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
-    WishlistForm, WishlistListingForm, ProfileForm)
+    WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
@@ -77,7 +77,7 @@ class SignUpFormTest(TestCase):
         self.assertTrue(form.is_valid())
 
     #Test to ensure a user is not able to sign up if paypalEmail is missing
-    def test_valid_paypal_email(self):
+    def test_invalid_paypal_email(self):
         username = "Mikael"
         password1 = "examplepassword8265"
         password2 = "examplepassword8265"
@@ -92,7 +92,7 @@ class SignUpFormTest(TestCase):
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to sign up if email is missing
-    def test_valid_email(self):
+    def test_invalid_email(self):
         username = "Mikael"
         password1 = "examplepassword8265"
         password2 = "examplepassword8265"
@@ -107,7 +107,7 @@ class SignUpFormTest(TestCase):
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to sign up if paypalEmail is too long
-    def test_valid_paypal_email_length(self):
+    def test_invalid_paypal_email_length(self):
         username = "Mikael"
         password1 = "examplepassword8265"
         password2 = "examplepassword8265"
@@ -123,7 +123,7 @@ class SignUpFormTest(TestCase):
         self.assertFalse(form.is_valid())
 
     #Test to ensure a user is not able to sign up if email is too long
-    def test_valid_email_length(self):
+    def test_invalid_email_length(self):
         username = "Mikael"
         password1 = "examplepassword8265"
         password2 = "examplepassword8265"
@@ -181,6 +181,101 @@ class SignUpFormTest(TestCase):
         }
         form = SignUpForm(data)
         self.assertFalse(form.is_valid())
+
+class EditAccountFormTest(TestCase):
+    #Test to ensure a user is able to edit account ptoviding all fields
+    def test_valid_account_edit(self):
+        paypal_email = "example@gmail.com"
+        first_name = "Michael"
+        last_name = "Lopez"
+        invites_open = True
+        inquiries_open = True
+        data = {'paypalEmail': paypal_email, 'first_name': first_name,
+            'last_name': last_name, 'invitesOpen': invites_open,
+            'inquiriesOpen': inquiries_open
+        }
+        form = EditAccountForm(data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to edit account if paypalEmail is missing
+    def test_invalid_edit_missing_paypal_email(self):
+        paypalEmail = "examplePaypalEmail@gmail.com"
+        first_name = "Michael"
+        last_name = "Lopez"
+        invites_open = True
+        inquiries_open = True
+        data = {'first_name': first_name,
+            'last_name': last_name, 'invitesOpen': invites_open,
+            'inquiriesOpen': inquiries_open
+        }
+        form = EditAccountForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to edit account if paypalEmail is too long
+    def test_invalid_edit_paypal_email_too_long(self):
+        paypalEmail = ("exampleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" +
+            "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" +
+            "eeeeeeeeeeeeeeeeeeeeeeeeeeeee@gmail.com")
+        first_name = "Michael"
+        last_name = "Lopez"
+        invites_open = True
+        inquiries_open = True
+        data = {'paypalEmail': paypalEmail, 'first_name': first_name,
+            'last_name': last_name, 'invitesOpen': invites_open,
+            'inquiriesOpen': inquiries_open
+        }
+        form = EditAccountForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to edit account if first name is missing
+    def test_first_name_required(self):
+        paypalEmail = "examplePaypalEmail@gmail.com"
+        first_name = "Michael"
+        last_name = "Lopez"
+        invites_open = True
+        inquiries_open = True
+        data = {'paypalEmail': paypalEmail, 'last_name': last_name,
+            'invitesOpen': invites_open, 'inquiriesOpen': inquiries_open
+        }
+        form = EditAccountForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to edit account if last name is missing
+    def test_last_name_required(self):
+        paypalEmail = "examplePaypalEmail@gmail.com"
+        first_name = "Michael"
+        last_name = "Lopez"
+        invites_open = True
+        inquiries_open = True
+        data = {'paypalEmail': paypalEmail, 'first_name': first_name,
+            'invitesOpen': invites_open, 'inquiriesOpen': inquiries_open
+        }
+        form = EditAccountForm(data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that invitesOpen field help text is correct
+    def test_invites_open_help_text(self):
+        form = EditAccountForm()
+        self.assertEqual(form.fields['invitesOpen'].help_text, ("Check " +
+            "if you want to be invited to events"))
+
+    #Test to ensure that invitesOpen field label is correct
+    def test_invites_open_label(self):
+        form = EditAccountForm()
+        self.assertEqual(form.fields['invitesOpen'].label,
+            "Open to Invitations?")
+
+    #Test to ensure that inquiriesOpen field help text is correct
+    def test_inquiries_open_help_text(self):
+        form = EditAccountForm()
+        self.assertEqual(form.fields['inquiriesOpen'].help_text, ("Check " +
+            "if you want users to message you"))
+
+    #Test to ensure that inquiriesOpen field label is correct
+    def test_inquiries_open_label(self):
+        form = EditAccountForm()
+        self.assertEqual(form.fields['inquiriesOpen'].label,
+            "Open to Inquiries?")
 
 class AddImageFormTest(TestCase):
     @classmethod

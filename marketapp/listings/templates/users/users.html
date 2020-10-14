@@ -1,0 +1,43 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-4 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>Users</h1>
+      </div>
+    </div>
+  </div>
+  {% if users %}
+    <div class="container-fluid col-lg-4 center-block"
+      style="margin-top: 20px; margin-bottom: 20px;">
+      <ul>
+      {% for user in users %}
+        <li>
+          <a href="{% url 'profile-detail' pk=user.profile.pk %}">
+            {{ user }}
+          </a>
+        </li>
+      {% endfor %}
+      </ul>
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+  {% else %}
+    <p style="text-align: center;">There are no users registered yet.</p>
+  {% endif %}
+{% endblock %}

@@ -61,6 +61,7 @@
               </li>
             {% endif %}
             <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'faq' %}">FAQ</a></li>
+            <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'users' %}">Users</a></li>
             <li class="site-nav-url" style="margin-left: -4px;"><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
           {% else %}
             <li class="site-nav-url"><a href="{% url 'index' %}">Home</a></li>

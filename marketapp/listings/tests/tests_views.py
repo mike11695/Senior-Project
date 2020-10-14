@@ -4756,3 +4756,53 @@ class EditProfileViewTest(MyTestCase):
         edited_profile = Profile.objects.get(id=profile.id)
         self.assertEqual(edited_profile.bio, 'My Updated Profile')
         self.assertEqual(edited_profile.deliveryAddress, 'SUNY Potsdam')
+
+class UsersViewTest(MyTestCase):
+    def setUp(self):
+        super(UsersViewTest, self).setUp()
+
+        #Create a variety of users to test with
+        #Number of users should be 9 as there are 2 global users
+        number_of_users = 7
+
+        for num in range(number_of_users):
+            User.objects.create_user(username='mike#{0}'.format(num), password="example",
+                email="example#{0}@text.com".format(num),
+                paypalEmail="example#{0}@text.com".format(num),
+                invitesOpen=True, inquiriesOpen=True)
+
+    #Test to ensure that a user must be logged in to view listings
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('users'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/users/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('users'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('users'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/users.html')
+
+    #Test to ensure that a user sees the correct amount of users on site
+    def test_list_users_page_1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('users'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['users']), 9)
+
+    #Test to ensure that different user sees the correct amount of active listings
+    def test_list_users_new_user_page_1(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('users'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['users']), 9)

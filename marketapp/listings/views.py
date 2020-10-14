@@ -1827,3 +1827,14 @@ def edit_profile(request, pk):
         return render(request, 'profiles/edit_profile.html', {'form': form})
     else:
         return redirect('index')
+
+#List view for all users currently on the site
+class UserListView(LoginRequiredMixin, generic.ListView):
+    model = User
+    context_object_name = 'users'
+    template_name = "users/users.html"
+    paginate_by = 25
+
+    #Return the list of users in order of when they signed up
+    def get_queryset(self):
+        return User.objects.all().order_by('id')
