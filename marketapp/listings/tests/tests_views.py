@@ -4806,3 +4806,53 @@ class UsersViewTest(MyTestCase):
         response = self.client.get(reverse('users'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['users']), 9)
+
+class EditAccountViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to edit account
+    def test_redirect_if_not_logged_in(self):
+        user = self.global_user1
+        response = self.client.get(reverse('edit-account', args=[str(user.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/users/{0}/edit'.format(user.id))
+
+    #Test to ensure user is not redirected if logged in and is correct user
+    #for the account
+    def test_no_redirect_if_logged_in_correct_user(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        user = self.global_user1
+        response = self.client.get(reverse('edit-account', args=[str(user.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is not the correct user
+    def test_redirect_if_logged_in_not_correct_user(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        user = self.global_user1
+        response = self.client.get(reverse('edit-account', args=[str(user.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        user = self.global_user1
+        response = self.client.get(reverse('edit-account', args=[str(user.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/edit_account.html')
+
+    #Test to ensure that a user is able to edit their account successfully
+    def test_account_is_updated(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        user = self.global_user1
+        response = self.client.get(reverse('edit-account', args=[str(user.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('edit-account', args=[str(user.id)]),
+            data={'paypalEmail': "paypalexample4@text.com", 'first_name': "Michael",
+                'last_name': "Lopez", 'invitesOpen': True, 'inquiriesOpen': False})
+        self.assertEqual(post_response.status_code, 302)
+        edited_user = User.objects.get(id=user.id)
+        self.assertEqual(edited_user.paypalEmail, 'paypalexample4@text.com')
+        self.assertEqual(edited_user.first_name, 'Michael')
+        self.assertEqual(edited_user.last_name, 'Lopez')

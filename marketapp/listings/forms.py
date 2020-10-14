@@ -693,6 +693,7 @@ class QuickWishlistListingForm(ModelForm):
        self.fields['items'].queryset = wishlist.items
        self.fields['itemsOffer'].queryset = Item.objects.filter(owner=self.user)
 
+#form for user to edit their profile
 class ProfileForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()

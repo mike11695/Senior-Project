@@ -15,7 +15,7 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
-    EditWishlistListingForm, ProfileForm)
+    EditWishlistListingForm, ProfileForm, EditAccountForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1838,3 +1838,25 @@ class UserListView(LoginRequiredMixin, generic.ListView):
     #Return the list of users in order of when they signed up
     def get_queryset(self):
         return User.objects.all().order_by('id')
+
+#Form view to edit a user's account
+@login_required(login_url='/accounts/login/')
+def edit_account(request, pk):
+    #Get the user to be edited
+    current_user = get_object_or_404(User, pk=pk)
+
+    #Check if the matching user is editing the account, redirect otherwise
+    if current_user == request.user:
+        if request.method == 'POST':
+            form = EditAccountForm(data=request.POST, instance=current_user)
+            if form.is_valid():
+                edited_account = form.save(commit=False)
+                edited_account.save()
+
+                #Redirect to the user's profile
+                return redirect('profile-detail', pk=current_user.profile.pk)
+        else:
+            form = EditAccountForm(instance=current_user)
+        return render(request, 'users/edit_account.html', {'form': form})
+    else:
+        return redirect('index')

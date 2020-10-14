@@ -5,7 +5,7 @@
     <h1 style="display: inline-block;">{{ profile.user }}'s Profile</h1>
     <div class="profile-buttons">
       {% if profile.user == request.user %}
-        <a href="">
+        <a href="{% url 'edit-account' pk=profile.user.pk %}">
           <div class="btn btn-blue profile-btn">
             Edit Account
           </div>
