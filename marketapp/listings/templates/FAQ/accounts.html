@@ -1,0 +1,32 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to Edit Your Account</h1>
+    <p>A user can edit their account by clicking on "Profile" in the navigation
+      bar in the top right, and on the new page, there will be a button near
+      the top right that says "Edit Account".  Clicking on this button will
+      take you to the form where you can edit your account.  When editing your
+      account, a PayPal email address and your first and last name are required.
+      In this form, you can set whether you want users to invite you to events or
+      have them message you.  Check "Open to Invites?" if you would like to receive
+      invitations or leave it unchecked to not receive them.  Check "Open to
+      Inquiries?" if you want users to message, leave unchecked if you do not
+      want users to message you.  Once you have finished making changes, click
+      on "Update" to save the changes to your account.</p>
+    <p>There is also a reset password link on the form page if one needs to
+      reset their password.  Click on the link where you'll then be taken to a
+      new page asking for the email you used to sign up with.  Enter the email
+      address and click the button to have a password reset email sent to the
+      email you provided.</p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Accounts</h1>
+    <h3 class="faq-question">Can I change my username and/or email?</h3>
+    <p>At the moment we are not allowing users to change their usernames and
+      emails themselves.  If a user does need to change them for whatever reason,
+      send in a report detailing the changes you want and an admin will make
+      the changes for you.</p>
+  </div>
+{% endblock %}
