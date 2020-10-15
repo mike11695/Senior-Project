@@ -1876,25 +1876,29 @@ def start_conversation(request, pk):
 
     #Check if the sending user is not the recipient, redirect otherwise
     if recipient != request.user:
-        if request.method == 'POST':
-            form = ConversationForm(data=request.POST)
-            if form.is_valid():
-                new_conversation = form.save()
+        #Check to ensure recipient is open to messages, else redirect
+        if recipient.inquiriesOpen:
+            if request.method == 'POST':
+                form = ConversationForm(data=request.POST)
+                if form.is_valid():
+                    new_conversation = form.save()
 
-                #Set sender of conversation
-                new_conversation.sender = request.user
+                    #Set sender of conversation
+                    new_conversation.sender = request.user
 
-                #Set recipient of conversation
-                new_conversation.recipient = recipient
+                    #Set recipient of conversation
+                    new_conversation.recipient = recipient
 
-                #Save the conversation
-                new_conversation.save()
+                    #Save the conversation
+                    new_conversation.save()
 
-                #Redirect to index, change to conversation list view when implemented
-                return redirect('index')
+                    #Redirect to index, change to conversation list view when implemented
+                    return redirect('index')
+            else:
+                form = ConversationForm()
+            return render(request, 'conversations/start_conversation.html',
+                {'form': form})
         else:
-            form = ConversationForm()
-        return render(request, 'conversations/start_conversation.html',
-            {'form': form})
+            return redirect('index')
     else:
         return redirect('index')

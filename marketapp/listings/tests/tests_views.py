@@ -4882,6 +4882,11 @@ class StartConversationViewTest(MyTestCase):
     def setUp(self):
         super(StartConversationViewTest, self).setUp()
 
+        #create a user that is not open to messages
+        self.no_messages_user = User.objects.create_user(username="mikey", password="example",
+            email="example5@text.com", paypalEmail="example5@text.com",
+            invitesOpen=True, inquiriesOpen=False)
+
     #Test to ensure that a user must be logged in to start a conversation
     def test_redirect_if_not_logged_in(self):
         recipient = self.global_user2
@@ -4907,6 +4912,16 @@ class StartConversationViewTest(MyTestCase):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         recipient = self.global_user1
+        response = self.client.get(reverse('start-conversation',
+            args=[str(recipient.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if logged in but is trying to start
+    #a conversation with a user not open to messages
+    def test_redirect_if_logged_in_recipient_not_open_to_messages(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        recipient = self.no_messages_user
         response = self.client.get(reverse('start-conversation',
             args=[str(recipient.id)]))
         self.assertRedirects(response, '/listings/')
