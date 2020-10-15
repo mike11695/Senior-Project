@@ -133,7 +133,7 @@ class Conversation(models.Model):
 class Message(models.Model):
     #Fields for Message
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE,
-        null=True)
+        null=True, related_name="messages")
     author = models.ForeignKey(User, on_delete=models.CASCADE,
         null=True)
     content = models.TextField(max_length=500, default="None")

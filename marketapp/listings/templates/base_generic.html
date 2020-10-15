@@ -19,7 +19,7 @@
           {% if user.is_authenticated %}
             <li class="site-nav-url"><a href="{% url 'profile-detail' pk=user.profile.pk %}">Profile</a></li>
             <div class="dropdown">
-              <div class="site-nav-url dropbtn" style="margin-left: -4px;">All Listings</div>
+              <div class="site-nav-url dropbtn" style="margin-left: -3px;">All Listings</div>
               <div class="dropdown-content mystuff-dropdown-all-listings">
                 <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'all-offer-listings' %}">Offers</a>
                 <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'all-auction-listings' %}">Auctions</a>
@@ -27,7 +27,7 @@
               </div>
             </div>
             <div class="dropdown">
-              <div class="site-nav-url dropbtn" style="margin-left: -3px;">My Stuff</div>
+              <div class="site-nav-url dropbtn" style="margin-left: -4px;">My Stuff</div>
               <div class="dropdown-content mystuff-dropdown">
                 <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'images' %}">Images</a>
                 <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'items' %}">Items</a>
@@ -36,7 +36,7 @@
               </div>
             </div>
             <div class="dropdown">
-              <div class="site-nav-url dropbtn" style="margin-left: -4px;">My Listings</div>
+              <div class="site-nav-url dropbtn" style="margin-left: -3px;">My Listings</div>
               <div class="dropdown-content mystuff-dropdown-listing">
                 <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'offer-listings' %}">Offers</a>
                 <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'auction-listings' %}">Auctions</a>
@@ -46,13 +46,13 @@
               </div>
             </div>
             <div class="dropdown">
-              <div class="site-nav-url dropbtn" style="margin-left: -3px;"><a href="{% url 'events' %}">Events</a></div>
+              <div class="site-nav-url dropbtn" style="margin-left: -4px;"><a href="{% url 'events' %}">Events</a></div>
               <div class="dropdown-content events-dropdown">
                 <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'invitations' %}">Invites</a>
               </div>
             </div>
             {% if request.user.wishlist %}
-              <li class="site-nav-url" style="margin-left: -3px;">
+              <li class="site-nav-url" style="margin-left: -4px;">
                 <a href="{% url 'wishlist-detail' pk=request.user.wishlist.pk %}">Wishlist</a>
               </li>
             {% else %}
@@ -60,8 +60,14 @@
                 <a href="{% url 'create-wishlist' %}">Wishlist</a>
               </li>
             {% endif %}
-            <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'faq' %}">FAQ</a></li>
-            <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'users' %}">Users</a></li>
+            <li class="site-nav-url" style="margin-left: -4px;"><a href="{% url 'conversations' %}">Conversations</a></li>
+            <div class="dropdown">
+              <div class="site-nav-url dropbtn" style="margin-left: -3px;">More...</div>
+              <div class="dropdown-content more-dropdown">
+                <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'faq' %}">FAQ</a></li>
+                <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'users' %}">Users</a></li>
+              </div>
+            </div>
             <li class="site-nav-url" style="margin-left: -4px;"><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
           {% else %}
             <li class="site-nav-url"><a href="{% url 'index' %}">Home</a></li>

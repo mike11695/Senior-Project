@@ -1,0 +1,71 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>My Conversations</h1>
+      </div>
+    </div>
+  </div>
+  {% if conversations %}
+    <div class="center-block col-lg-7">
+      {% for conversation in conversations %}
+        {% if conversation.latest_message_status and conversation.latest_message_author != request.user.id %}
+          <div class="conversation-container-unread col-lg-12">
+            <h3 style="display: inline-block;">
+              <a href="">{{ conversation.topic|truncatechars:50 }}</a>
+            </h3>
+            <div class="conversation-buttons">
+              <a href="">
+                <span class="btn btn-red"
+                  style="border-radius: 5px 10px 5px 5px;">DELETE</span>
+              </a>
+            </div>
+            {% if conversation.sender == request.user %}
+              <h5>Conversation with {{ conversation.recipient }}</h5>
+            {% else %}
+              <h5>Conversation with {{ conversation.sender }}</h5>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="conversation-container col-lg-12">
+            <h3 style="display: inline-block;">
+              <a href="">{{ conversation.topic|truncatechars:50 }}</a>
+            </h3>
+            <div class="conversation-buttons">
+              <a href="">
+                <span class="btn btn-red"
+                  style="border-radius: 5px 10px 5px 5px;">DELETE</span>
+              </a>
+            </div>
+            {% if conversation.sender == request.user %}
+              <h5>Conversation with {{ conversation.recipient }}</h5>
+            {% else %}
+              <h5>Conversation with {{ conversation.sender }}</h5>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p style="text-align: center;">You do not have any conversations currently.</p>
+  {% endif %}
+{% endblock %}

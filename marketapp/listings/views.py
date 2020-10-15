@@ -9,10 +9,11 @@ from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.files.base import ContentFile
 from django.contrib.gis.geoip2 import GeoIP2
+from django.db.models import Max
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
-    Conversation)
+    Conversation, Message)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -1868,6 +1869,24 @@ def edit_account(request, pk):
     else:
         return redirect('index')
 
+#List view for a user to see conversations related to them
+class ConversationListView(LoginRequiredMixin, generic.ListView):
+    model = Conversation
+    context_object_name = 'conversations'
+    template_name = "conversations/conversations.html"
+    paginate_by = 15
+
+    #Filters the list of conversations to only show those that the current
+    #user is a sender or a recipient of
+    def get_queryset(self):
+        conversation_ids = [
+            conversation.id for conversation
+            in Conversation.objects.all()
+            if conversation.sender == self.request.user
+            or conversation.recipient == self.request.user
+        ]
+        return Conversation.objects.filter(id__in=conversation_ids).annotate(latest_message_author=Max('messages__author'), latest_message_status=Max('messages__unread'), latest_message_date=Max('messages__dateSent')).order_by('latest_message_date')
+
 #Form view for a user to start a conversation with another user
 @login_required(login_url='/accounts/login/')
 def start_conversation(request, pk):
@@ -1892,8 +1911,15 @@ def start_conversation(request, pk):
                     #Save the conversation
                     new_conversation.save()
 
-                    #Redirect to index, change to conversation list view when implemented
-                    return redirect('index')
+                    #Create the first message of the conversation
+                    message_content = form.cleaned_data.get('message')
+                    Message.objects.create(conversation=new_conversation,
+                        author=request.user, content=message_content,
+                        dateSent=timezone.localtime(timezone.now()),
+                        unread=True)
+
+                    #Redirect to conversations
+                    return redirect('conversations')
             else:
                 form = ConversationForm()
             return render(request, 'conversations/start_conversation.html',

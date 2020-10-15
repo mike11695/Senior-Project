@@ -99,7 +99,7 @@ urlpatterns = [
     path('invitations/<int:pk>/decline', views.decline_invitation, name='decline-invitation'),
 
     #Conversations
-    #path('conversations/', views.ConversationListView.as_view(), name='conversations'),
+    path('conversations/', views.ConversationListView.as_view(), name='conversations'),
     path('conversations/<int:pk>/start-conversation', views.start_conversation,
         name='start-conversation'),
 ]

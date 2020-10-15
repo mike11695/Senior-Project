@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
-    Profile, Conversation)
+    Profile, Conversation, Message)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -4878,6 +4878,82 @@ class EditAccountViewTest(MyTestCase):
         self.assertEqual(edited_user.first_name, 'Michael')
         self.assertEqual(edited_user.last_name, 'Lopez')
 
+class ConversationsViewTest(MyTestCase):
+    def setUp(self):
+        super(ConversationsViewTest, self).setUp()
+
+        #Create a new user for testing with
+        self.user1 = User.objects.create_user(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Set number of conversations between users
+        number_of_conversations_user1_user2 = 3
+        number_of_conversations_user1_user3 = 2
+
+        for num in range(number_of_conversations_user1_user2):
+            conversation = Conversation.objects.create(sender=self.global_user1,
+                recipient=self.global_user2, topic="For a test")
+            Message.objects.create(content="Hello",
+                author=self.global_user1,
+                dateSent=timezone.localtime(timezone.now()), unread=True,
+                conversation=conversation)
+
+        for num in range(number_of_conversations_user1_user3):
+            conversation = Conversation.objects.create(sender=self.global_user1,
+                recipient=self.user1, topic="For a test")
+            Message.objects.create(content="Hello",
+                author=self.global_user1,
+                dateSent=timezone.localtime(timezone.now()), unread=True,
+                conversation=conversation)
+
+    #Test to ensure that a user must be logged in to view conversations
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('conversations'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/conversations/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('conversations'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('conversations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'conversations/conversations.html')
+
+    #Test to ensure that the user 1 only sees conversations they are a sender
+    #or recipient for
+    def test_list_only_conversations_related_to_user1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('conversations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['conversations']) == 5)
+
+    #Test to ensure that the user 2 only sees conversations they are a sender
+    #or recipient for
+    def test_list_only_conversations_related_to_user2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('conversations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['conversations']) == 3)
+
+    #Test to ensure that the user 3 only sees conversations they are a sender
+    #or recipient for
+    def test_list_only_conversations_related_to_user3(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('conversations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['conversations']) == 2)
+
 class StartConversationViewTest(MyTestCase):
     def setUp(self):
         super(StartConversationViewTest, self).setUp()
@@ -4936,7 +5012,7 @@ class StartConversationViewTest(MyTestCase):
         self.assertTemplateUsed(response, 'conversations/start_conversation.html')
 
     #Test to ensure that a user is able to start a conversation and have it
-    #relate to them and the recipient
+    #relate to them and the recipient, as well as message being created
     def test_conversation_is_started(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -4951,3 +5027,6 @@ class StartConversationViewTest(MyTestCase):
         new_conversation = Conversation.objects.last()
         self.assertEqual(new_conversation.sender, post_response.wsgi_request.user)
         self.assertEqual(new_conversation.recipient, self.global_user2)
+        new_message = Message.objects.last()
+        self.assertEqual(new_message.author, post_response.wsgi_request.user)
+        self.assertEqual(new_message.conversation, new_conversation)

@@ -82,6 +82,10 @@
   width: 66px;
 }
 
+.more-dropdown a {
+  width: 48px;
+}
+
 .btn-blue {
   background-color: blue !important;
   color: white !important;
@@ -688,4 +692,33 @@ a:hover {
   border-radius: 15px;
   padding: 10px;
   margin-bottom: 20px;
+}
+
+.conversation-container {
+  background: white;
+  border: 3px solid grey;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.conversation-container:nth-child(even){
+  background: #CCC;
+}
+
+.conversation-buttons {
+  float: right;
+  display: inline-block;
+}
+
+.conversation-container-unread {
+  background: #8cde83;
+  border: 3px solid #507d4b;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.conversation-container-unread:nth-child(even){
+  background: #77ba70;
 }
