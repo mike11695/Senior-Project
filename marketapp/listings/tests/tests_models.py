@@ -305,12 +305,6 @@ class ConversationModelTest(MyTestCase):
         help_text = conversation._meta.get_field('topic').help_text
         self.assertEqual(help_text, "Topic of the Conversation")
 
-    #Checks to ensure that unread field defaults to true
-    def test_unread_eaault(self):
-        conversation = self.conversation
-        default = conversation._meta.get_field('unread').default
-        self.assertEqual(default, True)
-
 #Tests for Message Class
 class MessageModelTest(MyTestCase):
     def setUp(self):
@@ -318,8 +312,8 @@ class MessageModelTest(MyTestCase):
         super(MessageModelTest, self).setUp()
         self.conversation = Conversation.objects.create(sender=self.global_user1,
             recipient=self.global_user2, topic="Nothing.")
-        self.message = Message.objects.create(author=self.global_user1,
-            content="Nothing")
+        self.message = Message.objects.create(conversation=self.conversation,
+            author=self.global_user1, content="Nothing")
 
     #Checks to ensure that content length is correct
     def test_content_max_length(self):
@@ -332,6 +326,12 @@ class MessageModelTest(MyTestCase):
         message = self.message
         field_label = message._meta.get_field('dateSent').verbose_name
         self.assertEqual(field_label, "Date Sent")
+
+    #Checks to ensure that unread field defaults to true
+    def test_unread_default(self):
+        conversation = self.message
+        default = conversation._meta.get_field('unread').default
+        self.assertEqual(default, True)
 
 #Tests for Image Class
 class ImageAndTagsModelTest(MyTestCase):

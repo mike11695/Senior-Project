@@ -1,7 +1,8 @@
 from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
-    WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm)
+    WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm,
+    ConversationForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
@@ -1753,3 +1754,67 @@ class ProfileFormTest(MyTestCase):
     def test_profile_delivery_address_label(self):
         form = ProfileForm()
         self.assertEqual(form.fields['deliveryAddress'].label, "Delivery Address")
+
+class ConversationFormTest(MyTestCase):
+    #Test to ensure a user is able to start a conversation providing all fields
+    def test_valid_conversation_creation(self):
+        topic = "Trade me your stuff"
+        message = "I want your stuff for free"
+        data = {'topic': topic, 'message': message}
+        form = ConversationForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to start a conversation if topic is
+    #missing
+    def test_invalid_conversation_creation_no_topic(self):
+        topic = "Trade me your stuff"
+        message = "I want your stuff for free"
+        data = {'message': message}
+        form = ConversationForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to start a conversation if message is
+    #missing
+    def test_invalid_conversation_creation_no_topic(self):
+        topic = "Trade me your stuff"
+        message = "I want your stuff for free"
+        data = {'topic': topic}
+        form = ConversationForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to start a conversation if topic
+    #is too long
+    def test_invalid_conversation_creation_topic_too_long(self):
+        topic = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        message = "I want your stuff for free"
+        data = {'topic': topic, 'message': message}
+        form = ConversationForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to start a conversation if message
+    #is too long
+    def test_invalid_conversation_creation_message_too_long(self):
+        topic = "Trade me your stuff"
+        message = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'topic': topic, 'message': message}
+        form = ConversationForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that topic field help text is correct
+    def test_conversation_topic_help_text(self):
+        form = ConversationForm()
+        self.assertEqual(form.fields['topic'].help_text, ("Topic " +
+            "of the conversation."))
+
+    #Test to ensure that message field help text is correct
+    def test_message_topic_help_text(self):
+        form = ConversationForm()
+        self.assertEqual(form.fields['message'].help_text, ("Initiating " +
+            "message for the conversation."))

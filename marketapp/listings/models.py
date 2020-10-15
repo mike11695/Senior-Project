@@ -114,10 +114,11 @@ class Warning(models.Model):
 #Fields needed: Sender, recipient, topic, unread
 class Conversation(models.Model):
     #Fields for Conversation
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender")
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recipient")
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender",
+        null=True)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE,
+        related_name="recipient", null=True)
     topic = models.TextField(max_length=100, help_text="Topic of the Conversation")
-    unread = models.BooleanField(default=True)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Conversation.
@@ -125,15 +126,19 @@ class Conversation(models.Model):
 
     def __str__(self):
         #String for representing the Conversation object.
-        return f'"Conversation between", {self.sender}, " & ", {self.recipient}'
+        return f'Conversation between {self.sender} & {self.recipient}'
 
 #Model for Message, containing content to be read
-#Fields needed: Author, content, dateSent
+#Fields needed: Conversation, author, content, dateSent, unread
 class Message(models.Model):
     #Fields for Message
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE,
+        null=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
+        null=True)
     content = models.TextField(max_length=500, default="None")
     dateSent = models.DateTimeField(auto_now_add=True, verbose_name="Date Sent")
+    unread = models.BooleanField(default=True)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Message.
@@ -141,7 +146,7 @@ class Message(models.Model):
 
     def __str__(self):
         #String for representing the Message object.
-        return f'"Mesage from: ", {self.author}'
+        return f'Message from: {self.author}'
 
 #Model for Tags, used to catagorize images
 #Fields needed: Name

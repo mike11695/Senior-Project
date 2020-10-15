@@ -3,7 +3,7 @@ from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
-    Profile)
+    Profile, Conversation, Message)
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -722,3 +722,16 @@ class ProfileForm(ModelForm):
         exclude = ['user', 'country', 'state', 'city', 'zipCode']
         help_texts = {'delivery': "Check this if you are able to deliver items."}
         labels = {'bio': "Biography"}
+
+#Form for user to start a conversation
+class ConversationForm(ModelForm):
+    topic = forms.CharField(max_length=50, required=True,
+        help_text="Topic of the conversation.")
+    message = forms.CharField(max_length=250, required=True,
+        help_text="Initiating message for the conversation.",
+        widget=forms.Textarea)
+
+    class Meta:
+        model = Conversation
+        fields = ['topic']
+        exclude = ['sender', 'recipient']
