@@ -11,11 +11,12 @@ from django.core.files.base import ContentFile
 from django.contrib.gis.geoip2 import GeoIP2
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
-    Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile)
+    Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
+    Conversation)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
-    EditWishlistListingForm, ProfileForm, EditAccountForm)
+    EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1864,5 +1865,36 @@ def edit_account(request, pk):
         else:
             form = EditAccountForm(instance=current_user)
         return render(request, 'users/edit_account.html', {'form': form})
+    else:
+        return redirect('index')
+
+#Form view for a user to start a conversation with another user
+@login_required(login_url='/accounts/login/')
+def start_conversation(request, pk):
+    #Get the user to be the recipient
+    recipient = get_object_or_404(User, pk=pk)
+
+    #Check if the sending user is not the recipient, redirect otherwise
+    if recipient != request.user:
+        if request.method == 'POST':
+            form = ConversationForm(data=request.POST)
+            if form.is_valid():
+                new_conversation = form.save()
+
+                #Set sender of conversation
+                new_conversation.sender = request.user
+
+                #Set recipient of conversation
+                new_conversation.recipient = recipient
+
+                #Save the conversation
+                new_conversation.save()
+
+                #Redirect to index, change to conversation list view when implemented
+                return redirect('index')
+        else:
+            form = ConversationForm()
+        return render(request, 'conversations/start_conversation.html',
+            {'form': form})
     else:
         return redirect('index')

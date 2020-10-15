@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
-    Profile)
+    Profile, Conversation)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -4877,3 +4877,62 @@ class EditAccountViewTest(MyTestCase):
         self.assertEqual(edited_user.paypalEmail, 'paypalexample4@text.com')
         self.assertEqual(edited_user.first_name, 'Michael')
         self.assertEqual(edited_user.last_name, 'Lopez')
+
+class StartConversationViewTest(MyTestCase):
+    def setUp(self):
+        super(StartConversationViewTest, self).setUp()
+
+    #Test to ensure that a user must be logged in to start a conversation
+    def test_redirect_if_not_logged_in(self):
+        recipient = self.global_user2
+        response = self.client.get(reverse('start-conversation',
+            args=[str(recipient.id)]))
+        self.assertRedirects(response,
+            ('/accounts/login/?next=/listings/conversations/' +
+                '{0}/start-conversation'.format(recipient.id)))
+
+    #Test to ensure user is not redirected if logged in and is starting a
+    #conversation with a different user
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        recipient = self.global_user2
+        response = self.client.get(reverse('start-conversation',
+            args=[str(recipient.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is trying to start
+    #a conversation with themselves
+    def test_redirect_if_logged_in_no_conversation_with_self(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        recipient = self.global_user1
+        response = self.client.get(reverse('start-conversation',
+            args=[str(recipient.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        recipient = self.global_user2
+        response = self.client.get(reverse('start-conversation',
+            args=[str(recipient.id)]))
+        self.assertTemplateUsed(response, 'conversations/start_conversation.html')
+
+    #Test to ensure that a user is able to start a conversation and have it
+    #relate to them and the recipient
+    def test_conversation_is_started(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        recipient = self.global_user2
+        response = self.client.get(reverse('start-conversation',
+            args=[str(recipient.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('start-conversation',
+            args=[str(recipient.id)]), data={'topic': "I want your item",
+                'message': "Sell me your item now."})
+        self.assertEqual(post_response.status_code, 302)
+        new_conversation = Conversation.objects.last()
+        self.assertEqual(new_conversation.sender, post_response.wsgi_request.user)
+        self.assertEqual(new_conversation.recipient, self.global_user2)

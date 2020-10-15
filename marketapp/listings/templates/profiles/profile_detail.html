@@ -24,7 +24,7 @@
           </a>
         {% endif %}
         {% if profile.user.inquiriesOpen %}
-          <a href="">
+          <a href="{% url 'start-conversation' pk=profile.user.pk %}">
             <div class="btn btn-blue profile-btn">
               Message User
             </div>

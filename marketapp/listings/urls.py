@@ -97,4 +97,9 @@ urlpatterns = [
     path('invitations/', views.InvitationListView.as_view(), name='invitations'),
     path('invitations/<int:pk>/accept', views.accept_invitation, name='accept-invitation'),
     path('invitations/<int:pk>/decline', views.decline_invitation, name='decline-invitation'),
+
+    #Conversations
+    #path('conversations/', views.ConversationListView.as_view(), name='conversations'),
+    path('conversations/<int:pk>/start-conversation', views.start_conversation,
+        name='start-conversation'),
 ]
