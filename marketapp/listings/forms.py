@@ -739,7 +739,7 @@ class ConversationForm(ModelForm):
 #Form for user to create a message
 class MessageForm(ModelForm):
     content = forms.CharField(max_length=250, required=True,
-        widget=forms.Textarea(attrs={'rows':5, 'cols':20}))
+        widget=forms.Textarea(attrs={'rows':3, 'cols':45}))
 
     class Meta:
         model = Message

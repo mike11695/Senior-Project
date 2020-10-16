@@ -111,11 +111,12 @@
   margin-right: -50px !important;
 }
 
-.listing-header {
+.listing-header, .conversation-header {
   text-align: center;
   border-bottom: 1px solid grey;
   padding-bottom: 10px;
   margin-bottom: 10px;
+  word-wrap: break-word;
 }
 
 .wishlist-listing-header {
@@ -721,4 +722,98 @@ a:hover {
 
 .conversation-container-unread:nth-child(even){
   background: #77ba70;
+}
+
+.conversation-messages-container {
+  background: #dedede;
+  border: 3px solid #adadad;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+  width: 400px;
+  height: 425px;
+}
+
+.messages-container {
+  height: 320px;
+  width: 373px;
+  overflow-y: scroll;
+  margin-bottom: 2px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.current-user-message {
+  width: 350px;
+  float: right;
+}
+
+.current-user-message-container {
+  max-width: 225px;
+  float: right;
+}
+
+.current-user-message-details {
+  text-align: right;
+  font-size: 10px;
+  font-weight: bold;
+  word-spacing: -1px;
+  word-wrap: break-word;
+  margin-bottom: 1.5px;
+}
+
+.current-user-message-content {
+  background-color: #97dbda;
+  padding: 2.5px 5px 2.5px 5px;
+  border-radius: 5px;
+  width: auto;
+  float: right;
+  word-wrap: break-word;
+  margin-bottom: 2.5px;
+  font-size: 14px;
+}
+
+.other-user-message {
+  width: 350px;
+  float: left;
+}
+
+.other-user-message-container {
+  max-width: 225px;
+  float: left;
+}
+
+.other-user-message-details {
+  text-align: left;
+  font-size: 10px;
+  font-weight: bold;
+  word-spacing: -1px;
+  word-wrap: break-word;
+  margin-bottom: 1.5px;
+}
+
+.other-user-message-content {
+  background-color: #97db99;
+  padding: 2.5px 5px 2.5px 5px;
+  border-radius: 5px;
+  width: auto;
+  float: left;
+  word-wrap: break-word;
+  margin-bottom: 2.5px;
+  font-size: 14px;
+}
+
+.message-form-container {
+  display: inline-block;
+}
+
+.message-send-btn {
+  display: inline-block;
+  width: 34px;
+  height: 78px;
+  float: right;
+  margin-left: 2px;
+  border-radius: 0px 0px 20px 0px;
+  padding-left: 8px;
+  font-weight: lighter !important;
 }

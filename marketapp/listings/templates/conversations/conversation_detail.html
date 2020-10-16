@@ -1,0 +1,58 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="col-lg-5 center-block conversation-header">
+    <h2>{{ conversation.topic }}</h2>
+    {% if conversation.sender == request.user %}
+      <h5>Conversation with {{ conversation.recipient }}</h5>
+    {% else %}
+      <h5>Conversation with {{ conversation.sender }}</h5>
+    {% endif %}
+  </div>
+  <div class="conversation-messages-container center-block">
+    <div class="messages-container">
+      {% if messages %}
+        {% for message in messages reversed %}
+          {% if message.author == request.user %}
+            <div class="current-user-message">
+              <div class="current-user-message-container">
+                {% if message.new_date %}
+                  <div class="current-user-message-details">
+                    {{ message.author }}  |  {{ message.dateSent }}
+                  </div>
+                {% endif %}
+                <div class="current-user-message-content">
+                  {{ message.content }}
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <div class="other-user-message">
+              <div class="other-user-message-container">
+                {% if message.new_date %}
+                  <div class="other-user-message-details">
+                    {{ message.author }}  |  {{ message.dateSent }}
+                  </div>
+                {% endif %}
+                <div class="other-user-message-content">
+                  {{ message.content }}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+    <div class="message-form-container">
+      <form enctype="multipart/form-data" method="post" action="">
+        {% csrf_token %}
+        {% for field in form %}
+          {{ field }}
+        {% endfor %}
+        <button type="btn submit" class="btn btn-blue message-send-btn">
+          <i class="far fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

@@ -5,11 +5,10 @@ from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.files.base import ContentFile
 from django.contrib.gis.geoip2 import GeoIP2
-from django.db.models import Max
+from django.db.models import Count, Max, OuterRef, Subquery
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
@@ -1886,7 +1885,15 @@ class ConversationListView(LoginRequiredMixin, generic.ListView):
             if conversation.sender == self.request.user
             or conversation.recipient == self.request.user
         ]
-        return Conversation.objects.filter(id__in=conversation_ids).annotate(latest_message_author=Max('messages__author'), latest_message_status=Max('messages__unread'), latest_message_date=Max('messages__dateSent')).order_by('latest_message_date')
+
+        latest_message = Subquery(Message.objects.filter(
+            conversation_id=OuterRef("id"),
+        ).values('dateSent').order_by("-dateSent")[:1])
+
+        conversations = Conversation.objects.filter(id__in=conversation_ids).annotate(
+            latest_message=latest_message).order_by(latest_message).reverse()
+
+        return conversations
 
 #Form view for a user to start a conversation with another user
 @login_required(login_url='/accounts/login/')
@@ -1965,9 +1972,11 @@ class ConversationDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
         for message in messages:
             #set message to be read if current user is not author of it
             if message.unread:
-                if message.author != self.request.user:
-                    message.unread = False
-                    message.save()
+                if (conversation.recipient == self.request.user
+                    or conversation.sender == self.request.user):
+                    if message.author != self.request.user:
+                        message.unread = False
+                        message.save()
 
     #Set the context for the detail view of the conversation
     def get_context_data(self, *args, **kwargs):
@@ -1975,6 +1984,30 @@ class ConversationDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
         conversation = self.get_object()
         context['message_form'] = self.get_form()
         context['conversation'] = conversation
+
+        #Get the messages and add context to them
+        messages = Message.objects.filter(conversation=conversation)
+        new_messages = []
+        for index, message in enumerate(messages):
+            if index == 0:
+                message.new_date = True
+                previous = message
+            else:
+                #compare current message dateSent with previous message dateSent
+                if (message.author == previous.author
+                    and message.dateSent.year == previous.dateSent.year
+                    and message.dateSent.month == previous.dateSent.month
+                    and message.dateSent.day == previous.dateSent.day
+                    and message.dateSent.hour == previous.dateSent.hour
+                    and message.dateSent.minute == previous.dateSent.minute):
+                        message.new_date = False
+                        previous = message
+                else:
+                    message.new_date = True
+                    previous = message
+
+        context['messages'] = messages
+
         return context
 
     #Post method for the message form

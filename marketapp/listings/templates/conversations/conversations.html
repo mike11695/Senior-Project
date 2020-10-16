@@ -11,10 +11,12 @@
   {% if conversations %}
     <div class="center-block col-lg-7">
       {% for conversation in conversations %}
-        {% if conversation.latest_message_status and conversation.latest_message_author != request.user.id %}
+        {% if conversation.messages.last.unread and conversation.messages.last.author != request.user %}
           <div class="conversation-container-unread col-lg-12">
             <h3 style="display: inline-block;">
-              <a href="">{{ conversation.topic|truncatechars:50 }}</a>
+              <a href="{% url 'conversation-detail' pk=conversation.pk %}">
+                {{ conversation.topic|truncatechars:50 }}
+              </a>
             </h3>
             <div class="conversation-buttons">
               <a href="">
@@ -31,7 +33,9 @@
         {% else %}
           <div class="conversation-container col-lg-12">
             <h3 style="display: inline-block;">
-              <a href="">{{ conversation.topic|truncatechars:50 }}</a>
+              <a href="{% url 'conversation-detail' pk=conversation.pk %}">
+                {{ conversation.topic|truncatechars:50 }}
+              </a>
             </h3>
             <div class="conversation-buttons">
               <a href="">
