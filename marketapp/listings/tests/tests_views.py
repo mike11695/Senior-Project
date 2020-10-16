@@ -5030,3 +5030,113 @@ class StartConversationViewTest(MyTestCase):
         new_message = Message.objects.last()
         self.assertEqual(new_message.author, post_response.wsgi_request.user)
         self.assertEqual(new_message.conversation, new_conversation)
+
+class ConversationDetailViewTest(MyTestCase):
+    def setUp(self):
+        super(ConversationDetailViewTest, self).setUp()
+
+        #Create a new user for testing with
+        self.user1 = User.objects.create_user(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Create a conversation for testing with
+        self.conversation = Conversation.objects.create(sender=self.global_user1,
+            recipient=self.global_user2, topic="For a test")
+
+        #create a message for testing with
+        self.unread_message = Message.objects.create(content="Hello",
+            author=self.global_user1,
+            dateSent=timezone.localtime(timezone.now()), unread=True,
+            conversation=self.conversation)
+
+    #Test to ensure that a user must be logged in to view a conversation
+    def test_redirect_if_not_logged_in(self):
+        conversation = self.conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in and is sender of
+    #conversation
+    def test_no_redirect_if_logged_in_sender(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in and is recipient of
+    #conversation
+    def test_no_redirect_if_logged_in_recipient(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is not recipient or
+    #sender of conversation
+    def test_redirect_if_logged_in_not_sender_or_recipient(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'conversations/conversation_detail.html')
+
+    #Test to ensure that unread messages remain unread if author views
+    #conversation
+    def test_messages_remain_unread_for_author(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+        message = Message.objects.get(id=self.unread_message.id)
+        self.assertEqual(message.unread, True)
+
+    #Test to ensure that unread messages become read if non author views
+    #conversation
+    def test_messages_become_read_for_non_author(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+        message = Message.objects.get(id=self.unread_message.id)
+        self.assertEqual(message.unread, False)
+
+    #Test to ensure that a user can create a message succesfully
+    def test_message_is_created(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('conversation-detail',
+            args=[str(conversation.id)]),
+            data={
+                'content': "I hope this message reaches you."
+            })
+        self.assertEqual(post_response.status_code, 302)
+        new_message = Message.objects.last()
+        self.assertEqual(new_message.author, post_response.wsgi_request.user)
+        self.assertEqual(new_message.conversation, conversation)
+        self.assertEqual(new_message.content, "I hope this message reaches you.")
+        self.assertEqual(new_message.unread, True)

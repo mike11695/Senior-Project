@@ -2,7 +2,7 @@ from django.contrib.auth import login, authenticate
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
@@ -17,7 +17,8 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
-    EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm)
+    EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
+    MessageForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1928,3 +1929,68 @@ def start_conversation(request, pk):
             return redirect('index')
     else:
         return redirect('index')
+
+#Detail view for a conversation with message form
+class ConversationDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
+    model = Conversation
+    template_name = "conversations/conversation_detail.html"
+    form_class = MessageForm
+
+    #Checks to ensure that only sender and recipient can view the conversation
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.sender == self.request.user:
+            return super(ConversationDetailView, self).dispatch(request, *args, **kwargs)
+        elif obj.recipient == self.request.user:
+            return super(ConversationDetailView, self).dispatch(request, *args, **kwargs)
+        else:
+            return redirect('index')
+
+    #Get the current conversation being accessed
+    def get_object(self):
+        try:
+            current_conversation = Conversation.objects.get(id=self.kwargs.get('pk'))
+
+            #Have unread messages be read
+            self.read_messages(current_conversation)
+
+            return current_conversation
+        except self.model.DoesNotExist:
+            raise Http404("Conversation could not be found.")
+
+    def read_messages(self, conversation):
+        #Get the messages from the conversation
+        messages = Message.objects.filter(conversation=conversation)
+
+        for message in messages:
+            #set message to be read if current user is not author of it
+            if message.unread:
+                if message.author != self.request.user:
+                    message.unread = False
+                    message.save()
+
+    #Set the context for the detail view of the conversation
+    def get_context_data(self, *args, **kwargs):
+        context = super(ConversationDetailView, self).get_context_data(*args, **kwargs)
+        conversation = self.get_object()
+        context['message_form'] = self.get_form()
+        context['conversation'] = conversation
+        return context
+
+    #Post method for the message form
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object() #conversation object
+        form = self.get_form()
+        if form.is_valid():
+            content = form.cleaned_data.get('content')
+
+            #Create the new message
+            Message.objects.create(conversation=self.object,
+                author=request.user, content=content,
+                dateSent=timezone.localtime(timezone.now()),
+                unread=True)
+
+            #Return to the conversation detail view
+            return redirect('conversation-detail', pk=self.object.pk)
+        else:
+            return super(ConversationDetailView, self).form_invalid(form)

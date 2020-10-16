@@ -735,3 +735,13 @@ class ConversationForm(ModelForm):
         model = Conversation
         fields = ['topic']
         exclude = ['sender', 'recipient']
+
+#Form for user to create a message
+class MessageForm(ModelForm):
+    content = forms.CharField(max_length=250, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':20}))
+
+    class Meta:
+        model = Message
+        fields = ['content']
+        exclude = ['conversation', 'author', 'dateSent', 'unread']

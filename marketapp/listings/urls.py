@@ -100,6 +100,8 @@ urlpatterns = [
 
     #Conversations
     path('conversations/', views.ConversationListView.as_view(), name='conversations'),
+    path('conversations/<int:pk>', views.ConversationDetailView.as_view(),
+        name='conversation-detail'),
     path('conversations/<int:pk>/start-conversation', views.start_conversation,
         name='start-conversation'),
 ]

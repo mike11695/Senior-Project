@@ -2,7 +2,7 @@ from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
     WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm,
-    ConversationForm)
+    ConversationForm, MessageForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
@@ -1818,3 +1818,33 @@ class ConversationFormTest(MyTestCase):
         form = ConversationForm()
         self.assertEqual(form.fields['message'].help_text, ("Initiating " +
             "message for the conversation."))
+
+class MessageFormTest(MyTestCase):
+    #Test to ensure a user is able to create a message providing all fields
+    def test_valid_message_creation(self):
+        content = "Can I have your stuff?"
+        data = {'content': content}
+        form = MessageForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a message if content is
+    #missing
+    def test_invalid_conversation_creation_no_content(self):
+        content = "Can I have your stuff?"
+        data = {}
+        form = MessageForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to start a conversation if message
+    #is too long
+    def test_invalid_conversation_creation_message_too_long(self):
+        content = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'content': content}
+        form = MessageForm(data=data)
+        self.assertFalse(form.is_valid())
