@@ -65,7 +65,19 @@
                 <a href="{% url 'create-wishlist' %}">Wishlist</a>
               </li>
             {% endif %}
-            <li class="site-nav-url" style="margin-left: -4px;"><a href="{% url 'conversations' %}">Conversations</a></li>
+            {% if user.unread_message_count > 0 %}
+              <li class="site-nav-url-alert" style="margin-left: -4px;">
+                <a href="{% url 'conversations' %}">
+                  Conversations
+                </a>
+              </li>
+            {% else %}
+              <li class="site-nav-url" style="margin-left: -4px;">
+                <a href="{% url 'conversations' %}">
+                  Conversations
+                </a>
+              </li>
+            {% endif %}
             <div class="dropdown">
               <div class="site-nav-url dropbtn" style="margin-left: -3px;">More...</div>
               <div class="dropdown-content more-dropdown">

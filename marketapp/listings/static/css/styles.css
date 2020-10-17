@@ -15,12 +15,37 @@
   background-color: #255180;
 }
 
+.site-nav-url-alert {
+  display: inline-block;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-timing-function: linear;
+  animation-name: ALERT;
+  background-color: #037bfc;
+  padding: 10px;
+}
+
+@keyframes ALERT {
+  to {
+    background-color: #8fc5ff;
+  }
+}
+
 .site-nav-url a {
   color: white;
 }
 
 .site-nav-url a:hover {
   text-decoration: none;
+}
+
+.site-nav-url-alert a:hover {
+  text-decoration: none;
+}
+
+.site-nav-url-alert a {
+  color: white;
 }
 
 .site-nav-container {

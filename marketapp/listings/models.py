@@ -40,6 +40,28 @@ class User(AbstractUser):
         verbose_name="Allow Users to Contact You Through Profile",
         help_text="Leave this field checked if you are interested in being contacted by users through your profile.  If unchecked, users will only be able to contact you after you accept their offer or bid or you contact them.")
 
+    @property
+    def unread_message_count(self):
+        unread_count = 0
+
+        #Get ids of conversation the user is related with
+        conversation_ids = [
+            conversation.id for conversation
+            in Conversation.objects.all()
+            if conversation.sender == self
+            or conversation.recipient == self
+        ]
+
+        #Filter our the conversations that match the obtained ids
+        conversations = Conversation.objects.filter(id__in=conversation_ids)
+
+        if conversations.count() > 0:
+            for conversation in conversations:
+                if conversation.messages.filter(unread=True).exclude(author=self):
+                    unread_count = unread_count + 1
+
+        return unread_count
+
 
 #model for Portfolios, where users can learn about one another and leave feedback
 class Profile(models.Model):
