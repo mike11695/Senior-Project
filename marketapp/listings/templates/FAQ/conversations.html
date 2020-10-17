@@ -1,0 +1,27 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to Start a Conversation</h1>
+    <p>To start a conversation with another user, you will need to go to the
+      user's profile page.  You can access this page by clicking on their
+      username on several different pages.  On the user's profile page, if the
+      user is open to messages, there will be a button near the top right of the
+      page that says "Message User".  Clicking on it will take you to the form
+      to start a conversation.</p>
+    <p>When starting a conversation, you will need to add a topic and message.
+      The topic can be about anything such as asking about an item, asking if
+      a user may be interested in an item and so on.  Your message should
+      expand upon the topic to give the other user an idea of what you're trying
+      to communicate with them.  Once you have added both fields, click on "Send"
+      to finish creating the conversation.</p>
+    <p>After you have created a conversation, you can find a list of your active
+      conversations by clicking on "Conversations" in the navigation bar at the
+      top right.  When you receive a new message or a new conversation is started
+      with you by a different user, the "Conversation" button will slowly blink
+      to alert you of the new message/conversation.  In your list of conversations,
+      those with unread messages will be highlighted green while conversations
+      with all messages read will have a plain white background.</p>
+  </div>
+{% endblock %}

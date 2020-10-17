@@ -26,34 +26,34 @@
             <div class="dropdown">
               <div class="site-nav-url dropbtn" style="margin-left: -3px;">All Listings</div>
               <div class="dropdown-content mystuff-dropdown-all-listings">
-                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'all-offer-listings' %}">Offers</a>
-                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'all-auction-listings' %}">Auctions</a>
-                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'all-wishlist-listings' %}">Wishlist</a>
+                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'all-offer-listings' %}">Offers</a>
+                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'all-auction-listings' %}">Auctions</a>
+                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'all-wishlist-listings' %}">Wishlist</a>
               </div>
             </div>
             <div class="dropdown">
               <div class="site-nav-url dropbtn" style="margin-left: -4px;">My Stuff</div>
               <div class="dropdown-content mystuff-dropdown">
-                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'images' %}">Images</a>
-                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'items' %}">Items</a>
-                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'my-offers' %}">Offers</a>
-                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'my-bids' %}">Bids</a>
+                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'images' %}">Images</a>
+                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'items' %}">Items</a>
+                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'my-offers' %}">Offers</a>
+                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'my-bids' %}">Bids</a>
               </div>
             </div>
             <div class="dropdown">
               <div class="site-nav-url dropbtn" style="margin-left: -3px;">My Listings</div>
               <div class="dropdown-content mystuff-dropdown-listing">
-                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'offer-listings' %}">Offers</a>
-                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'auction-listings' %}">Auctions</a>
+                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'offer-listings' %}">Offers</a>
+                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'auction-listings' %}">Auctions</a>
                 {% if request.user.wishlist %}
-                  <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'wishlist-listings' %}">Wishlist</a>
+                  <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'wishlist-listings' %}">Wishlist</a>
                 {% endif %}
               </div>
             </div>
             <div class="dropdown">
               <div class="site-nav-url dropbtn" style="margin-left: -4px;"><a href="{% url 'events' %}">Events</a></div>
               <div class="dropdown-content events-dropdown">
-                <a class="site-nav-url" style="margin-left: -3px;" href="{% url 'invitations' %}">Invites</a>
+                <a class="site-nav-url" style="margin-left: -4px;" href="{% url 'invitations' %}">Invites</a>
               </div>
             </div>
             {% if request.user.wishlist %}
