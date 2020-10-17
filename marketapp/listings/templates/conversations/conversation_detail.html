@@ -2,15 +2,32 @@
 
 {% block content %}
   <div class="col-lg-5 center-block conversation-header">
-    <h2>{{ conversation.topic }}</h2>
-    {% if conversation.sender == request.user %}
-      <h5>Conversation with {{ conversation.recipient }}</h5>
-    {% else %}
-      <h5>Conversation with {{ conversation.sender }}</h5>
+    <h3 style="margin-bottom: 1px;">{{ conversation.topic }}</h3>
+    {% if conversation.sender == request.user and conversation.recipient != None %}
+      <h6 style="margin-bottom: 2.5px;">Conversation with {{ conversation.recipient }}</h6>
+    {% elif conversation.recipient == request.user and conversation.sender != None %}
+      <h6 style="margin-bottom: 2.5px;">Conversation with {{ conversation.sender }}</h6>
     {% endif %}
+    <a href="{% url 'delete-conversation' pk=conversation.pk %}">
+      {% if conversation.sender == None or conversation.recipient == None %}
+        <span class="btn btn-red"
+          style="width: 75px; height: 25px; font-size: 14px; padding-top: 0px;">
+          DELETE
+        </span>
+      {% else %}
+        <span class="btn btn-red"
+          style="width: 85px; height: 25px; font-size: 14px; padding-top: 0px;">
+          REMOVE
+        </span>
+      {% endif %}
+    </a>
   </div>
   <div class="conversation-messages-container center-block">
+    {% if conversation.sender != None and conversation.recipient != None %}
     <div class="messages-container">
+    {% else %}
+    <div class="inactive-messages-container">
+    {% endif %}
       {% if messages %}
         {% for message in messages reversed %}
           {% if message.author == request.user %}
@@ -43,16 +60,19 @@
         {% endfor %}
       {% endif %}
     </div>
-    <div class="message-form-container">
-      <form enctype="multipart/form-data" method="post" action="">
-        {% csrf_token %}
-        {% for field in form %}
-          {{ field }}
-        {% endfor %}
-        <button type="btn submit" class="btn btn-blue message-send-btn">
-          <i class="far fa-paper-plane"></i>
-        </button>
-      </form>
-    </div>
+
+    {% if message_form %}
+      <div class="message-form-container">
+        <form enctype="multipart/form-data" method="post" action="">
+          {% csrf_token %}
+          {% for field in form %}
+            {{ field }}
+          {% endfor %}
+          <button type="btn submit" class="btn btn-blue message-send-btn">
+            <i class="far fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+    {% endif %}
   </div>
 {% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="col-lg-10 center-block">
+    <form method="post" style="text-align: center;">{% csrf_token %}
+      {% if conversation.sender == None or conversation.recipient == None %}
+        <p>Are you sure you want to delete this conversation?</p>
+        <h3>{{ conversation.topic }}</h3>
+      {% else %}
+        <p>Are you sure you want to remove yourself from this conversation?</p>
+        <h3>{{ conversation.topic }}</h3>
+      {% endif %}
+      <input type="submit" value="Confirm" class="btn btn-blue">
+    </form>
+  </div>
+{% endblock %}

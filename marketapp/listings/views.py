@@ -5,7 +5,7 @@ from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.files.base import ContentFile
 from django.contrib.gis.geoip2 import GeoIP2
 from django.db.models import Count, Max, OuterRef, Subquery
@@ -1988,7 +1988,8 @@ class ConversationDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
     def get_context_data(self, *args, **kwargs):
         context = super(ConversationDetailView, self).get_context_data(*args, **kwargs)
         conversation = self.get_object()
-        context['message_form'] = self.get_form()
+        if conversation.sender != None and conversation.recipient != None:
+            context['message_form'] = self.get_form()
         context['conversation'] = conversation
 
         #Get the messages and add context to them
@@ -2019,17 +2020,59 @@ class ConversationDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
     #Post method for the message form
     def post(self, request, *args, **kwargs):
         self.object = self.get_object() #conversation object
-        form = self.get_form()
-        if form.is_valid():
-            content = form.cleaned_data.get('content')
+        if self.object.sender != None and self.object.recipient != None:
+            form = self.get_form()
+            if form.is_valid():
+                content = form.cleaned_data.get('content')
 
-            #Create the new message
-            Message.objects.create(conversation=self.object,
-                author=request.user, content=content,
-                dateSent=timezone.localtime(timezone.now()),
-                unread=True)
+                #Create the new message
+                Message.objects.create(conversation=self.object,
+                    author=request.user, content=content,
+                    dateSent=timezone.localtime(timezone.now()),
+                    unread=True)
 
-            #Return to the conversation detail view
-            return redirect('conversation-detail', pk=self.object.pk)
+                #Return to the conversation detail view
+                return redirect('conversation-detail', pk=self.object.pk)
+            else:
+                return super(ConversationDetailView, self).form_invalid(form)
         else:
-            return super(ConversationDetailView, self).form_invalid(form)
+            raise Http404("The other user is no longer part of the conversation.")
+
+#View for a user to delete an conversation they are a part of
+#Conversation will only truly be deleted after both users have removed themselves
+class ConversationDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = Conversation
+    success_url = reverse_lazy('conversations')
+    template_name = "conversations/conversation_delete.html"
+    context_object_name = 'conversation'
+
+    #Checks to make sure owner of listing clicked to delete, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.sender == self.request.user:
+            return super(ConversationDeleteView, self).dispatch(request, *args, **kwargs)
+        elif obj.recipient == self.request.user:
+            return super(ConversationDeleteView, self).dispatch(request, *args, **kwargs)
+        else:
+            return redirect('index')
+
+    #Handles deletion of the conversation so that it will only be deleted once
+    #both users are removed
+    def delete(self, request, *args, **kwargs):
+       self.object = self.get_object()
+
+       if (self.object.sender == self.request.user or self.object.recipient == self.request.user):
+           if (self.object.sender != None and self.object.recipient != None):
+               #Just remove the current user from conversation, do not delete
+               if self.object.sender == self.request.user:
+                   self.object.sender = None
+                   self.object.save()
+               else:
+                   self.object.recipient = None
+                   self.object.save()
+           elif (self.object.sender == None or self.object.recipient == None):
+               #Delete the conversation
+               self.object.delete()
+           return HttpResponseRedirect(self.get_success_url())
+       else:
+           return redirect('index')

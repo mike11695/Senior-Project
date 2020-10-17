@@ -19,14 +19,19 @@
               </a>
             </h3>
             <div class="conversation-buttons">
-              <a href="">
-                <span class="btn btn-red"
-                  style="border-radius: 5px 10px 5px 5px;">DELETE</span>
+              <a href="{% url 'delete-conversation' pk=conversation.pk %}">
+                {% if conversation.sender == None or conversation.recipient == None %}
+                  <span class="btn btn-red"
+                    style="border-radius: 5px 10px 5px 5px;">DELETE</span>
+                {% else %}
+                  <span class="btn btn-red"
+                    style="border-radius: 5px 10px 5px 5px;">REMOVE</span>
+                {% endif %}
               </a>
             </div>
-            {% if conversation.sender == request.user %}
+            {% if conversation.sender == request.user and conversation.recipient != None %}
               <h5>Conversation with {{ conversation.recipient }}</h5>
-            {% else %}
+            {% elif conversation.recipient == request.user and conversation.sender != None %}
               <h5>Conversation with {{ conversation.sender }}</h5>
             {% endif %}
           </div>
@@ -38,14 +43,19 @@
               </a>
             </h3>
             <div class="conversation-buttons">
-              <a href="">
-                <span class="btn btn-red"
-                  style="border-radius: 5px 10px 5px 5px;">DELETE</span>
+              <a href="{% url 'delete-conversation' pk=conversation.pk %}">
+                {% if conversation.sender == None or conversation.recipient == None %}
+                  <span class="btn btn-red"
+                    style="border-radius: 5px 10px 5px 5px;">DELETE</span>
+                {% else %}
+                  <span class="btn btn-red"
+                    style="border-radius: 5px 10px 5px 5px;">REMOVE</span>
+                {% endif %}
               </a>
             </div>
-            {% if conversation.sender == request.user %}
+            {% if conversation.sender == request.user and conversation.recipient != None %}
               <h5>Conversation with {{ conversation.recipient }}</h5>
-            {% else %}
+            {% elif conversation.recipient == request.user and conversation.sender != None %}
               <h5>Conversation with {{ conversation.sender }}</h5>
             {% endif %}
           </div>

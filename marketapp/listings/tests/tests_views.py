@@ -5064,6 +5064,8 @@ class ConversationDetailViewTest(MyTestCase):
         #Create a conversation for testing with
         self.conversation = Conversation.objects.create(sender=self.global_user1,
             recipient=self.global_user2, topic="For a test")
+        self.inactive_conversation = Conversation.objects.create(sender=self.global_user1,
+            topic="For a test")
 
         #create a message for testing with
         self.unread_message = Message.objects.create(content="Hello",
@@ -5161,3 +5163,129 @@ class ConversationDetailViewTest(MyTestCase):
         self.assertEqual(new_message.conversation, conversation)
         self.assertEqual(new_message.content, "I hope this message reaches you.")
         self.assertEqual(new_message.unread, True)
+
+    #Test to ensure that a user can not create a message if the other user
+    #is no longer part of the conversation
+    def test_message_is_not_created_other_user_no_longer_in_conversation(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        conversation = self.inactive_conversation
+        response = self.client.get(reverse('conversation-detail',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('conversation-detail',
+            args=[str(conversation.id)]),
+            data={
+                'content': "I hope this message reaches you."
+            })
+        self.assertEqual(post_response.status_code, 404)
+
+class ConversationDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(ConversationDeleteViewTest, self).setUp()
+        #Create a new user for testing with
+        self.user = User.objects.create_user(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Create an conversation to test for deletion
+        self.conversation = Conversation.objects.create(sender=self.global_user1,
+            recipient=self.global_user2, topic="For a test")
+        self.inactive_conversation = Conversation.objects.create(sender=self.global_user1,
+            recipient=None, topic="For a test")
+        self.conversation_id = self.conversation.id
+        self.inactive_conversation_id = self.inactive_conversation.id
+
+        #create some messages for the conversations
+        number_of_messages_conversation_1 = 3
+        number_of_messages_conversation_2 = 5
+
+        self.active_message_ids = [0 for number in range(number_of_messages_conversation_1)]
+        self.inactive_message_ids = [0 for number in range(number_of_messages_conversation_2)]
+
+        #Messages for the active conversation
+        for num in range(number_of_messages_conversation_1):
+            message = Message.objects.create(content="Hello",
+                author=self.global_user1,
+                dateSent=timezone.localtime(timezone.now()), unread=True,
+                conversation=self.conversation)
+            self.active_message_ids[num] = message.id
+
+        #Messages for the inactive conversation
+        for num in range(number_of_messages_conversation_2):
+            message = Message.objects.create(content="Hello",
+                author=self.global_user1,
+                dateSent=timezone.localtime(timezone.now()), unread=True,
+                conversation=self.inactive_conversation)
+            self.inactive_message_ids[num] = message.id
+
+    #Test to ensure that a user must be logged in to delete a conversation
+    def test_redirect_if_not_logged_in(self):
+        conversation = self.conversation
+        response = self.client.get(reverse('delete-conversation',
+            args=[str(conversation.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if the are the sender
+    def test_no_redirect_if_logged_in_sender(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('delete-conversation',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in if the are the recipient
+    def test_no_redirect_if_logged_in_recipient(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('delete-conversation',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they are not sender
+    #or recipient
+    def test_no_redirect_if_logged_in_not_sender_or_recipient(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('delete-conversation',
+            args=[str(conversation.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        response = self.client.get(reverse('delete-conversation',
+            args=[str(conversation.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'conversations/conversation_delete.html')
+
+    #Test to ensure conversation is not deleted if one user removes themselves
+    #from conversation but other user hasn't yet
+    def test_successful_removal_of_user(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        conversation = self.conversation
+        post_response = self.client.post(reverse('delete-conversation',
+            args=[str(conversation.id)]))
+        self.assertRedirects(post_response, reverse('conversations'))
+        self.assertTrue(Conversation.objects.filter(id=self.conversation_id).exists())
+        for message_id in self.active_message_ids:
+            self.assertTrue(Message.objects.filter(id=message_id).exists())
+
+    #Test to ensure conversation is deleted if the last user removes themselves
+    #from the conversation
+    def test_successful_deletion(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        conversation = self.inactive_conversation
+        post_response = self.client.post(reverse('delete-conversation',
+            args=[str(conversation.id)]))
+        self.assertRedirects(post_response, reverse('conversations'))
+        self.assertFalse(Conversation.objects.filter(id=self.inactive_conversation_id).exists())
+        for message_id in self.inactive_message_ids:
+            self.assertFalse(Message.objects.filter(id=message_id).exists())

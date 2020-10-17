@@ -768,6 +768,15 @@ a:hover {
   flex-direction: column-reverse;
 }
 
+.inactive-messages-container {
+  height: 400px;
+  width: 373px;
+  overflow-y: scroll;
+  margin-bottom: 2px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
 .current-user-message {
   width: 350px;
   float: right;

@@ -105,4 +105,6 @@ urlpatterns = [
         name='conversation-detail'),
     path('conversations/<int:pk>/start-conversation', views.start_conversation,
         name='start-conversation'),
+    path('conversations/<int:pk>/delete', views.ConversationDeleteView.as_view(),
+        name='delete-conversation'),
 ]
