@@ -470,9 +470,17 @@ class Offer(models.Model):
         return f'{self.listing.name}'"""
 
 #Model for Receipts, made after a transaction between users is completed
-#Fields needed: Owner, buyer, listing
-"""class Receipt(models.Model):
+#Fields needed: Owner, exchangee, listingName, ownerItems, exchangeeItems, exchangeeAmountOffer
+class Receipt(models.Model):
     #Fields for Receipt
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL,
+        related_name="listing_owner", null=True)
+    exchangee = models.ForeignKey(User, on_delete=models.SET_NULL,
+        related_name="listing_exchangee", null=True)
+    listingName = models.TextField(max_length=100)
+    ownerItems = models.ManyToManyField(Item, related_name="owner_items")
+    exchangeeItems = models.ManyToManyField(Item, related_name="exchangee_items")
+    exchangeeAmountOffer = models.DecimalField(max_digits=9, decimal_places=2)
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Receipt.
@@ -480,4 +488,4 @@ class Offer(models.Model):
 
     def __str__(self):
         #String for representing the Receipt object.
-        return f'"Receipt for ", {self.listing.name}'"""
+        return f'Receipt for {self.listingName}'
