@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 import os
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'documents',
     'mathfilters',
     'geoip2',
+    'django_celery_beat', 
 ]
 
 MIDDLEWARE = [
@@ -144,3 +146,20 @@ MEDIA_URL = '/media/'
 LOGIN_REDIRECT_URL = '/'
 
 GEOIP_PATH = os.path.join('geoip')
+
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+
+CELERY_TIMEZONE = 'America/New_York'
+
+CELERY_BEAT_SCHEDULE = {
+    'create-receipts-every-minute': {
+       'task': 'listings.tasks.create_receipts',
+        # There are 4 ways we can handle time, read further
+       'schedule': 60.0,
+    },
+
+}

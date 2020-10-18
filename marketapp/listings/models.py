@@ -409,6 +409,8 @@ class AuctionListing(Listing):
     autobuy = models.DecimalField(default=None, max_digits=9, decimal_places=2, null=True,
         help_text="If a user bids the amount you set in this field, the auction will close and they will win the auction.")
 
+
+
     def get_absolute_url(self):
         #Returns the url to access a particular instance of AuctionListing.
         return reverse('auction-listing-detail', args=[str(self.id)])
