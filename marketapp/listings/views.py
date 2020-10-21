@@ -623,6 +623,34 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
             return redirect('index')
         return super(OfferListingDeleteView, self).dispatch(request, *args, **kwargs)
 
+    #Checks to make sure listing is not active before deleting
+    def delete(self, request, *args, **kwargs):
+       self.object = self.get_object()
+
+       if self.object.owner == self.request.user:
+            if self.object.listingEnded != True:
+                #Listing is still active, only allow user to delete if there
+                #are no offers
+                if Offer.objects.filter(offerListing=self.object).exists():
+                    raise Http404(("This listing cannot be deleted, reject " +
+                        "all current offers to delete it."))
+                else:
+                    #Allow the user to delete the listing if there are no offers
+                    self.object.delete()
+                    return HttpResponseRedirect(self.get_success_url())
+            else:
+                #Listing has ended, soft deleted if listing was completed
+                #Delete if listing was not completed
+                if self.object.listingCompleted:
+                    self.object.owner = None
+                    self.object.save()
+                else:
+                    self.object.delete()
+
+                return HttpResponseRedirect(self.get_success_url())
+       else:
+           return redirect('index')
+
 #Form for a user to view all of their active auctions (need to come back to this
 #once listings are able to end)
 class AuctionListingListView(LoginRequiredMixin, generic.ListView):
@@ -954,10 +982,7 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.owner == self.request.user:
-            if obj.offerAccepted:
-                return redirect('offer-detail', pk=obj.pk)
-            else:
-                return super(OfferDeleteView, self).dispatch(request, *args, **kwargs)
+            return super(OfferDeleteView, self).dispatch(request, *args, **kwargs)
         elif obj.offerListing.owner == self.request.user:
             if obj.offerAccepted:
                 return redirect('offer-detail', pk=obj.pk)
@@ -966,15 +991,37 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
         else:
             return redirect('index')
 
+    #Checks to see if offer was accepted or not before deleting
+    def delete(self, request, *args, **kwargs):
+       self.object = self.get_object()
+       listing = self.object.offerListing
+
+       if self.object.owner == self.request.user:
+           if self.object.offerAccepted:
+               #Soft delete the offer
+               self.object.owner = None
+               self.object.save()
+           elif self.object.offerAccepted != True:
+               #Delete the offer
+               self.object.delete()
+           return HttpResponseRedirect(self.get_success_url(listing))
+       elif self.object.offerListing.owner == self.request.user:
+           if self.object.offerAccepted != True:
+               #Delete the offer if it wasn't accepted
+               self.object.delete()
+               return HttpResponseRedirect(self.get_success_url(listing))
+           else:
+               raise Http404(("Only the owner that made this offer can delete it."))
+       else:
+           return redirect('index')
+
     #Returns offer listing owner to the offer listing, will return offer owner to their list of offers
-    def get_success_url(self):
-        obj = self.get_object()
-        listing = OfferListing.objects.get(id=obj.offerListing.id)
-        if obj.owner == self.request.user:
-            #Change this to offer list later for user that owns offer
+    def get_success_url(self, listing):
+        if listing.owner == self.request.user:
             return reverse_lazy('offer-listing-detail', kwargs={'pk': listing.pk})
         else:
-            return reverse_lazy('offer-listing-detail', kwargs={'pk': listing.pk})
+            return reverse_lazy('my-offers')
+
 
 #Form view for creating an bid for an auction listing
 @login_required(login_url='/accounts/login/')
@@ -1072,6 +1119,23 @@ class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                 return redirect('auction-listings')
         else:
             return redirect('index')
+
+    #Checks to see if expired listing has bids or not
+    def delete(self, request, *args, **kwargs):
+       self.object = self.get_object()
+
+       if self.object.owner == self.request.user:
+           #Check if listing has bids, if so soft delete
+           #If not delete
+           if Bid.objects.filter(auctionListing=self.object).exists():
+               self.object.owner = None
+               self.object.save()
+           else:
+               self.object.delete()
+
+           return HttpResponseRedirect(self.get_success_url())
+       else:
+           return redirect('index')
 
 #View for a user to see a list of events they created
 class EventListView(LoginRequiredMixin, generic.ListView):

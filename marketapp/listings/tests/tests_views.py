@@ -666,44 +666,51 @@ class EditItemViewTest(MyTestCase):
 class ItemDeleteViewTest(MyTestCase):
     def setUp(self):
         super(ItemDeleteViewTest, self).setUp()
-        #Create an item object to test for deletion
-        self.item =  Item.objects.create(name="Item to Delete",
+        #Create item objects to test for deletion
+        self.unrelated_item =  Item.objects.create(name="Item to Delete",
             description="A item to test deletion", owner=self.global_user1)
-        self.item.images.add = self.global_image1
-        self.item.save
-        self.item_id = self.item.id
-        self.global_wishlist.items.add(self.item)
+        self.unrelated_item.images.add = self.global_image1
+        self.unrelated_item.save
+        self.unrelated_item_id = self.unrelated_item.id
+
+        self.listing_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.listing_item.images.add = self.global_image1
+        self.listing_item.save
+        self.listing_item_id = self.listing_item.id
+        self.global_wishlist.items.add(self.listing_item)
         self.global_wishlist.save
 
         date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+        date_ended = timezone.localtime(timezone.now()) - timedelta(days=1)
 
-        #Create an offer listing to test for deletion
-        self.offer_listing = OfferListing.objects.create(owner=self.global_user1, name='Test Offer Listing',
+        #Create offer listings to test for deletion
+        self.active_offer_listing = OfferListing.objects.create(owner=self.global_user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
             maxRange=10.00, notes="Just offer", endTime=date_active)
-        self.offer_listing.items.add(self.item)
-        self.offer_listing.save
-        self.offer_listing_id = self.offer_listing.id
+        self.active_offer_listing.items.add(self.listing_item)
+        self.active_offer_listing.save
+        self.active_offer_listing_id = self.active_offer_listing.id
 
         #create an auction listing to test for deletion
-        self.auction_listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+        self.active_auction_listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
             description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
             endTime=date_active)
-        self.auction_listing.items.add(self.item)
-        self.auction_listing.save
-        self.auction_listing_id = self.auction_listing.id
+        self.active_auction_listing.items.add(self.listing_item)
+        self.active_auction_listing.save
+        self.active_auction_listing_id = self.active_auction_listing.id
 
         #Create a wishlist listing to test for deletion
-        self.wishlist_listing = WishlistListing.objects.create(owner=self.global_user1,
+        self.active_wishlist_listing = WishlistListing.objects.create(owner=self.global_user1,
             name='My Wishlist Listing', endTime=date_active,
             moneyOffer=5.00, notes="Just a test")
-        self.wishlist_listing.items.add(self.item)
-        self.wishlist_listing.save
-        self.wishlist_listing_id = self.wishlist_listing.id
+        self.active_wishlist_listing.items.add(self.listing_item)
+        self.active_wishlist_listing.save
+        self.active_wishlist_listing_id = self.active_wishlist_listing.id
 
     #Test to ensure that a user must be logged in to delete an item
     def test_redirect_if_not_logged_in(self):
-        item = self.item
+        item = self.listing_item
         response = self.client.get(reverse('delete-item', args=[str(item.id)]))
         self.assertRedirects(response, '/listings/')
 
@@ -711,7 +718,7 @@ class ItemDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_owner(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        item = self.item
+        item = self.listing_item
         response = self.client.get(reverse('delete-item', args=[str(item.id)]))
         self.assertEqual(response.status_code, 200)
 
@@ -719,7 +726,7 @@ class ItemDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_not_owner(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
-        item = self.item
+        item = self.listing_item
         response = self.client.get(reverse('delete-item', args=[str(item.id)]))
         self.assertRedirects(response, '/listings/')
 
@@ -727,24 +734,35 @@ class ItemDeleteViewTest(MyTestCase):
     def test_correct_template_used(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        item = self.item
+        item = self.listing_item
         response = self.client.get(reverse('delete-item', args=[str(item.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'items/item_delete.html')
 
-    #Test to ensure object is deleted if user confirms as well as listings that contained the item
+    #Test to ensure user can delete an item that has no relations to a
+    #listing or offer
+    """def test_successful_deletion_unrelated_item(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.unrelated_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(post_response, reverse('items'))
+        self.assertFalse(Item.objects.filter(id=self.unrelated_item_id).exists())"""
+
+    """#Test to ensure object is deleted if user confirms as well as active
+    #listings that contained the item
     def test_succesful_deletion(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        item = self.item
+        item = self.listing_item
         post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
         self.assertRedirects(post_response, reverse('items'))
-        self.assertFalse(Item.objects.filter(id=self.item_id).exists())
-        self.assertFalse(OfferListing.objects.filter(id=self.offer_listing_id).exists())
-        self.assertFalse(AuctionListing.objects.filter(id=self.auction_listing_id).exists())
-        self.assertFalse(WishlistListing.objects.filter(id=self.wishlist_listing_id).exists())
+        self.assertFalse(Item.objects.filter(id=self.listing_item_id).exists())
+        self.assertFalse(OfferListing.objects.filter(id=self.active_offer_listing_id).exists())
+        self.assertFalse(AuctionListing.objects.filter(id=self.active_auction_listing_id).exists())
+        self.assertFalse(WishlistListing.objects.filter(id=self.active_wishlist_listing_id).exists())
         self.assertTrue(OfferListing.objects.filter(id=self.global_offer_listing1.id).exists())
-        self.assertTrue(AuctionListing.objects.filter(id=self.global_auction_listing1.id).exists())
+        self.assertTrue(AuctionListing.objects.filter(id=self.global_auction_listing1.id).exists())"""
 
 class FAQViewTest(TestCase):
     def setUp(self):
@@ -1721,41 +1739,84 @@ class RelistOfferListingViewTest(MyTestCase):
 class OfferListingDeleteViewTest(MyTestCase):
     def setUp(self):
         super(OfferListingDeleteViewTest, self).setUp()
-        user = User.objects.create_user(username="mike", password="example",
-            email="example@text.com", paypalEmail="example@text.com",
-            invitesOpen=True, inquiriesOpen=True)
+        #Get the current date and time for testing and create active and inactive endtimes
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
 
-        #Create an offer listing object to test for deletion
-        self.offerListing = OfferListing.objects.create(owner=user,
+        #Create offer listing objects to test for deletion
+        #Active listings
+        self.active_offer_listing_no_offers = OfferListing.objects.create(owner=self.global_user1,
             name="My Items For Offers", description="A few items up for offers",
-            openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer")
-        self.offerListing.items.add = self.global_item1
-        self.offerListing.save
-        self.listingID = self.offerListing.id
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_active)
+        self.active_offer_listing_no_offers.items.add = self.global_item1
+        self.active_offer_listing_no_offers.save
+        self.active_offer_listing_no_offers_id = self.active_offer_listing_no_offers.id
 
-        #create some offers for the listing
+        self.active_offer_listing_offers = OfferListing.objects.create(owner=self.global_user1,
+            name="My Items For Offers", description="A few items up for offers",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_active)
+        self.active_offer_listing_offers.items.add = self.global_item1
+        self.active_offer_listing_offers.save
+        self.active_offer_listing_offers_id = self.active_offer_listing_offers.id
+
+        #Inactive listings
+        self.inactive_offer_listing_no_offers = OfferListing.objects.create(owner=self.global_user1,
+            name="My Items For Offers", description="A few items up for offers",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended)
+        self.inactive_offer_listing_no_offers.items.add = self.global_item1
+        self.inactive_offer_listing_no_offers.save
+        self.inactive_offer_listing_no_offers_id = self.inactive_offer_listing_no_offers.id
+
+        self.inactive_offer_listing_offers = OfferListing.objects.create(owner=self.global_user1,
+            name="My Items For Offers", description="A few items up for offers",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended, listingCompleted=False)
+        self.inactive_offer_listing_offers.items.add = self.global_item1
+        self.inactive_offer_listing_offers.save
+        self.inactive_offer_listing_offers_id = self.inactive_offer_listing_offers.id
+
+        self.inactive_offer_listing_completed = OfferListing.objects.create(owner=self.global_user1,
+            name="My Items For Offers", description="A few items up for offers",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended, listingCompleted=True)
+        self.inactive_offer_listing_completed.items.add = self.global_item1
+        self.inactive_offer_listing_completed.save
+        self.inactive_offer_listing_completed_id = self.inactive_offer_listing_completed.id
+
+        #create some offers for listings
         number_of_offers = 3
 
-        self.offerIDs = [0 for number in range(number_of_offers)]
+        self.active_offer_listing_offers_offer_ids = [0 for number in range(number_of_offers)]
+        self.inactive_offer_listing_offers_offer_ids = [0 for number in range(number_of_offers)]
 
         for offer in range(number_of_offers):
-            new_offer = Offer.objects.create(offerListing=self.offerListing, owner=self.global_user2,
-                amount=7.00)
+            new_offer = Offer.objects.create(offerListing=self.active_offer_listing_offers,
+                owner=self.global_user2, amount=7.00)
             new_offer.items.add(self.global_item2)
             new_offer.save
-            self.offerIDs[offer] = new_offer.id
+            self.active_offer_listing_offers_offer_ids[offer] = new_offer.id
+
+        for offer in range(number_of_offers):
+            new_offer = Offer.objects.create(offerListing=self.inactive_offer_listing_offers,
+                owner=self.global_user2, amount=7.00)
+            new_offer.items.add(self.global_item2)
+            new_offer.save
+            self.inactive_offer_listing_offers_offer_ids[offer] = new_offer.id
 
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
-        listing = self.offerListing
+        listing = self.active_offer_listing_no_offers
         response = self.client.get(reverse('delete-offer-listing', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
 
     #Test to ensure user is not redirected if logged in if they own the listing
     def test_no_redirect_if_logged_in_owner(self):
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        listing = self.offerListing
+        listing = self.active_offer_listing_no_offers
         response = self.client.get(reverse('delete-offer-listing', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
 
@@ -1763,29 +1824,68 @@ class OfferListingDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_not_owner(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
-        listing = self.offerListing
+        listing = self.active_offer_listing_no_offers
         response = self.client.get(reverse('delete-offer-listing', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
 
     #Test to ensure right template is used/exists
     def test_correct_template_used(self):
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        listing = self.offerListing
+        listing = self.active_offer_listing_no_offers
         response = self.client.get(reverse('delete-offer-listing', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_listing_delete.html')
 
-    #Test to ensure object is deleted and offers asociated are also deleted if user confirms
-    def test_succesful_deletion(self):
-        login = self.client.login(username='mike', password='example')
+    #Test to ensure user can delete an active offer listing with no offers
+    def test_successful_deletion_active_listing_no_offers(self):
+        login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        listing = self.offerListing
+        listing = self.active_offer_listing_no_offers
         post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
         self.assertRedirects(post_response, reverse('offer-listings'))
-        self.assertFalse(OfferListing.objects.filter(id=self.listingID).exists())
-        for offer_id in self.offerIDs:
+        self.assertFalse(OfferListing.objects.filter(id=self.active_offer_listing_no_offers_id).exists())
+
+    #Test to ensure user cannot delete an active offer listing with offers
+    def test_unsuccessful_deletion_active_listing_offers(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.active_offer_listing_offers
+        post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure that user can delete an inactive offer listing the was not
+    #completed with no offers
+    def test_successful_deletion_inactive_listing_no_offers(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_offer_listing_no_offers
+        post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(post_response, reverse('offer-listings'))
+        self.assertFalse(OfferListing.objects.filter(id=self.inactive_offer_listing_no_offers_id).exists())
+
+    #Test to ensure that user can delete an inactive offer listing the was not
+    #completed with offers and offers are deleted
+    def test_successful_deletion_inactive_listing_offers(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_offer_listing_offers
+        post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(post_response, reverse('offer-listings'))
+        self.assertFalse(OfferListing.objects.filter(id=self.inactive_offer_listing_offers_id).exists())
+        for offer_id in self.inactive_offer_listing_offers_offer_ids:
             self.assertFalse(Offer.objects.filter(id=offer_id).exists())
+
+    #Test to ensure user can soft delete an offer listing that was completed
+    def test_successful_soft_deletion_inactive_listing_completed(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_offer_listing_completed
+        post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
+        self.assertRedirects(post_response, reverse('offer-listings'))
+        self.assertTrue(OfferListing.objects.filter(id=self.inactive_offer_listing_completed_id).exists())
+        updated_listing = OfferListing.objects.get(id=self.inactive_offer_listing_completed_id)
+        self.assertEqual(updated_listing.owner, None)
 
 class AuctionListingsViewTest(MyTestCase):
     def setUp(self):
@@ -2714,7 +2814,7 @@ class OfferDeleteViewTest(MyTestCase):
 
         #Create offers for testing deletion with
         self.regular_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
-            owner=self.global_user2, amount=7.00)
+            owner=self.global_user2, amount=7.00, offerAccepted=False)
 
         self.accepted_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
             owner=self.global_user2, amount=7.00, offerAccepted=True)
@@ -2758,8 +2858,8 @@ class OfferDeleteViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_delete.html')
 
-    #Test to ensure object is deleted
-    def test_succesful_deletion(self):
+    #Test to ensure object can be deleted by listing owner
+    def test_successful_deletion_by_listing_owner(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         offer = self.regular_offer
@@ -2768,8 +2868,18 @@ class OfferDeleteViewTest(MyTestCase):
         self.assertRedirects(post_response, reverse('offer-listing-detail', args=[str(self.global_offer_listing1.id)]))
         self.assertFalse(Offer.objects.filter(id=offer_id).exists())
 
-    #Test to ensure an accepted offer cannot be deleted
-    def test_unsuccesful_deletion_accepted_offer(self):
+    #Test to ensure object can be deleted by offer owner
+    def test_successful_deletion_by_offer_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.regular_offer
+        offer_id = self.regular_offer.id
+        post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertRedirects(post_response, '/listings/offer-listings/my-offers')
+        self.assertFalse(Offer.objects.filter(id=offer_id).exists())
+
+    #Test to ensure an accepted offer cannot be soft deleted by listing owner
+    def test_unsuccessful_soft_deletion_accepted_offer_by_listing_owner(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         offer = self.accepted_offer
@@ -2777,6 +2887,20 @@ class OfferDeleteViewTest(MyTestCase):
         post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
         self.assertRedirects(post_response, reverse('offer-detail', args=[str(offer.id)]))
         self.assertTrue(Offer.objects.filter(id=offer_id).exists())
+        updated_offer = Offer.objects.get(id=offer_id)
+        self.assertEqual(updated_offer.owner, self.global_user2)
+
+    #Test to ensure an accepted offer can be soft deleted by offer owner
+    def test_successful_soft_deletion_accepted_offer_by_offer_owner(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        offer = self.accepted_offer
+        offer_id = self.accepted_offer.id
+        post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
+        self.assertRedirects(post_response, '/listings/offer-listings/my-offers')
+        self.assertTrue(Offer.objects.filter(id=offer_id).exists())
+        updated_offer = Offer.objects.get(id=offer_id)
+        self.assertEqual(updated_offer.owner, None)
 
 class OfferEditViewTest(MyTestCase):
     def setUp(self):
@@ -2866,7 +2990,14 @@ class AuctionListingDeleteViewTest(MyTestCase):
             minimumIncrement=1.00, autobuy=25.00, endTime=date_inactive)
         self.inactive_auction_listing.items.add = self.global_item1
         self.inactive_auction_listing.save
-        self.inactive_listing_id = self.inactive_auction_listing.id
+        self.inactive_auction_listing_id = self.inactive_auction_listing.id
+
+        self.inactive_auction_listing_no_bids = AuctionListing.objects.create(owner=self.global_user1,
+            name='Test Auction Listing', description="Just a test listing", startingBid=5.00,
+            minimumIncrement=1.00, autobuy=25.00, endTime=date_inactive)
+        self.inactive_auction_listing_no_bids.items.add = self.global_item1
+        self.inactive_auction_listing_no_bids.save
+        self.inactive_auction_listing_no_bids_id = self.inactive_auction_listing_no_bids.id
 
         self.active_auction_listing = AuctionListing.objects.create(owner=self.global_user1,
             name='Test Auction Listing', description="Just a test listing", startingBid=5.00,
@@ -2923,16 +3054,27 @@ class AuctionListingDeleteViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/auction_listing_delete.html')
 
-    #Test to ensure object is deleted and offers asociated are also deleted if user confirms
-    def test_succesful_deletion(self):
+    #Test to ensure that user can delete an expired auction listing
+    #with no bids
+    def test_successful_deletion_expired_listing_no_bids(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.inactive_auction_listing_no_bids
+        post_response = self.client.post(reverse('delete-auction-listing', args=[str(listing.id)]))
+        self.assertRedirects(post_response, reverse('auction-listings'))
+        self.assertFalse(AuctionListing.objects.filter(id=self.inactive_auction_listing_no_bids_id).exists())
+
+    #Test to ensure that user can soft delete an expired auction listing
+    #with bids
+    def test_successful_soft_deletion_expired_listing_bids(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         listing = self.inactive_auction_listing
         post_response = self.client.post(reverse('delete-auction-listing', args=[str(listing.id)]))
         self.assertRedirects(post_response, reverse('auction-listings'))
-        self.assertFalse(AuctionListing.objects.filter(id=self.inactive_listing_id).exists())
-        for bid_id in self.bid_IDs:
-            self.assertFalse(Bid.objects.filter(id=bid_id).exists())
+        self.assertTrue(AuctionListing.objects.filter(id=self.inactive_auction_listing_id).exists())
+        updated_listing = AuctionListing.objects.get(id=self.inactive_auction_listing_id)
+        self.assertEqual(updated_listing.owner, None)
 
 class EventListViewTest(MyTestCase):
     def setUp(self):
