@@ -346,41 +346,37 @@ class ImageDeleteViewTest(MyTestCase):
     def setUp(self):
         super(ImageDeleteViewTest, self).setUp()
 
-        #Create an image object to test for deletion
+        #Create image objects to test for deletion
         test_image = SimpleUploadedFile(name='art1.png',
             content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
-        self.image = Image.objects.create(owner=self.global_user1,
+        self.unrelated_image = Image.objects.create(owner=self.global_user1,
             image=test_image, name="Test Image")
-        self.image_id = self.image.id
+        self.unrelated_image_id = self.unrelated_image.id
 
-        #create an item object to test that it will be deleted after having the sole image deleted
-        self.item =  Item.objects.create(name="Item to Delete",
+        self.related_image_owned_item = Image.objects.create(owner=self.global_user1,
+            image=test_image, name="Test Image")
+        self.related_image_owned_item_id = self.related_image_owned_item.id
+
+        self.related_image_unowned_item_in_receipt = Image.objects.create(owner=self.global_user1,
+            image=test_image, name="Test Image")
+        self.related_image_unowned_item_in_receipt_id = self.related_image_unowned_item_in_receipt.id
+
+        #create item objects to test with
+        self.owned_item =  Item.objects.create(name="Item to Delete",
             description="A item to test deletion", owner=self.global_user1)
-        self.item.images.add = self.image
-        self.item.save
-        self.item_id = self.item.id
+        self.owned_item.images.add(self.related_image_owned_item)
+        self.owned_item.save
+        self.owned_item_id = self.owned_item.id
 
-        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
-
-        #Create an offer listing to test for deletion
-        self.offer_listing = OfferListing.objects.create(owner=self.global_user1, name='Test Offer Listing',
-            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
-            maxRange=10.00, notes="Just offer", endTime=date_active)
-        self.offer_listing.items.add(self.item)
-        self.offer_listing.save
-        self.offer_listing_id = self.offer_listing.id
-
-        #create an auction listing to test for deletion
-        self.auction_listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
-            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
-            endTime=date_active)
-        self.auction_listing.items.add(self.item)
-        self.auction_listing.save
-        self.auction_listing_id = self.auction_listing.id
+        self.unowned_item_in_receipt =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=None)
+        self.unowned_item_in_receipt.images.add(self.related_image_unowned_item_in_receipt)
+        self.unowned_item_in_receipt.save
+        self.unowned_item_in_receipt_id = self.unowned_item_in_receipt.id
 
     #Test to ensure that a user must be logged in to delete an image
     def test_redirect_if_not_logged_in(self):
-        image = self.image
+        image = self.unrelated_image
         response = self.client.get(reverse('delete-image', args=[str(image.id)]))
         self.assertRedirects(response, '/listings/')
 
@@ -388,7 +384,7 @@ class ImageDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_owner(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        image = self.image
+        image = self.unrelated_image
         response = self.client.get(reverse('delete-image', args=[str(image.id)]))
         self.assertEqual(response.status_code, 200)
 
@@ -396,7 +392,7 @@ class ImageDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_not_owner(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
-        image = self.image
+        image = self.unrelated_image
         response = self.client.get(reverse('delete-image', args=[str(image.id)]))
         self.assertRedirects(response, '/listings/')
 
@@ -404,24 +400,40 @@ class ImageDeleteViewTest(MyTestCase):
     def test_correct_template_used(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        image = self.image
+        image = self.unrelated_image
         response = self.client.get(reverse('delete-image', args=[str(image.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'images/image_delete.html')
 
-    #Test to ensure object is deleted if user confirms as well as items that contain the image
-    #as its sole image and listings that contained the item
-    def test_succesful_deletion(self):
+    #Test to ensure object is deleted if image is not related to any items
+    def test_successful_deletion_unrelated_image(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        image = self.image
+        image = self.unrelated_image
         post_response = self.client.post(reverse('delete-image', args=[str(image.id)]))
         self.assertRedirects(post_response, reverse('images'))
-        self.assertFalse(Image.objects.filter(id=self.image_id).exists())
-        self.assertFalse(Item.objects.filter(id=self.item_id).exists())
-        self.assertFalse(OfferListing.objects.filter(id=self.offer_listing_id).exists())
-        self.assertFalse(AuctionListing.objects.filter(id=self.auction_listing_id).exists())
-        self.assertTrue(Item.objects.filter(id=self.global_item1.id).exists())
+        self.assertFalse(Image.objects.filter(id=self.unrelated_image_id).exists())
+
+    #Test to ensure object is not deleted if image is related to any items
+    #owned by current user
+    def test_unsuccessful_deletion_related_image_to_owned_item(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.related_image_owned_item
+        post_response = self.client.post(reverse('delete-image', args=[str(image.id)]))
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure object is soft deleted if image is related to any items
+    #not owned by current user and there exists no items owned by user
+    def test_successful_soft_deletion_related_image_to_unowned_item(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.related_image_unowned_item_in_receipt
+        post_response = self.client.post(reverse('delete-image', args=[str(image.id)]))
+        self.assertRedirects(post_response, reverse('images'))
+        self.assertTrue(Image.objects.filter(id=self.related_image_unowned_item_in_receipt_id).exists())
+        updated_image = Image.objects.get(id=self.related_image_unowned_item_in_receipt_id)
+        self.assertEqual(updated_image.owner, None)
 
 class ItemsViewTest(MyTestCase):
     def setUp(self):

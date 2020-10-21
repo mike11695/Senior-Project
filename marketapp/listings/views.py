@@ -136,34 +136,30 @@ class ImageDeleteView(LoginRequiredMixin, generic.DeleteView):
             return redirect('index')
         return super(ImageDeleteView, self).dispatch(request, *args, **kwargs)
 
-    #Get items that contain image to be deleted and delete them if they contain no other images afterwards
+    #Check to see if any items contain the image before deleting
     def delete(self, request, *args, **kwargs):
        self.object = self.get_object()
-       items = Item.objects.filter(owner=self.object.owner)
+       items = Item.objects.filter(images__pk=self.object.pk)
        if self.object.owner == self.request.user:
-           self.object.delete()
            if items:
-               for item in items:
-                   if item.images.count() == 0:
-                       #get the owner's listings to search which ones contain the item
-                       offer_listings = OfferListing.objects.filter(owner=self.object.owner)
-                       auction_listings = AuctionListing.objects.filter(owner=self.object.owner)
+               #Image is related to items
+               #Check to see if image is related to unowned items only
+               if items.filter(owner=self.request.user).exists() != True:
+                   #Soft delete the image
+                   self.object.owner = None
+                   self.object.save()
 
-                       if offer_listings:
-                           for listing in offer_listings:
-                               if item in listing.items.all():
-                                   #Deletes offer listing if it contained the item
-                                   listing.delete()
+                   return HttpResponseRedirect(self.get_success_url())
+               elif items.filter(owner=self.request.user).exists():
+                   #Image is referenced in item user owns, do not allow deletion
+                   raise Http404("This item is referenced in items you own. " +
+                    "Deleted the related items first to delete this image.")
 
-                       if auction_listings:
-                           for listing in auction_listings:
-                               if item in listing.items.all():
-                                   #Deletes auction listing if it contained the item
-                                   listing.delete()
-
-                       #Deletes item if no other images are contained as to not have items with broken images
-                       item.delete()
-           return HttpResponseRedirect(self.get_success_url())
+               return HttpResponseRedirect(self.get_success_url())
+           else:
+              #Image is not related to items, delete it
+              self.object.delete()
+              return HttpResponseRedirect(self.get_success_url())
        else:
            return redirect('index')
 
