@@ -673,44 +673,169 @@ class ItemDeleteViewTest(MyTestCase):
         self.unrelated_item.save
         self.unrelated_item_id = self.unrelated_item.id
 
-        self.listing_item =  Item.objects.create(name="Item to Delete",
+        self.undeletable_offer_listing_item =  Item.objects.create(name="Item to Delete",
             description="A item to test deletion", owner=self.global_user1)
-        self.listing_item.images.add = self.global_image1
-        self.listing_item.save
-        self.listing_item_id = self.listing_item.id
-        self.global_wishlist.items.add(self.listing_item)
+        self.undeletable_offer_listing_item.images.add = self.global_image1
+        self.undeletable_offer_listing_item.save
+        self.undeletable_offer_listing_item_id = self.undeletable_offer_listing_item.id
+
+        self.undeletable_auction_listing_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.undeletable_auction_listing_item.images.add = self.global_image1
+        self.undeletable_auction_listing_item.save
+        self.undeletable_auction_listing_item_id = self.undeletable_auction_listing_item.id
+
+        self.deletable_offer_listing_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.deletable_offer_listing_item.images.add = self.global_image1
+        self.deletable_offer_listing_item.save
+        self.deletable_offer_listing_item_id = self.deletable_offer_listing_item.id
+
+        self.soft_deletable_offer_listing_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.soft_deletable_offer_listing_item.images.add = self.global_image1
+        self.soft_deletable_offer_listing_item.save
+        self.soft_deletable_offer_listing_item_id = self.soft_deletable_offer_listing_item.id
+
+        self.deletable_auction_listing_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.deletable_auction_listing_item.images.add = self.global_image1
+        self.deletable_auction_listing_item.save
+        self.deletable_auction_listing_item_id = self.deletable_auction_listing_item.id
+
+        self.undeletable_auction_listing_no_bids_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.undeletable_auction_listing_no_bids_item.images.add = self.global_image1
+        self.undeletable_auction_listing_no_bids_item.save
+        self.undeletable_auction_listing_no_bids_item_id = self.undeletable_auction_listing_no_bids_item.id
+
+        self.soft_deletable_auction_listing_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.soft_deletable_auction_listing_item.images.add = self.global_image1
+        self.soft_deletable_auction_listing_item.save
+        self.soft_deletable_auction_listing_item_id = self.soft_deletable_auction_listing_item.id
+
+        self.deletable_wishlist_listing_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user1)
+        self.deletable_wishlist_listing_item.images.add = self.global_image1
+        self.deletable_wishlist_listing_item.save
+        self.deletable_wishlist_listing_item_id = self.deletable_wishlist_listing_item.id
+        self.global_wishlist.items.add(self.deletable_wishlist_listing_item)
         self.global_wishlist.save
+
+        self.deletable_offer_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user2)
+        self.deletable_offer_item.images.add = self.global_image1
+        self.deletable_offer_item.save
+        self.deletable_offer_item_id = self.deletable_offer_item.id
+
+        self.soft_deletable_offer_item =  Item.objects.create(name="Item to Delete",
+            description="A item to test deletion", owner=self.global_user2)
+        self.soft_deletable_offer_item.images.add = self.global_image1
+        self.soft_deletable_offer_item.save
+        self.soft_deletable_offer_item_id = self.soft_deletable_offer_item.id
 
         date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
         date_ended = timezone.localtime(timezone.now()) - timedelta(days=1)
 
         #Create offer listings to test for deletion
-        self.active_offer_listing = OfferListing.objects.create(owner=self.global_user1, name='Test Offer Listing',
+        self.active_offer_listing_no_offers = OfferListing.objects.create(
+            owner=self.global_user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
-            maxRange=10.00, notes="Just offer", endTime=date_active)
-        self.active_offer_listing.items.add(self.listing_item)
-        self.active_offer_listing.save
-        self.active_offer_listing_id = self.active_offer_listing.id
+            maxRange=10.00, notes="Just offer", endTime=date_active,
+            listingCompleted=False)
+        self.active_offer_listing_no_offers.items.add(self.deletable_offer_listing_item)
+        self.active_offer_listing_no_offers.save
+        self.active_offer_listing_no_offers_id = self.active_offer_listing_no_offers.id
+
+        self.inactive_offer_listing_no_offers = OfferListing.objects.create(
+            owner=self.global_user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=date_ended,
+            listingCompleted=False)
+        self.inactive_offer_listing_no_offers.items.add(self.deletable_offer_listing_item)
+        self.inactive_offer_listing_no_offers.save
+        self.inactive_offer_listing_no_offers_id = self.inactive_offer_listing_no_offers.id
+
+        self.active_offer_listing_offers = OfferListing.objects.create(
+            owner=self.global_user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=date_active,
+            listingCompleted=False)
+        self.active_offer_listing_offers.items.add(self.undeletable_offer_listing_item)
+        self.active_offer_listing_offers.save
+        self.active_offer_listing_offers_id = self.active_offer_listing_offers.id
+        self.deleteable_offer = Offer.objects.create(offerListing=self.active_offer_listing_offers,
+            owner=self.global_user2, amount=5.00, offerAccepted=False)
+        self.deleteable_offer.items.add(self.deletable_offer_item)
+        self.deleteable_offer.save
+        self.deleteable_offer_id = self.deleteable_offer.id
+
+        self.completed_offer_listing = OfferListing.objects.create(
+            owner=self.global_user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=date_ended,
+            listingCompleted=True)
+        self.completed_offer_listing.items.add(self.soft_deletable_offer_listing_item)
+        self.completed_offer_listing.save
+        self.completed_offer_listing_id = self.completed_offer_listing.id
+        self.accepted_offer = Offer.objects.create(offerListing=self.completed_offer_listing,
+            owner=self.global_user2, amount=5.00, offerAccepted=True)
+        self.accepted_offer.items.add(self.soft_deletable_offer_item)
+        self.accepted_offer.save
+        self.accepted_offer_id = self.accepted_offer.id
 
         #create an auction listing to test for deletion
-        self.active_auction_listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+        self.active_auction_listing_no_bids = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
             description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
             endTime=date_active)
-        self.active_auction_listing.items.add(self.listing_item)
-        self.active_auction_listing.save
-        self.active_auction_listing_id = self.active_auction_listing.id
+        self.active_auction_listing_no_bids.items.add(self.undeletable_auction_listing_no_bids_item)
+        self.active_auction_listing_no_bids.save
+        self.active_auction_listing_no_bids_id = self.active_auction_listing_no_bids.id
 
-        #Create a wishlist listing to test for deletion
+        self.inactive_auction_listing_no_bids = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            endTime=date_ended)
+        self.inactive_auction_listing_no_bids.items.add(self.deletable_auction_listing_item)
+        self.inactive_auction_listing_no_bids.save
+        self.inactive_auction_listing_no_bids_id = self.inactive_auction_listing_no_bids.id
+
+        self.active_auction_listing_bids = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            endTime=date_active)
+        self.active_auction_listing_bids.items.add(self.undeletable_auction_listing_item)
+        self.active_auction_listing_bids.save
+        self.active_auction_listing_bids_id = self.active_auction_listing_bids.id
+        Bid.objects.create(auctionListing=self.active_auction_listing_bids,
+            bidder=self.global_user2, amount=5.00, winningBid=True)
+
+        self.completed_auction_listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
+            description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy= 25.00,
+            endTime=date_ended)
+        self.completed_auction_listing.items.add(self.soft_deletable_auction_listing_item)
+        self.completed_auction_listing.save
+        self.completed_auction_listing_id = self.completed_auction_listing.id
+        Bid.objects.create(auctionListing=self.completed_auction_listing,
+            bidder=self.global_user2, amount=5.00, winningBid=True)
+
+        #Create wishlist listings to test for deletion
         self.active_wishlist_listing = WishlistListing.objects.create(owner=self.global_user1,
             name='My Wishlist Listing', endTime=date_active,
             moneyOffer=5.00, notes="Just a test")
-        self.active_wishlist_listing.items.add(self.listing_item)
+        self.active_wishlist_listing.items.add(self.deletable_wishlist_listing_item)
         self.active_wishlist_listing.save
         self.active_wishlist_listing_id = self.active_wishlist_listing.id
 
+        self.inactive_wishlist_listing = WishlistListing.objects.create(owner=self.global_user1,
+            name='My Wishlist Listing', endTime=date_ended,
+            moneyOffer=5.00, notes="Just a test")
+        self.inactive_wishlist_listing.items.add(self.deletable_wishlist_listing_item)
+        self.inactive_wishlist_listing.save
+        self.inactive_wishlist_listing_id = self.inactive_wishlist_listing.id
+
     #Test to ensure that a user must be logged in to delete an item
     def test_redirect_if_not_logged_in(self):
-        item = self.listing_item
+        item = self.unrelated_item
         response = self.client.get(reverse('delete-item', args=[str(item.id)]))
         self.assertRedirects(response, '/listings/')
 
@@ -718,7 +843,7 @@ class ItemDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_owner(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        item = self.listing_item
+        item = self.unrelated_item
         response = self.client.get(reverse('delete-item', args=[str(item.id)]))
         self.assertEqual(response.status_code, 200)
 
@@ -726,7 +851,7 @@ class ItemDeleteViewTest(MyTestCase):
     def test_no_redirect_if_logged_in_not_owner(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
-        item = self.listing_item
+        item = self.unrelated_item
         response = self.client.get(reverse('delete-item', args=[str(item.id)]))
         self.assertRedirects(response, '/listings/')
 
@@ -734,35 +859,134 @@ class ItemDeleteViewTest(MyTestCase):
     def test_correct_template_used(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        item = self.listing_item
+        item = self.unrelated_item
         response = self.client.get(reverse('delete-item', args=[str(item.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'items/item_delete.html')
 
     #Test to ensure user can delete an item that has no relations to a
     #listing or offer
-    """def test_successful_deletion_unrelated_item(self):
+    def test_successful_deletion_unrelated_item(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         item = self.unrelated_item
         post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
         self.assertRedirects(post_response, reverse('items'))
-        self.assertFalse(Item.objects.filter(id=self.unrelated_item_id).exists())"""
+        self.assertFalse(Item.objects.filter(id=self.unrelated_item_id).exists())
 
-    """#Test to ensure object is deleted if user confirms as well as active
-    #listings that contained the item
-    def test_succesful_deletion(self):
+    #Test to ensure user can not delete an item that is contained in an active
+    #offer listing that has offers
+    def test_unsuccessful_deletion_item_in_active_listing_with_offers(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        item = self.listing_item
+        item = self.undeletable_offer_listing_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure user can not delete an item that is contained in an active
+    #auction listing that has bids
+    def test_unsuccessful_deletion_item_in_active_listing_with_bids(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.undeletable_auction_listing_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure user can delete an item that is contained in an active
+    #or inactive offer listing that has no offers
+    def test_successful_deletion_item_in_offer_listings_with_no_offers(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.deletable_offer_listing_item
         post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
         self.assertRedirects(post_response, reverse('items'))
-        self.assertFalse(Item.objects.filter(id=self.listing_item_id).exists())
-        self.assertFalse(OfferListing.objects.filter(id=self.active_offer_listing_id).exists())
-        self.assertFalse(AuctionListing.objects.filter(id=self.active_auction_listing_id).exists())
-        self.assertFalse(WishlistListing.objects.filter(id=self.active_wishlist_listing_id).exists())
+        self.assertFalse(Item.objects.filter(id=self.deletable_offer_listing_item_id).exists())
+        self.assertFalse(OfferListing.objects.filter(id=self.active_offer_listing_no_offers_id).exists())
+        self.assertFalse(OfferListing.objects.filter(id=self.inactive_offer_listing_no_offers_id).exists())
         self.assertTrue(OfferListing.objects.filter(id=self.global_offer_listing1.id).exists())
-        self.assertTrue(AuctionListing.objects.filter(id=self.global_auction_listing1.id).exists())"""
+
+    #Test to ensure user can soft delete an item that is contained in an
+    #completed offer listing
+    def test_successful_soft_deletion_item_in_completed_offer_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.soft_deletable_offer_listing_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(post_response, reverse('items'))
+        self.assertTrue(Item.objects.filter(id=self.soft_deletable_offer_listing_item_id).exists())
+        self.assertTrue(OfferListing.objects.filter(id=self.completed_offer_listing_id).exists())
+        updated_item = Item.objects.get(id=self.soft_deletable_offer_listing_item_id)
+        self.assertEqual(updated_item.owner, None)
+
+    #Test to ensure user can delete an item that is contained in inactive
+    #auction listing that has no bids
+    def test_successful_deletion_item_in_inactive_auction_listings_with_no_bids(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.deletable_auction_listing_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(post_response, reverse('items'))
+        self.assertFalse(Item.objects.filter(id=self.deletable_auction_listing_item_id).exists())
+        self.assertFalse(AuctionListing.objects.filter(id=self.inactive_auction_listing_no_bids_id).exists())
+        self.assertTrue(AuctionListing.objects.filter(id=self.global_auction_listing1.id).exists())
+
+    #Test to ensure user can not delete an item that is contained in active
+    #auction listing that has no bids
+    def test_unsuccessful_deletion_item_in_active_auction_listings_with_no_bids(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.undeletable_auction_listing_no_bids_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure user can soft delete an item that is contained in an
+    #completed auction listing
+    def test_successful_soft_deletion_item_in_completed_auction_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.soft_deletable_auction_listing_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(post_response, reverse('items'))
+        self.assertTrue(Item.objects.filter(id=self.soft_deletable_auction_listing_item_id).exists())
+        self.assertTrue(AuctionListing.objects.filter(id=self.completed_auction_listing_id).exists())
+        updated_item = Item.objects.get(id=self.soft_deletable_auction_listing_item_id)
+        self.assertEqual(updated_item.owner, None)
+
+    #Test to ensure user can delete an item that is contained in an active
+    #or inactive wishlist listing
+    def test_successful_deletion_item_in_wishlist_listings(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        item = self.deletable_wishlist_listing_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(post_response, reverse('items'))
+        self.assertFalse(Item.objects.filter(id=self.deletable_wishlist_listing_item_id).exists())
+        self.assertFalse(WishlistListing.objects.filter(id=self.active_wishlist_listing_id).exists())
+        self.assertFalse(WishlistListing.objects.filter(id=self.inactive_wishlist_listing_id).exists())
+
+    #Test to ensure user can delete an item that is contained in an unaccepted
+    #offer
+    def test_successful_deletion_item_in_unaccepted_offer(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        item = self.deletable_offer_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(post_response, reverse('items'))
+        self.assertFalse(Item.objects.filter(id=self.deletable_offer_item_id).exists())
+        self.assertFalse(Offer.objects.filter(id=self.deleteable_offer_id).exists())
+
+    #Test to ensure user can soft delete an item that is contained in an accepted
+    #offer
+    def test_successful_deletion_item_in_unaccepted_offer(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        item = self.soft_deletable_offer_item
+        post_response = self.client.post(reverse('delete-item', args=[str(item.id)]))
+        self.assertRedirects(post_response, reverse('items'))
+        self.assertTrue(Item.objects.filter(id=self.soft_deletable_offer_item_id).exists())
+        self.assertTrue(Offer.objects.filter(id=self.accepted_offer_id).exists())
+        updated_item = Item.objects.get(id=self.soft_deletable_offer_item_id)
+        self.assertEqual(updated_item.owner, None)
 
 class FAQViewTest(TestCase):
     def setUp(self):

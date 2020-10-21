@@ -245,14 +245,123 @@ class ItemDeleteView(LoginRequiredMixin, generic.DeleteView):
             return redirect('index')
         return super(ItemDeleteView, self).dispatch(request, *args, **kwargs)
 
-    #Get listings that contain item to be deleted and delete them if they contain the item
+    #Get listings that contain item to be deleted and delete them if they
+    #contain the item, unless offer listing or auction listing is completed
+    #if so soft delete those listings.  If an offer is accepted, also
+    #soft delete
     def delete(self, request, *args, **kwargs):
        self.object = self.get_object()
-       offer_listings = OfferListing.objects.filter(owner=self.object.owner)
-       auction_listings = AuctionListing.objects.filter(owner=self.object.owner)
-       wishlist_listings = WishlistListing.objects.filter(owner=self.object.owner)
+       offer_listings = OfferListing.objects.filter(owner=self.object.owner,
+            items__pk=self.object.pk)
+       auction_listings = AuctionListing.objects.filter(owner=self.object.owner,
+            items__pk=self.object.pk)
+       wishlist_listings = WishlistListing.objects.filter(owner=self.object.owner,
+            items__pk=self.object.pk)
+       offers = Offer.objects.filter(owner=self.object.owner,
+            items__pk=self.object.pk)
        if self.object.owner == self.request.user:
-           if offer_listings:
+           if (offer_listings or auction_listings or wishlist_listings
+                or offers):
+                #Go through all listings and offers
+                #Delete any inactive listings that contain the item
+                #Delete any active listings that contain the item if no offers
+                #or bids.
+                #Delete all wishlist listings that contain the item
+                #Delete all offers that have not been accepted that contain the
+                #item
+                #If there are and completed listings or offers, soft delete
+                #the item
+                soft_delete = False
+
+                #Check to see if any active offer listings have offers.
+                #If so, don't allow deletion
+                if offer_listings:
+                    if Offer.objects.filter(
+                            offerListing__in=[listing.id for listing in
+                                offer_listings if listing.listingEnded == False]
+                        ).exists():
+                            raise Http404("This item is offered in a listing" +
+                            " that currently has offers.  Reject the current" +
+                            " offers to delete this item.")
+
+                #Check to see if there are any active auction listings.
+                #If so, don't allow deletion
+                if auction_listings:
+                    if AuctionListing.objects.filter(
+                            id__in=[listing.id for listing in
+                                auction_listings if listing.listingEnded == False]
+                        ).exists():
+                            raise Http404("This item is offered in at least " +
+                                " one active auction.  This item cannot be" +
+                                " deleted.")
+
+                #There are no active listings with offers or bids
+                #For offer listings, check if any of the listings have been completed
+                if offer_listings:
+                    if offer_listings.filter(listingCompleted=True).exists():
+                        #There are completed listings, item should be soft deleted
+                        soft_delete = True
+
+                        #Delete all the active and inactive listings that have not
+                        #been completed
+                        non_completed_offer_listings = offer_listings.filter(
+                            listingCompleted=False)
+                        if non_completed_offer_listings:
+                            for listing in non_completed_offer_listings:
+                                listing.delete()
+
+                    else:
+                        #There are no completed listings, delete the listings
+                        for listing in offer_listings:
+                            listing.delete()
+
+                #For auction listings, check if any of the listings have been completed
+                #All listings should be expired
+                if auction_listings:
+                    if Bid.objects.filter(
+                        auctionListing__in=[listing.id for listing in
+                            auction_listings]).exists():
+                        #There are completed listings, item should be soft deleted
+                        soft_delete = True
+
+                        #Delete all inactive listings that were not bid on
+                        for listing in auction_listings:
+                            if listing.bids.count() == 0:
+                                listing.delete()
+
+                    else:
+                        #There are no completed listings, delete the listings
+                        for listing in auction_listings:
+                            listing.delete()
+
+                #Delete all wishlist listings
+                if wishlist_listings:
+                    for listing in wishlist_listings:
+                        listing.delete()
+
+                #Check if any offers have been accepted
+                if offers:
+                    if offers.filter(offerAccepted=True).exists():
+                        #There are accepted offers, item should be soft deleted
+                        soft_delete = True
+
+                    #Delete all offers that were not accepted
+                    for offer in offers:
+                        if offer.offerAccepted != True:
+                            offer.delete()
+
+                if soft_delete:
+                    self.object.owner = None
+                    self.object.save()
+                else:
+                    self.object.delete()
+
+                return HttpResponseRedirect(self.get_success_url())
+           else:
+                #Item has no relationships, delete it
+                self.object.delete()
+                return HttpResponseRedirect(self.get_success_url())
+           """if offer_listings:
                for listing in offer_listings:
                    if self.object in listing.items.all():
                        #Deletes offer listing if it contained the item
@@ -268,10 +377,7 @@ class ItemDeleteView(LoginRequiredMixin, generic.DeleteView):
                for listing in wishlist_listings:
                    if self.object in listing.items.all() or self.object in listing.itemsOffer.all():
                        #Deletes wishlist listing if it contained the item
-                       listing.delete()
-
-           self.object.delete()
-           return HttpResponseRedirect(self.get_success_url())
+                       listing.delete()"""
        else:
            return redirect('index')
 
