@@ -819,33 +819,3 @@ class BidModelTest(MyTestCase):
         self.assertEqual(default, False)
 
 #Tests for Favorites class
-
-#Tests for Receipts class
-class ReceiptModelTest(MyTestCase):
-    def setUp(self):
-        #Set up records for OfferListing, AuctionListing and WishlistListing for testing
-        super(ReceiptModelTest, self).setUp()
-
-        self.receipt = Receipt.objects.create(owner=self.global_user1,
-            exchangee=self.global_user2, listingName="Test Listing",
-            exchangeeAmountOffer=5.00)
-        self.receipt.ownerItems.add(self.global_item)
-        self.receipt.save
-
-    #Checks to ensure that Receipt listing name max length is correct
-    def test_receipt_listing_name_max_length(self):
-        receipt = self.receipt
-        max_length = receipt._meta.get_field('listingName').max_length
-        self.assertEqual(max_length, 100)
-
-    #Checks to ensure that Receipt exchangee amount offer max digits is correct
-    def test_receipt_exchangee_amount_offer_digits(self):
-        receipt = self.receipt
-        max_digits = receipt._meta.get_field('exchangeeAmountOffer').max_digits
-        self.assertEqual(max_digits, 9)
-
-    #Checks to ensure that Receipt exchangee amount offer decimal places is correct
-    def test_receipt_exchangee_amount_offer_decimals(self):
-        receipt = self.receipt
-        decimal_places = receipt._meta.get_field('exchangeeAmountOffer').decimal_places
-        self.assertEqual(decimal_places, 2)

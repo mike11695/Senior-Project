@@ -13,11 +13,13 @@
     {% elif offerlisting.listingCompleted != True %}
       <h6>Ends: {{ offerlisting.endTime }}</h6>
     {% endif %}
-    <a href="{% url 'wishlist-detail' pk=offerlisting.owner.wishlist.id %}">
-      <div class="btn btn-blue" style="margin-top: 5px;">
-        {{ offerlisting.owner }}'s Wishlist
-      </div>
-    </a>
+    {% if offerlisting.owner.wishlist %}
+      <a href="{% url 'wishlist-detail' pk=offerlisting.owner.wishlist.id %}">
+        <div class="btn btn-blue" style="margin-top: 5px;">
+          {{ offerlisting.owner }}'s Wishlist
+        </div>
+      </a>
+    {% endif %}
   </div>
   <div class="listing-item-container col-lg-10 center-block">
     <div class="listing-item-container-header"><h4>This listing contains:</h4></div>

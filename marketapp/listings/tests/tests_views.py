@@ -2392,7 +2392,7 @@ class MyBidsViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('my-bids'))
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(len(response.context['bids']) == 5)
+        self.assertTrue(len(response.context['bids']) == 1)
 
     #Test to ensure that the user only sees offers they have made for the second user
     def test_list_only_current_users_bids_user2(self):
@@ -2400,7 +2400,7 @@ class MyBidsViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('my-bids'))
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(len(response.context['bids']) == 4)
+        self.assertTrue(len(response.context['bids']) == 1)
 
 class CreateAuctionListingViewTest(MyTestCase):
     def setUp(self):
@@ -3321,8 +3321,8 @@ class EventListViewTest(MyTestCase):
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
 
-        self.number_of_events_user1 = 3
-        self.number_of_events_user2 = 6
+        self.number_of_events_user1 = 3 #1 global event
+        self.number_of_events_user2 = 6 #1 global event
         self.number_of_events_user3 = 5
 
         #Create the events for the 1st user
@@ -3371,7 +3371,7 @@ class EventListViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('events'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['events']), self.number_of_events_user1)
+        self.assertEqual(len(response.context['events']), 4)
 
     #Test to ensure that the user only sees events they're hosting for user2
     def test_list_only_current_users_events_user2(self):
@@ -3379,7 +3379,7 @@ class EventListViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('events'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['events']), self.number_of_events_user2)
+        self.assertEqual(len(response.context['events']), 7)
 
     #Test to ensure that the user only sees events they've been invited to for user3
     def test_list_only_current_users_events_user3(self):

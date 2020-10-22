@@ -355,25 +355,13 @@ class ItemDeleteView(LoginRequiredMixin, generic.DeleteView):
                 return HttpResponseRedirect(self.get_success_url())
            else:
                 #Item has no relationships, delete it
+                #Delete any images that have no owner
+                for image in self.object.images.all():
+                    if image.owner == None:
+                        image.delete()
+
                 self.object.delete()
                 return HttpResponseRedirect(self.get_success_url())
-           """if offer_listings:
-               for listing in offer_listings:
-                   if self.object in listing.items.all():
-                       #Deletes offer listing if it contained the item
-                       listing.delete()
-
-           if auction_listings:
-               for listing in auction_listings:
-                   if self.object in listing.items.all():
-                       #Deletes auction listing if it contained the item
-                       listing.delete()
-
-           if wishlist_listings:
-               for listing in wishlist_listings:
-                   if self.object in listing.items.all() or self.object in listing.itemsOffer.all():
-                       #Deletes wishlist listing if it contained the item
-                       listing.delete()"""
        else:
            return redirect('index')
 
@@ -738,6 +726,16 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                         "all current offers to delete it."))
                 else:
                     #Allow the user to delete the listing if there are no offers
+
+                    #Go through items and delete any that don't have an owner
+                    for item in self.object.items.all():
+                        if item.owner == None:
+                            #Go through images and delete any that don't have an owner
+                            for image in item.images.all():
+                                if image.owner == None:
+                                    image.delete()
+                            item.delete()
+
                     self.object.delete()
                     return HttpResponseRedirect(self.get_success_url())
             else:
@@ -747,6 +745,15 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                     self.object.owner = None
                     self.object.save()
                 else:
+                    #Go through items and delete any that don't have an owner
+                    for item in self.object.items.all():
+                        if item.owner == None:
+                            #Go through images and delete any that don't have an owner
+                            for image in item.images.all():
+                                if image.owner == None:
+                                    image.delete()
+                            item.delete()
+
                     self.object.delete()
 
                 return HttpResponseRedirect(self.get_success_url())
@@ -1105,11 +1112,31 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
                self.object.save()
            elif self.object.offerAccepted != True:
                #Delete the offer
+
+               #Go through items and delete any that don't have an owner
+               for item in self.object.items.all():
+                   if item.owner == None:
+                       #Go through images and delete any that don't have an owner
+                       for image in item.images.all():
+                           if image.owner == None:
+                               image.delete()
+                       item.delete()
+
                self.object.delete()
            return HttpResponseRedirect(self.get_success_url(listing))
        elif self.object.offerListing.owner == self.request.user:
            if self.object.offerAccepted != True:
                #Delete the offer if it wasn't accepted
+
+               #Go through items and delete any that don't have an owner
+               for item in self.object.items.all():
+                   if item.owner == None:
+                       #Go through images and delete any that don't have an owner
+                       for image in item.images.all():
+                           if image.owner == None:
+                               image.delete()
+                       item.delete()
+
                self.object.delete()
                return HttpResponseRedirect(self.get_success_url(listing))
            else:
@@ -1123,7 +1150,6 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
             return reverse_lazy('offer-listing-detail', kwargs={'pk': listing.pk})
         else:
             return reverse_lazy('my-offers')
-
 
 #Form view for creating an bid for an auction listing
 @login_required(login_url='/accounts/login/')
@@ -1233,6 +1259,15 @@ class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                self.object.owner = None
                self.object.save()
            else:
+               #Go through items and delete any that don't have an owner
+               for item in self.object.items.all():
+                   if item.owner == None:
+                       #Go through images and delete any that don't have an owner
+                       for image in item.images.all():
+                           if image.owner == None:
+                               image.delete()
+                       item.delete()
+                       
                self.object.delete()
 
            return HttpResponseRedirect(self.get_success_url())
