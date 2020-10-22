@@ -12,7 +12,7 @@ from django.db.models import Count, Max, OuterRef, Subquery
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
-    Conversation, Message)
+    Conversation, Message, Receipt)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -561,6 +561,13 @@ def create_offer_listing(request):
                 created_listing.items.add(item)
 
             created_listing.save()
+
+            #Set owner for receipt if it was created sucessfully
+            if created_listing.receipt.exists():
+                receipt = Receipt.objects.get(listing=created_listing)
+                receipt.owner = request.user
+                receipt.save()
+
             return redirect('offer-listings')
     else:
         form = OfferListingForm(user=request.user)
@@ -886,6 +893,13 @@ def create_auction_listing(request):
             created_listing.endTime = date
             created_listing.owner = request.user
             created_listing.save()
+
+            #Set owner for receipt if it was created sucessfully
+            if created_listing.receipt.exists():
+                receipt = Receipt.objects.get(listing=created_listing)
+                receipt.owner = request.user
+                receipt.save()
+                
             return redirect('auction-listings')
     else:
         form = AuctionListingForm(user=request.user)
@@ -1267,7 +1281,7 @@ class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                            if image.owner == None:
                                image.delete()
                        item.delete()
-                       
+
                self.object.delete()
 
            return HttpResponseRedirect(self.get_success_url())

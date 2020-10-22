@@ -374,6 +374,14 @@ class OfferListing(Listing):
         #String for representing the OfferListing object.
         return f'{self.name}'
 
+    #Create receipt for listing upon creation
+    def save(self, *args, **kwargs):
+        is_new = True if not self.id else False
+        super(OfferListing, self).save(*args, **kwargs)
+        if is_new:
+            receipt = Receipt.objects.create(listing=self)
+            receipt.save()
+
 #Subclass for WishlistListing, a listing that is looking for item(s)
 #Fields needed: MoneyOffer, ItemsOffer, notes
 class WishlistListing(Listing):
@@ -409,8 +417,6 @@ class AuctionListing(Listing):
     autobuy = models.DecimalField(default=None, max_digits=9, decimal_places=2, null=True,
         help_text="If a user bids the amount you set in this field, the auction will close and they will win the auction.")
 
-
-
     def get_absolute_url(self):
         #Returns the url to access a particular instance of AuctionListing.
         return reverse('auction-listing-detail', args=[str(self.id)])
@@ -418,6 +424,14 @@ class AuctionListing(Listing):
     def __str__(self):
         #String for representing the AuctionListing object.
         return f'{self.name}'
+
+    #Create receipt for listing upon creation
+    def save(self, *args, **kwargs):
+        is_new = True if not self.id else False
+        super(AuctionListing, self).save(*args, **kwargs)
+        if is_new:
+            receipt = Receipt.objects.create(listing=self)
+            receipt.save()
 
 #Model for Bids, which is a money amount offered by a user on an auction
 #Fields needed: AuctionListing, bidder, amount, winningBid
@@ -479,21 +493,8 @@ class Receipt(models.Model):
         related_name="listing_owner", null=True)
     exchangee = models.ForeignKey(User, on_delete=models.SET_NULL,
         related_name="listing_exchangee", null=True)
-    listing = models.ForeignKey(Listing, on_delete=models.SET_NULL,
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE,
         related_name="receipt", null=True)
-
-    #Creates a receipt object for a listing when it is created
-    @receiver(post_save, sender=Listing)
-    def create_receipt(sender, instance, created, **kwargs):
-        if created:
-            if (OfferListing.objects.filter(pk=instance.pk).exists()
-                or AuctionListing.objects.filter(pk=instance.pk).exists()):
-                Receipt.objects.create(owner=instance.owner, listing=instance)
-
-    #Saves the receipt object that was created when a listing was made
-    @receiver(post_save, sender=Listing)
-    def save_receipt(sender, instance, **kwargs):
-        instance.receipt.save()
 
     def get_absolute_url(self):
         #Returns the url to access a particular instance of Receipt.

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
-    Profile, Conversation, Message)
+    Profile, Conversation, Message, Receipt)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -1568,7 +1568,8 @@ class CreateOfferListingViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/create_offer_listing.html')
 
-    #Test to ensure that a user is able to create an offer listing and have it relate to them
+    #Test to ensure that a user is able to create an offer listing and
+    #have it relate to them, and that a receipt is made for the listing
     def test_offer_listing_is_created(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
@@ -1584,6 +1585,9 @@ class CreateOfferListingViewTest(MyTestCase):
         self.assertEqual(new_offer_listing.owner, post_response.wsgi_request.user)
         self.assertEqual(new_offer_listing.minRange, 5.00)
         self.assertEqual(new_offer_listing.maxRange, 10.00)
+        self.assertTrue(new_offer_listing.receipt.exists())
+        receipt = Receipt.objects.get(listing=new_offer_listing)
+        self.assertEqual(receipt.owner, post_response.wsgi_request.user)
 
     #Test to ensure that an offer listing created to end in 1 hour has correct end time
     def test_offer_listing_is_created_correct_1h(self):
@@ -2438,7 +2442,8 @@ class CreateAuctionListingViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/create_auction_listing.html')
 
-    #Test to ensure a user is able to create an auction listing and have it relate to them
+    #Test to ensure a user is able to create an auction listing and have it
+    #relate to them.  Also test to ensure receipt for listing was created
     def test_auction_listing_is_created(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
@@ -2452,6 +2457,9 @@ class CreateAuctionListingViewTest(MyTestCase):
         new_auction_listing = AuctionListing.objects.last()
         self.assertEqual(new_auction_listing.owner, post_response.wsgi_request.user)
         self.assertEqual(new_auction_listing.autobuy, 50.00)
+        self.assertTrue(new_auction_listing.receipt.exists())
+        receipt = Receipt.objects.get(listing=new_auction_listing)
+        self.assertEqual(receipt.owner, post_response.wsgi_request.user)
 
     #Test to ensure autobuy is set to 0.00 if left blank and auction listing is created successfully
     def test_auction_listing_autobuy_set_to_0_if_blank(self):
