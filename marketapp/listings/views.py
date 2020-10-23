@@ -899,7 +899,7 @@ def create_auction_listing(request):
                 receipt = Receipt.objects.get(listing=created_listing)
                 receipt.owner = request.user
                 receipt.save()
-                
+
             return redirect('auction-listings')
     else:
         form = AuctionListingForm(user=request.user)
@@ -1090,6 +1090,11 @@ def accept_offer(request, pk):
                     #Destroy the object
                     offer.delete()
 
+            #Update the listing's receipt
+            receipt = Receipt.objects.get(listing=current_listing)
+            receipt.exchangee = current_offer.owner
+            receipt.save()
+
             #Redirect to the listing afterwards
             return redirect('offer-listing-detail', pk=current_offer.offerListing.pk)
     else:
@@ -1210,6 +1215,14 @@ def create_bid(request, pk):
                             created_bid.winningBid = True
 
                             created_bid.save()
+
+                            #Update the receipt for the listing
+                            receipt = Receipt.objects.get(listing=current_listing)
+                            receipt.exchangee = request.user
+                            receipt.save()
+
+                            print(receipt)
+
                             return redirect('auction-listing-detail', pk=current_listing.pk)
                     else:
                         form = CreateBidForm(instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
@@ -1236,6 +1249,12 @@ def create_bid(request, pk):
                         created_bid.winningBid = True
 
                         created_bid.save()
+
+                        #Update the receipt for the listing
+                        receipt = Receipt.objects.get(listing=current_listing)
+                        receipt.exchangee = request.user
+                        receipt.save()
+                        
                         return redirect('auction-listing-detail', pk=current_listing.pk)
                 else:
                     form = CreateBidForm(instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})

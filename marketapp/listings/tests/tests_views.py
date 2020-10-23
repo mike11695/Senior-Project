@@ -2816,7 +2816,8 @@ class CreateBidViewTest(MyTestCase):
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
 
-    #Test to ensure that a bid is created succesfully and relates to the current user
+    #Test to ensure that a bid is created succesfully and relates to the
+    #current user
     def test_successful_bid_creation_related_to_user(self):
         listing = self.active_listing
         login = self.client.login(username='mike', password='example')
@@ -2842,6 +2843,21 @@ class CreateBidViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         created_bid = Bid.objects.last()
         self.assertEqual(created_bid.auctionListing, listing)
+
+    #Test to ensure that listing receipt is updated when bid is placed
+    def test_successful_bid_receipt_is_updated(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
+            data={'amount': 5.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_bid = Bid.objects.last()
+        self.assertEqual(created_bid.amount, 5.00)
+        receipt = Receipt.objects.get(listing=listing)
+        self.assertEqual(receipt.exchangee, created_bid.bidder)
 
     #Test to ensure that a auction ends if autobuy bid is made
     def test_successful_bid_creation_autobuy_ends_listing(self):
@@ -3025,6 +3041,17 @@ class AcceptOfferViewTest(MyTestCase):
         all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing1)
         self.assertEqual(len(all_listing_offers), 1)
         self.assertEqual(offer, all_listing_offers.first())
+
+    #Test to ensure that the listing receipt is updated
+    def test_listing_receipt_is_updated(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        listing = OfferListing.objects.get(id=offer.offerListing.id)
+        receipt = Receipt.objects.get(listing=listing)
+        self.assertEqual(receipt.exchangee, offer.owner)
 
     #Test to ensure that a user cannot accept an offer once listing has completed
     def test_offer_not_accepted_listing_completed(self):
