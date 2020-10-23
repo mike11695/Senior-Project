@@ -1254,7 +1254,7 @@ def create_bid(request, pk):
                         receipt = Receipt.objects.get(listing=current_listing)
                         receipt.exchangee = request.user
                         receipt.save()
-                        
+
                         return redirect('auction-listing-detail', pk=current_listing.pk)
                 else:
                     form = CreateBidForm(instance=current_listing, initial={'auctionListing': current_listing, 'bidder': request.user})
@@ -2310,3 +2310,61 @@ class ConversationDeleteView(LoginRequiredMixin, generic.DeleteView):
            return HttpResponseRedirect(self.get_success_url())
        else:
            return redirect('index')
+
+#View for a user to see a list of receipts related to them
+class ReceiptListView(LoginRequiredMixin, generic.ListView):
+    model = Receipt
+    context_object_name = 'receipts'
+    template_name = "receipts/receipts.html"
+    paginate_by = 10
+
+    #Filters the list of items to only show those that belong to the current logged in user
+    def get_queryset(self):
+        all_receipt_ids = []
+
+        #Get user's completed offer listings, and the receipts for listings
+        offer_listings = OfferListing.objects.filter(owner=self.request.user, listingCompleted=True)
+        if offer_listings:
+            for listing in offer_listings:
+                receipt = Receipt.objects.get(listing=listing)
+                if receipt:
+                    all_receipt_ids.append(receipt.id)
+
+        #Get user's completed auction listings, and the receipts for listings
+        auction_listing_ids = [listing.id for listing
+            in AuctionListing.objects.filter(owner=self.request.user)
+            if (listing.bids.count() > 0 and listing.listingEnded)]
+        auction_listings = AuctionListing.objects.filter(id__in=auction_listing_ids)
+        if auction_listings:
+            for listing in auction_listings:
+                receipt = Receipt.objects.get(listing=listing)
+                if receipt:
+                    all_receipt_ids.append(receipt.id)
+
+        #Get users accepted offers, and the receipts for offers
+        offers = Offer.objects.filter(owner=self.request.user, offerAccepted=True)
+        if offers:
+            listing_ids = [offer.offerListing.id for offer in offers]
+            listings = OfferListing.objects.filter(id__in=listing_ids)
+            if listings:
+                for listing in listings:
+                    receipt = Receipt.objects.get(listing=listing)
+                    if receipt:
+                        all_receipt_ids.append(receipt.id)
+
+        #Get user's winning bids, and the receipts for bids
+        bid_ids = [bid.id for bid
+            in Bid.objects.filter(bidder=self.request.user, winningBid=True)
+            if bid.auctionListing.listingEnded]
+        bids = Bid.objects.filter(id__in=bid_ids)
+        if bids:
+            listing_ids = [bid.auctionListing.id for bid in bids]
+            listings = AuctionListing.objects.filter(id__in=listing_ids)
+            if listings:
+                for listing in listings:
+                    receipt = Receipt.objects.get(listing=listing)
+                    if receipt:
+                        all_receipt_ids.append(receipt.id)
+                        
+        receipts = Receipt.objects.filter(id__in=all_receipt_ids).order_by('id')
+        return receipts

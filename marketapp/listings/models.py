@@ -378,9 +378,8 @@ class OfferListing(Listing):
     def save(self, *args, **kwargs):
         is_new = True if not self.id else False
         super(OfferListing, self).save(*args, **kwargs)
-        if is_new:
-            receipt = Receipt.objects.create(listing=self)
-            receipt.save()
+        if is_new and Receipt.objects.filter(listing=self).exists() != True:
+            Receipt.objects.create(listing=self)
 
 #Subclass for WishlistListing, a listing that is looking for item(s)
 #Fields needed: MoneyOffer, ItemsOffer, notes
@@ -429,9 +428,8 @@ class AuctionListing(Listing):
     def save(self, *args, **kwargs):
         is_new = True if not self.id else False
         super(AuctionListing, self).save(*args, **kwargs)
-        if is_new:
-            receipt = Receipt.objects.create(listing=self)
-            receipt.save()
+        if is_new and Receipt.objects.filter(listing=self).exists() != True:
+            Receipt.objects.create(listing=self)
 
 #Model for Bids, which is a money amount offered by a user on an auction
 #Fields needed: AuctionListing, bidder, amount, winningBid
@@ -493,7 +491,7 @@ class Receipt(models.Model):
         related_name="listing_owner", null=True)
     exchangee = models.ForeignKey(User, on_delete=models.SET_NULL,
         related_name="listing_exchangee", null=True)
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE,
+    listing = models.OneToOneField(Listing, on_delete=models.CASCADE,
         related_name="receipt", null=True)
 
     def get_absolute_url(self):

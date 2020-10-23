@@ -5702,3 +5702,164 @@ class ConversationDeleteViewTest(MyTestCase):
         self.assertFalse(Conversation.objects.filter(id=self.inactive_conversation_id).exists())
         for message_id in self.inactive_message_ids:
             self.assertFalse(Message.objects.filter(id=message_id).exists())
+
+class ReceiptListViewTest(MyTestCase):
+    def setUp(self):
+        super(ReceiptListViewTest, self).setUp()
+
+        #Create users for testing with
+        self.user1 = User.objects.create_user(username="mikey", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        self.user2 = User.objects.create_user(username="mikea", password="example",
+            email="example5@text.com", paypalEmail="example5@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Global user 2 should have 15 receipts, 14 from here and 1 global
+        #completed listing
+        self.number_of_receipts_user1 = 6
+        self.number_of_receipts_user2 = 8
+
+        #Get the current date and time for testing and create active and inactive endtimes
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create the receipts for the 1st user
+        for num in range(self.number_of_receipts_user1):
+            remainder = num % 2
+            if remainder == 0:
+                listing = OfferListing.objects.create(owner=self.global_user1,
+                    name='Test Offer Listing', description="Just a test listing",
+                    openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+                    notes="Just offer", endTime=date_ended, listingCompleted=True)
+                Offer.objects.create(offerListing=listing, owner=self.user1,
+                    amount=5.00, offerAccepted=True)
+                receipt = Receipt.objects.get(listing=listing)
+                receipt.owner = self.global_user1
+                receipt.exchangee = self.user1
+                receipt.save
+            else:
+                listing = AuctionListing.objects.create(owner=self.global_user1,
+                    name='Test Auction Listing', description="Just a test listing",
+                    startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+                    endTime=date_ended)
+                Bid.objects.create(auctionListing=listing, bidder=self.user1,
+                    amount=5.00, winningBid=True)
+                receipt = Receipt.objects.get(listing=listing)
+                receipt.owner = self.global_user1
+                receipt.exchangee = self.user1
+                receipt.save
+
+        #Create the receipts for the 2nd user
+        for num in range(self.number_of_receipts_user2):
+            remainder = num % 2
+            if remainder == 0:
+                listing = OfferListing.objects.create(owner=self.global_user1,
+                    name='Test Offer Listing', description="Just a test listing",
+                    openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+                    notes="Just offer", endTime=date_ended, listingCompleted=True)
+                Offer.objects.create(offerListing=listing, owner=self.global_user2,
+                    amount=5.00, offerAccepted=True)
+                receipt = Receipt.objects.get(listing=listing)
+                receipt.owner = self.global_user1
+                receipt.exchangee = self.global_user2
+                receipt.save
+            else:
+                listing = AuctionListing.objects.create(owner=self.global_user1,
+                    name='Test Auction Listing', description="Just a test listing",
+                    startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+                    endTime=date_ended)
+                Bid.objects.create(auctionListing=listing, bidder=self.global_user2,
+                    amount=5.00, winningBid=True)
+                receipt = Receipt.objects.get(listing=listing)
+                receipt.owner = self.global_user1
+                receipt.exchangee = self.global_user2
+                receipt.save
+
+        #Create some active listings for testing
+        listing = OfferListing.objects.create(owner=self.global_user1,
+            name='Test Offer Listing', description="Just a test listing",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_active, listingCompleted=False)
+        Offer.objects.create(offerListing=listing, owner=self.global_user2,
+            amount=5.00, offerAccepted=False)
+        receipt = Receipt.objects.get(listing=listing)
+        receipt.owner = self.global_user1
+        receipt.exchangee = self.global_user2
+        receipt.save
+
+        listing = AuctionListing.objects.create(owner=self.global_user1,
+            name='Test Auction Listing', description="Just a test listing",
+            startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+            endTime=date_active)
+        Bid.objects.create(auctionListing=listing, bidder=self.user1,
+            amount=5.00, winningBid=True)
+        receipt = Receipt.objects.get(listing=listing)
+        receipt.owner = self.global_user1
+        receipt.exchangee = self.user1
+        receipt.save
+
+    #Test to ensure that a user must be logged in to view receipts
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('receipts'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/receipts/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('receipts'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('receipts'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'receipts/receipts.html')
+
+    #Test to ensure that the user only sees receipts related to them for
+    # completed listings for user1
+    def test_list_only_receipts_for_completed_listings_user1(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('receipts'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['receipts']), 6)
+
+    #Test to ensure that the user only sees receipts related to them for
+    # completed listings for user2
+    def test_list_only_receipts_for_completed_listings_user2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('receipts'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['receipts']), 8)
+
+    #Test to ensure that the user only sees receipts related to them for
+    # completed listings for user3 on page 1
+    def test_list_only_receipts_for_completed_listings_user3_page_1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('receipts'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['receipts']), 10)
+
+    #Test to ensure that the user only sees receipts related to them for
+    # completed listings for user3 on page 2
+    def test_list_only_receipts_for_completed_listings_user3_page_2(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('receipts')+'?page=2')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['receipts']), 5)
+
+    #Test to ensure that the user only sees receipts related to them for
+    # completed listings for user4
+    def test_list_only_receipts_for_completed_listings_user4(self):
+        login = self.client.login(username='mikea', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('receipts'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['receipts']), 0)

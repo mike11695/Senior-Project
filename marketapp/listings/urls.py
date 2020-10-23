@@ -107,4 +107,7 @@ urlpatterns = [
         name='start-conversation'),
     path('conversations/<int:pk>/delete', views.ConversationDeleteView.as_view(),
         name='delete-conversation'),
+
+    #Receipts
+    path('receipts/', views.ReceiptListView.as_view(), name='receipts'),
 ]
