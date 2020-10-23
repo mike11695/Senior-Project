@@ -282,7 +282,7 @@ a:hover {
   display: inline-block;
 }
 
-.listings-container, .offer-detail-container {
+.listings-container, .offer-detail-container, .receipts-container {
   border-bottom: 1px solid grey;
   margin-bottom: 10px;
   padding-bottom: 10px;
@@ -850,4 +850,47 @@ a:hover {
   border-radius: 0px 0px 20px 0px;
   padding-left: 8px;
   font-weight: lighter !important;
+}
+
+.receipt-container {
+  background: white;
+  border: 3px dashed grey;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.receipt-container:nth-child(even) {
+  background: #CCC;
+}
+
+.receipt-exchange-details {
+  margin-bottom: 10px;
+}
+
+.receipt-owner-owners-offer, .receipt-owner-exchangee-offer {
+  display: inline-block;
+  height: inherit;
+  vertical-align: text-top;
+}
+
+.receipt-exchangee-owners-offer, .receipt-exchangee-exchangee-offer {
+  display: inline-block;
+  height: inherit;
+  vertical-align: text-top;
+}
+
+.receipt-item-image {
+  width: 55px;
+  height: 55px;
+  border-radius: 15px;
+  border: 2px solid black;
+  margin-right: 5px;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+.receipt-amount {
+  margin-top: 5px;
 }

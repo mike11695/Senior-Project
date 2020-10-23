@@ -563,7 +563,7 @@ def create_offer_listing(request):
             created_listing.save()
 
             #Set owner for receipt if it was created sucessfully
-            if created_listing.receipt.exists():
+            if created_listing.receipt:
                 receipt = Receipt.objects.get(listing=created_listing)
                 receipt.owner = request.user
                 receipt.save()
@@ -895,7 +895,7 @@ def create_auction_listing(request):
             created_listing.save()
 
             #Set owner for receipt if it was created sucessfully
-            if created_listing.receipt.exists():
+            if created_listing.receipt:
                 receipt = Receipt.objects.get(listing=created_listing)
                 receipt.owner = request.user
                 receipt.save()
@@ -2365,6 +2365,14 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
                     receipt = Receipt.objects.get(listing=listing)
                     if receipt:
                         all_receipt_ids.append(receipt.id)
-                        
+
         receipts = Receipt.objects.filter(id__in=all_receipt_ids).order_by('id')
+        for receipt in receipts:
+            if OfferListing.objects.filter(receipt=receipt).exists():
+                listing_obj = OfferListing.objects.get(receipt=receipt)
+            else:
+                listing_obj = AuctionListing.objects.get(receipt=receipt)
+
+            receipt.listing_obj = listing_obj=listing_obj
+
         return receipts

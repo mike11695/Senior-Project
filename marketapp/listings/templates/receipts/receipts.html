@@ -1,0 +1,181 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block receipts-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>My Receipts</h1>
+      </div>
+    </div>
+  </div>
+  {% if receipts %}
+    <div class="center-block col-lg-4">
+      {% for receipt in receipts %}
+        <div class="receipt-container">
+          {% if receipt.owner == request.user %}
+            <h4>Owner Receipt</h4>
+            <h6>For Your Listing:<br>
+              <a href="{{ receipt.listing_obj.get_absolute_url }}">{{ receipt.listing_obj }}</a>
+            </h6>
+            <h6>Exchangee:
+              <a href="{% url 'profile-detail' pk=receipt.exchangee.profile.pk %}">
+                {{ receipt.exchangee }}
+              </a>
+            </h6>
+            <div class="receipt-exchange-details">
+              <div class="receipt-owner-owners-offer col-lg-5">
+                Offered<br>
+                {% for item in receipt.listing_obj.items.all %}
+                  {% with item.images.all|first as image %}
+                    <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="receipt-item-image"></img></a>
+                  {% endwith %}
+                {% endfor %}
+              </div>
+              <div class="receipt-owner-exchangee-offer col-lg-5">
+                Received
+                {% if receipt.listing_obj.listingCompleted %}
+                  {% for offer in receipt.listing_obj.offerlisting.all %}
+                    {% if offer.items %}
+                      <br>
+                      {% for item in offer.items.all %}
+                        {% with item.images.all|first as image %}
+                          <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="receipt-item-image"></img></a>
+                        {% endwith %}
+                      {% endfor %}
+                    {% endif %}
+                    {% if offer.amount > 0.00 %}
+                      <br>
+                      <div class="amount-offered receipt-amount">
+                        <h4>${{ offer.amount }}</h4>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% else %}
+                  <div class="amount-offered receipt-amount">
+                    <h4>${{ receipt.listing_obj.bids.all.last.amount }}</h4>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="receipt-buttons">
+              <a href="{% url 'start-conversation' pk=receipt.exchangee.pk %}">
+                <div class="btn btn-blue">
+                  Message {{ receipt.exchangee }}
+                </div>
+              </a>
+              <a href="">
+                <div class="btn btn-red">
+                  Delete
+                </div>
+              </a>
+            </div>
+          {% else %}
+            <h4>Exchangee Receipt</h4>
+            <h6>For Listing:<br>
+              <a href="{{ receipt.listing_obj.get_absolute_url }}">{{ receipt.listing_obj }}</a>
+            </h6>
+            <h6>Owner:
+              <a href="{% url 'profile-detail' pk=receipt.owner.profile.pk %}">
+                {{ receipt.owner }}
+              </a>
+            </h6>
+            <div class="receipt-exchange-details">
+              <div class="receipt-exchangee-exchangee-offer col-lg-5">
+                Offered
+                {% if receipt.listing_obj.listingCompleted %}
+                  {% for offer in receipt.listing_obj.offerlisting.all %}
+                    {% if offer.items %}
+                      <br>
+                      {% for item in offer.items.all %}
+                        {% with item.images.all|first as image %}
+                          <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="receipt-item-image"></img></a>
+                        {% endwith %}
+                      {% endfor %}
+                    {% endif %}
+                    {% if offer.amount > 0.00 %}
+                      <br>
+                      <div class="amount-offered receipt-amount">
+                        <h4>${{ offer.amount }}</h4>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% else %}
+                  <div class="amount-offered receipt-amount">
+                    <h4>${{ receipt.listing_obj.bids.all.last.amount }}</h4>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="receipt-exchangee-owners-offer col-lg-5">
+                Received<br>
+                {% for item in receipt.listing_obj.items.all %}
+                  {% with item.images.all|first as image %}
+                    <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="receipt-item-image"></img></a>
+                  {% endwith %}
+                {% endfor %}
+              </div>
+            </div>
+            <div class="receipt-buttons">
+              {% if receipt.listing_obj.bids.all.last.amount %}
+                <div style="margin-bottom: 5px;"
+                  <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
+                    <div class="btn btn-blue">
+                      Message {{ receipt.owner }}
+                    </div>
+                  </a>
+                  <a href="">
+                    <div class="btn btn-blue">
+                      Send Payment
+                    </div>
+                  </a><br>
+                </div>
+              {% elif receipt.listing_obj.offerlisting.all.last.amount > 0.00 %}
+                <div style="margin-bottom: 5px;"
+                  <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
+                    <div class="btn btn-blue">
+                      Message {{ receipt.owner }}
+                    </div>
+                  </a>
+                  <a href="">
+                    <div class="btn btn-blue">
+                      Send Payment
+                    </div>
+                  </a><br>
+                </div>
+              {% else %}
+                <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
+                  <div class="btn btn-blue">
+                    Message {{ receipt.owner }}
+                  </div>
+                </a>
+              {% endif %}
+              <a href="">
+                <div class="btn btn-red">
+                  Delete
+                </div>
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p style="text-align: center;">You don't have any receipts currently.</p>
+  {% endif %}
+{% endblock %}
