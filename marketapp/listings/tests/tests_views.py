@@ -5863,3 +5863,147 @@ class ReceiptListViewTest(MyTestCase):
         response = self.client.get(reverse('receipts'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['receipts']), 0)
+
+class MakePaypalPaymentViewTest(MyTestCase):
+    def setUp(self):
+        super(MakePaypalPaymentViewTest, self).setUp()
+
+        #Create users for testing with
+        self.user1 = User.objects.create_user(username="mikey", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+        self.user2 = User.objects.create_user(username="mikea", password="example",
+            email="example5@text.com", paypalEmail="example5@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Get the current date and time for testing and create active and inactive endtimes
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create completed offer listings
+        self.completed_offer_listing = OfferListing.objects.create(owner=self.global_user1,
+            name='Test Offer Listing', description="Just a test listing",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended, listingCompleted=True)
+        self.completed_offer_listing_2 = OfferListing.objects.create(owner=self.global_user1,
+            name='Test Offer Listing', description="Just a test listing",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended, listingCompleted=True)
+
+        #Create active and completed auction listings
+        self.active_auction_listing = AuctionListing.objects.create(owner=self.global_user1,
+            name='Test Auction Listing', description="Just a test listing",
+            startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+            endTime=date_active)
+        self.completed_auction_listing = AuctionListing.objects.create(owner=self.global_user1,
+            name='Test Auction Listing', description="Just a test listing",
+            startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+            endTime=date_ended)
+
+        #Create objects related to listings
+        self.accepted_offer = Offer.objects.create(offerListing=self.completed_offer_listing,
+            owner=self.global_user2, amount=5.00, offerAccepted=True)
+        self.accepted_offer_2 = Offer.objects.create(offerListing=self.completed_offer_listing_2,
+            owner=self.global_user2, amount=0.00, offerAccepted=True)
+        self.winning_final_bid = Bid.objects.create(auctionListing=self.completed_auction_listing,
+            bidder=self.global_user2, amount=5.00, winningBid=True)
+        self.winning_non_final_bid = Bid.objects.create(auctionListing=self.active_auction_listing,
+            bidder=self.global_user2, amount=5.00, winningBid=True)
+
+        #Update the related receipts
+        self.completed_offer_listing_receipt = Receipt.objects.get(
+            listing=self.completed_offer_listing)
+        self.completed_offer_listing_receipt.owner = self.global_user1
+        self.completed_offer_listing_receipt.exchangee = self.global_user2
+        self.completed_offer_listing_receipt.save()
+
+        self.completed_offer_listing_receipt_2 = Receipt.objects.get(
+            listing=self.completed_offer_listing_2)
+        self.completed_offer_listing_receipt_2.owner = self.global_user1
+        self.completed_offer_listing_receipt_2.exchangee = self.global_user2
+        self.completed_offer_listing_receipt_2.save()
+
+        self.completed_auction_listing_receipt = Receipt.objects.get(
+            listing=self.completed_auction_listing)
+        self.completed_auction_listing_receipt.owner = self.global_user1
+        self.completed_auction_listing_receipt.exchangee = self.global_user2
+        self.completed_auction_listing_receipt.save()
+
+        self.active_auction_listing_receipt = Receipt.objects.get(
+            listing=self.active_auction_listing)
+        self.active_auction_listing_receipt.owner = self.global_user1
+        self.active_auction_listing_receipt.exchangee = self.global_user2
+        self.active_auction_listing_receipt.save()
+
+    #Test to ensure that a user must be logged in to make payment
+    def test_redirect_if_not_logged_in(self):
+        receipt = self.completed_offer_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/receipts/{0}/send-payment'.format(receipt.id))
+
+    #Test to ensure user is redirected if logged in and is not the
+    #receipt exchangee for an offer listing
+    def test_redirect_if_logged_in_offer_listing_not_exchangee(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.completed_offer_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if logged in and is the
+    #receipt exchangee, and that the listing is completed but an amount
+    #was not offered for an offer listing
+    def test_redirect_if_logged_in_offer_listing_exchangee_no_amount_offered(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.completed_offer_listing_receipt_2
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in and is the
+    #receipt exchangee, and that the listing is completed and an amount
+    #was offered for an offer listing
+    def test_no_redirect_if_logged_offer_listing_in_exchangee(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.completed_offer_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in and is not the
+    #receipt exchangee for an auction listing
+    def test_redirect_if_logged_in_auction_listing_not_exchangee(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.completed_auction_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if logged in and is the
+    #receipt exchangee, but the listing is still active for an auction listing
+    def test_redirect_if_logged_in_offer_listing_exchangee_listing_still_active(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.active_auction_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in and is the
+    #receipt exchangee, and that the listing is completed for an
+    #auction listing
+    def test_no_redirect_if_logged_in_auction_listing_exchangee(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.completed_auction_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.completed_offer_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'receipts/make_payment.html')

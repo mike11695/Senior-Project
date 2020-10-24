@@ -9,6 +9,7 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.files.base import ContentFile
 from django.contrib.gis.geoip2 import GeoIP2
 from django.db.models import Count, Max, OuterRef, Subquery
+from paypal.standard.forms import PayPalPaymentsForm
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
@@ -2368,6 +2369,7 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
 
         receipts = Receipt.objects.filter(id__in=all_receipt_ids).order_by('id')
         for receipt in receipts:
+            #Add the actual listing subclass object to the receipt
             if OfferListing.objects.filter(receipt=receipt).exists():
                 listing_obj = OfferListing.objects.get(receipt=receipt)
             else:
@@ -2376,3 +2378,65 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
             receipt.listing_obj = listing_obj=listing_obj
 
         return receipts
+
+#Form view for user to make a payment
+@login_required(login_url='/accounts/login/')
+def make_paypal_payment(request, pk):
+    #Get the receipt object to work with
+    receipt = get_object_or_404(Receipt, pk=pk)
+
+    #Check to see that the receipt exchangee is making payment
+    #Redirect if otherwise
+    if receipt.exchangee == request.user:
+        #Get the listing that is related to the receipt
+        if OfferListing.objects.filter(receipt=receipt).exists():
+            listing = OfferListing.objects.get(receipt=receipt)
+            listing_type = "Offer Listing"
+        elif AuctionListing.objects.filter(receipt=receipt).exists():
+            listing = AuctionListing.objects.get(receipt=receipt)
+            listing_type = "Auction Listing"
+        else:
+            return redirect('index')
+
+        #Check to ensure that listing has ended
+        #If not, redirect
+        if (listing_type == "Offer Listing"
+            and (listing.listingEnded and listing.listingCompleted)):
+                #Get the related offer
+                related_offer = listing.offerlisting.last()
+
+                #Check to ensure that the offer is indeed the users.
+                #If so, check if an amount was included in offer
+                #If not, redirect
+                if (related_offer.owner == request.user
+                    and related_offer.amount > 0.00
+                    and related_offer.offerAccepted):
+                        payment_amount = related_offer.amount
+                else:
+                    return redirect('index')
+        elif (listing_type == "Auction Listing"
+            and (listing.listingEnded and listing.bids.count() > 0)):
+                #Get the related bid
+                related_bid = listing.bids.last()
+
+                #Check to ensure that the bid is indeed the users
+                #If so, get the amount offered in bid
+                #If not redirect
+                if (related_bid.bidder == request.user
+                    and related_bid.winningBid):
+                        payment_amount = related_bid.amount
+                else:
+                    return redirect('index')
+        else:
+            return redirect('index')
+
+        #User indeed owns the winning bid or accepted offer and an amount
+        #was included.
+        context = {
+            'payment_amount': payment_amount,
+            'user_paying': receipt.exchangee,
+            'user_receiving': receipt.owner,
+        }
+        return render(request, 'receipts/make_payment.html', context=context)
+    else:
+        return redirect('index')

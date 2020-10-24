@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.models import AbstractUser, User
 from listings.models import (User, Profile, Rating, Warning, Conversation,
     Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
-    Item, WishlistListing, Offer, Bid)
+    Item, WishlistListing, Offer, Bid, Receipt)
 
 # Register your models here.
 #admin.site.register(User)
@@ -21,6 +21,7 @@ admin.site.register(AuctionListing)
 admin.site.register(Item)
 admin.site.register(Offer)
 admin.site.register(Bid)
+admin.site.register(Receipt)
 
 # Define the user admin class
 class UserAdmin(admin.ModelAdmin):

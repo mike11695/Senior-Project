@@ -110,4 +110,6 @@ urlpatterns = [
 
     #Receipts
     path('receipts/', views.ReceiptListView.as_view(), name='receipts'),
+    path('receipts/<int:pk>/send-payment', views.make_paypal_payment,
+        name="send-payment")
 ]

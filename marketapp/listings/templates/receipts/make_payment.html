@@ -1,0 +1,31 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-4 center-block receipts-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>Send Payment of
+          <span class="amount-offered">${{ payment_amount }}</span>
+          to {{ user_receiving }}
+        </h1>
+      </div>
+    </div>
+  </div>
+  <div id="payment-container" class="center-block col-lg-4">
+    <script>paypal.Buttons({
+      createOrder: function(data, actions) {
+        // This function sets up the details of the transaction, including the amount and line item details.
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: payment_amount
+            },
+            payee: {
+              email_address: user_receiving.paypalEmail
+            }
+          }]
+        });
+      }
+    }).render(document.getElementById('payment-container'));</script>
+  </div>
+{% endblock %}

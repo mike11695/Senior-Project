@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'documents',
     'mathfilters',
     'geoip2',
-    'django_celery_beat', 
+    'django_celery_beat',
+    'paypal.standard.ipn',
 ]
 
 MIDDLEWARE = [
@@ -163,3 +164,5 @@ CELERY_BEAT_SCHEDULE = {
     },
 
 }
+
+PAYPAL_TEST = True

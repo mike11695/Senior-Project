@@ -122,7 +122,7 @@
                       Message {{ receipt.owner }}
                     </div>
                   </a>
-                  <a href="">
+                  <a href="{% url 'send-payment' pk=receipt.pk %}">
                     <div class="btn btn-blue">
                       Send Payment
                     </div>
@@ -135,7 +135,7 @@
                       Message {{ receipt.owner }}
                     </div>
                   </a>
-                  <a href="">
+                  <a href="{% url 'send-payment' pk=receipt.pk %}">
                     <div class="btn btn-blue">
                       Send Payment
                     </div>
