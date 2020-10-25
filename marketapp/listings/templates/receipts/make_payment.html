@@ -1,6 +1,7 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
+  <script src="https://www.paypal.com/sdk/js?client-id=AeoRBJPyMGHTOi8OmRxKW5IZaB0sf276fAWwELm-XySMnConkjQryyFPFP4wkampSRGcTCs0VV4mW0Sm&merchant-id={{ user_receiving.paypalEmail }}"></script>
   <div class="container-fluid col-lg-4 center-block receipts-container">
     <div class="center-block" style="text-align: center;">
       <div>
@@ -12,20 +13,12 @@
     </div>
   </div>
   <div id="payment-container" class="center-block col-lg-4">
-    <script>paypal.Buttons({
-      createOrder: function(data, actions) {
-        // This function sets up the details of the transaction, including the amount and line item details.
-        return actions.order.create({
-          purchase_units: [{
-            amount: {
-              value: payment_amount
-            },
-            payee: {
-              email_address: user_receiving.paypalEmail
-            }
-          }]
-        });
-      }
-    }).render(document.getElementById('payment-container'));</script>
+    {{ payment_amount|json_script:"payment_amount" }}
+    {{ user_receiving.paypalEmail|json_script:"user_receiving" }}
+    {{ receipt.id|json_script:"receipt_id" }}
+    {% load static %}
+    <script src="{% static 'js/paypal_payment.js' %}">
+      var URL = "{% url 'update-receipt' pk=receipt.pk %}";
+    </script>
   </div>
 {% endblock %}

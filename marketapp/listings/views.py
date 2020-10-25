@@ -10,6 +10,7 @@ from django.core.files.base import ContentFile
 from django.contrib.gis.geoip2 import GeoIP2
 from django.db.models import Count, Max, OuterRef, Subquery
 from paypal.standard.forms import PayPalPaymentsForm
+from django.views.decorators.csrf import csrf_exempt
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
@@ -2436,7 +2437,31 @@ def make_paypal_payment(request, pk):
             'payment_amount': payment_amount,
             'user_paying': receipt.exchangee,
             'user_receiving': receipt.owner,
+            'receipt': receipt,
         }
         return render(request, 'receipts/make_payment.html', context=context)
     else:
         return redirect('index')
+
+#Form view for user to see paypal payment details after making payment
+@login_required(login_url='/accounts/login/')
+def paypal_payment_made(request, pk):
+    #Get the receipt object to work with
+    receipt = get_object_or_404(Receipt, pk=pk)
+
+    if receipt.exchangee == request.user:
+        return render(request, 'receipts/payment_made.html')
+    else:
+        return redirect('index')
+
+#View that will update receipt when a payment is made
+@csrf_exempt
+def update_receipt(request, pk):
+    #Get the receipt object to work with
+    receipt = get_object_or_404(Receipt, pk=pk)
+
+    if request.method == 'POST':
+        if 'details' in request.POST:
+            return HttpResponse('success')
+    #Something went wrong
+    return HttpRepsonse('not success')
