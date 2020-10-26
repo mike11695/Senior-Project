@@ -112,8 +112,8 @@ urlpatterns = [
     path('receipts/', views.ReceiptListView.as_view(), name='receipts'),
     path('receipts/<int:pk>/send-payment', views.make_paypal_payment,
         name="send-payment"),
-    path('receipts/<int:pk>/update-receipt', views.update_receipt,
-        name="update-receipt"),
+    path('receipts/create-payment-receipt', views.create_payment_receipt,
+        name="create-payment-receipt"),
     path('receipts/<int:pk>/payment-made', views.paypal_payment_made,
         name="payment-made"),
 ]

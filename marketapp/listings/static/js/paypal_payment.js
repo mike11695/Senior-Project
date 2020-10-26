@@ -15,21 +15,28 @@ paypal.Buttons({
   onApprove: function(data, actions) {
     // This function captures the funds from the transaction.
     return actions.order.capture().then(function(details) {
-      // This function shows a transaction success message to your buyer.
-      alert('Transaction Details: ' + details.payer.name.given_name);
-
       receipt_id = JSON.parse(document.getElementById('receipt_id').textContent)
-      var data = {'details': details}
-      $.post(URL, data, function(response){
-          if(response === 'success'){
-            alert('All went well :)');
+      amount = JSON.parse(document.getElementById('payment_amount').textContent)
+      var data = {'receipt_id': receipt_id, 'order_id': details.id,
+        'status': details.status,
+        'amount': amount,
+      }
+      $.ajax({
+        type: "POST",
+        url: '/listings/receipts/create-payment-receipt',
+        data: data,
+        success: function(response) {
+          if (response === 'success') {
+            alert("Transaction Completed by: " + details.payer.name.given_name
+              + "\nReceipt has been updated!");
             location.href = "/listings/receipts/" + receipt_id + "/payment-made"
           } else {
-            alert('Something went wrong...');
+            alert("Transaction Completed by: " + details.payer.name.given_name
+              + "\nReceipt could not be updated though.");
+            location.href = "/listings/receipts/" + receipt_id + "/payment-made"
           }
-      });
-      //receipt_id = JSON.parse(document.getElementById('receipt_id').textContent)
-      //location.href = "/listings/receipts/" + receipt_id + "/payment-made"
+        }
+      })
     });
   }
 }).render(document.getElementById('payment-container'));

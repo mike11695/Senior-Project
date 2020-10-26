@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
-    Profile, Conversation, Message, Receipt)
+    Profile, Conversation, Message, Receipt, PaymentReceipt)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.utils.timezone import make_aware
 from django.conf import settings
+from django.contrib.messages import get_messages
 
 # Create your tests here.
 class MyTestCase(TestCase):
@@ -6007,3 +6008,105 @@ class MakePaypalPaymentViewTest(MyTestCase):
         response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'receipts/make_payment.html')
+
+    #Test to ensure user is redirected if a payment receipt exists for the receipt
+    def test_redirect_if_payment_receipt_exists(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.completed_offer_listing_receipt
+        payment_receipt = PaymentReceipt.objects.create(
+            receipt=self.completed_offer_listing_receipt,
+            orderID="Dkjid62d5tg41g", status="Completed", amountPaid=5.00,
+            paymentDate="October 31st, 5:00 P.M.")
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+class PaypalPaymentMadeViewTest(MyTestCase):
+    def setUp(self):
+        super(PaypalPaymentMadeViewTest, self).setUp()
+
+    """#Test to ensure that a user must be logged in to view payment receipt
+    def test_redirect_if_not_logged_in(self):
+        receipt = self.completed_offer_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/receipts/{0}/send-payment'.format(receipt.id))
+
+    #Test to ensure user is redirected if logged in and is not the
+    #receipt exchangee for an offer listing
+    def test_redirect_if_logged_in_offer_listing_not_exchangee(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.completed_offer_listing_receipt
+        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')"""
+
+class CreatePaymentReceiptViewTest(MyTestCase):
+    def setUp(self):
+        super(CreatePaymentReceiptViewTest, self).setUp()
+
+        #Get the current date and time for testing and create inactive endtimes
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+
+        #Create a listing for testing with
+        self.completed_offer_listing = OfferListing.objects.create(owner=self.global_user1,
+            name='Test Offer Listing', description="Just a test listing",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended, listingCompleted=True)
+
+        #Create objects related to listings
+        self.accepted_offer = Offer.objects.create(offerListing=self.completed_offer_listing,
+            owner=self.global_user2, amount=5.00, offerAccepted=True)
+
+        #Update the related receipts
+        self.completed_offer_listing_receipt = Receipt.objects.get(
+            listing=self.completed_offer_listing)
+        self.completed_offer_listing_receipt.owner = self.global_user1
+        self.completed_offer_listing_receipt.exchangee = self.global_user2
+        self.completed_offer_listing_receipt.save()
+
+    #Test to ensure that the view canbe called called
+    def test_view_is_called(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-payment-receipt'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure that the view responds negatively to call if no data
+    #was sent
+    def test_view_responds_fail_no_data_sent(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-payment-receipt'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-payment-receipt'),
+            data={})
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure that the view responds positevely to call if receipt
+    #id is sent
+    def test_view_responds_success_receipt_id_sent(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-payment-receipt'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-payment-receipt'),
+            data={'receipt_id': [str(self.completed_offer_listing_receipt.id)]})
+        self.assertEqual(post_response.status_code, 200)
+
+    #Test to ensure that a payment receipt is made using details from paypal
+    def test_view_creates_payment_receipt(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-payment-receipt'))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-payment-receipt'),
+            data={'receipt_id': [str(self.completed_offer_listing_receipt.id)],
+                'order_id': "f5g1g5ghh5v26d", 'status': "Complete",
+                'amount': 5.00})
+        self.assertEqual(post_response.status_code, 200)
+        payment_receipt = PaymentReceipt.objects.last()
+        self.assertTrue(payment_receipt.receipt, self.completed_offer_listing_receipt)
+        self.assertTrue(payment_receipt.orderID, "f5g1g5ghh5v26d")
+        self.assertTrue(payment_receipt.status, "Complete")
+        self.assertTrue(payment_receipt.amountPaid, 5.00)

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from listings.models import (User, Profile, Rating, Warning, Conversation,
     Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
-    Item, Offer, Bid, WishlistListing, Receipt)
+    Item, Offer, Bid, WishlistListing, Receipt, PaymentReceipt)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import datetime
 from django.utils.timezone import make_aware
@@ -817,5 +817,47 @@ class BidModelTest(MyTestCase):
         bid = self.bid
         default = bid._meta.get_field('winningBid').default
         self.assertEqual(default, False)
+
+#Tests for PaymentReceipt class
+class PaymentReceiptModelTest(MyTestCase):
+    def setUp(self):
+        #Set up records for PaymentReceipt for testing
+        super(PaymentReceiptModelTest, self).setUp()
+
+        self.receipt = Receipt.objects.create(owner=self.global_user1,
+            exchangee=self.global_user2)
+        self.payment_receipt = PaymentReceipt.objects.create(receipt=self.receipt,
+            orderID="d5f461hg58f2d", status="Complete", amountPaid="5.00",
+            paymentDate="October 31st, 5:00 P.M.")
+
+    #Checks to ensure that payment receipt orderID max length is correct
+    def test_payment_receipt_order_ID_max_length(self):
+        receipt = self.payment_receipt
+        max_length = receipt._meta.get_field('orderID').max_length
+        self.assertEqual(max_length, 100)
+
+    #Checks to ensure that payment receipt status max length is correct
+    def test_payment_receipt_status_max_length(self):
+        receipt = self.payment_receipt
+        max_length = receipt._meta.get_field('status').max_length
+        self.assertEqual(max_length, 100)
+
+    #Checks to ensure that payment receipt amount paid field max digits is correct
+    def test_payment_receipt_amount_paid_max_digits(self):
+        receipt = self.payment_receipt
+        max_digits = receipt._meta.get_field('amountPaid').max_digits
+        self.assertEqual(max_digits, 9)
+
+    #Checks to ensure that payment receiptn amount paid field decimal places is correct
+    def test_payment_receipt_amount_paid_decimal_places(self):
+        receipt = self.payment_receipt
+        decimal_places = receipt._meta.get_field('amountPaid').decimal_places
+        self.assertEqual(decimal_places, 2)
+
+    #Checks to ensure that payment receipt payment date max length is correct
+    def test_payment_receipt_date_max_length(self):
+        receipt = self.payment_receipt
+        max_length = receipt._meta.get_field('paymentDate').max_length
+        self.assertEqual(max_length, 250)
 
 #Tests for Favorites class

@@ -484,7 +484,7 @@ class Offer(models.Model):
         return f'{self.listing.name}'"""
 
 #Model for Receipts, made after a transaction between users is completed
-#Fields needed: Owner, exchangee, listing, ownerItems, exchangeeItems, exchangeeAmountOffer
+#Fields needed: Owner, exchangee, listing
 class Receipt(models.Model):
     #Fields for Receipt
     owner = models.ForeignKey(User, on_delete=models.SET_NULL,
@@ -501,3 +501,22 @@ class Receipt(models.Model):
     def __str__(self):
         #String for representing the Receipt object.
         return f'Receipt for {self.listing}'
+
+#Model for PaymentReceipts, made after a paypal/online payment is made
+#Fields needed: Receipt, orderID, status, amountPaid, fees, netAmount, paymentDate
+class PaymentReceipt(models.Model):
+    #Fields for PaymentReceipt
+    receipt = models.OneToOneField(Receipt, on_delete=models.CASCADE,
+        related_name="payment_receipt")
+    orderID = models.TextField(max_length=100)
+    status = models.TextField(max_length=100)
+    amountPaid = models.DecimalField(max_digits=9, decimal_places=2)
+    paymentDate = models.TextField(max_length=250)
+
+    def get_absolute_url(self):
+        #Returns the url to access a particular instance of PaymentReceipt.
+        return reverse('payment-receipt-detail', args=[str(self.id)])
+
+    def __str__(self):
+        #String for representing the PaymentReceipt object.
+        return f'Payment receipt for {self.receipt.listing.name}'

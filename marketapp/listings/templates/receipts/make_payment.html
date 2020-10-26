@@ -18,7 +18,6 @@
     {{ receipt.id|json_script:"receipt_id" }}
     {% load static %}
     <script src="{% static 'js/paypal_payment.js' %}">
-      var URL = "{% url 'update-receipt' pk=receipt.pk %}";
     </script>
   </div>
 {% endblock %}
