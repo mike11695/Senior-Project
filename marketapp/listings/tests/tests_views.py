@@ -1586,7 +1586,7 @@ class CreateOfferListingViewTest(MyTestCase):
         self.assertEqual(new_offer_listing.owner, post_response.wsgi_request.user)
         self.assertEqual(new_offer_listing.minRange, 5.00)
         self.assertEqual(new_offer_listing.maxRange, 10.00)
-        self.assertTrue(new_offer_listing.receipt.exists())
+        self.assertTrue(Receipt.objects.filter(listing=new_offer_listing).exists())
         receipt = Receipt.objects.get(listing=new_offer_listing)
         self.assertEqual(receipt.owner, post_response.wsgi_request.user)
 
@@ -2458,7 +2458,7 @@ class CreateAuctionListingViewTest(MyTestCase):
         new_auction_listing = AuctionListing.objects.last()
         self.assertEqual(new_auction_listing.owner, post_response.wsgi_request.user)
         self.assertEqual(new_auction_listing.autobuy, 50.00)
-        self.assertTrue(new_auction_listing.receipt.exists())
+        self.assertTrue(Receipt.objects.filter(listing=new_auction_listing).exists())
         receipt = Receipt.objects.get(listing=new_auction_listing)
         self.assertEqual(receipt.owner, post_response.wsgi_request.user)
 
@@ -5738,7 +5738,7 @@ class ReceiptListViewTest(MyTestCase):
                 receipt = Receipt.objects.get(listing=listing)
                 receipt.owner = self.global_user1
                 receipt.exchangee = self.user1
-                receipt.save
+                receipt.save()
             else:
                 listing = AuctionListing.objects.create(owner=self.global_user1,
                     name='Test Auction Listing', description="Just a test listing",
@@ -5749,7 +5749,7 @@ class ReceiptListViewTest(MyTestCase):
                 receipt = Receipt.objects.get(listing=listing)
                 receipt.owner = self.global_user1
                 receipt.exchangee = self.user1
-                receipt.save
+                receipt.save()
 
         #Create the receipts for the 2nd user
         for num in range(self.number_of_receipts_user2):
@@ -5764,7 +5764,7 @@ class ReceiptListViewTest(MyTestCase):
                 receipt = Receipt.objects.get(listing=listing)
                 receipt.owner = self.global_user1
                 receipt.exchangee = self.global_user2
-                receipt.save
+                receipt.save()
             else:
                 listing = AuctionListing.objects.create(owner=self.global_user1,
                     name='Test Auction Listing', description="Just a test listing",
@@ -5775,7 +5775,7 @@ class ReceiptListViewTest(MyTestCase):
                 receipt = Receipt.objects.get(listing=listing)
                 receipt.owner = self.global_user1
                 receipt.exchangee = self.global_user2
-                receipt.save
+                receipt.save()
 
         #Create some active listings for testing
         listing = OfferListing.objects.create(owner=self.global_user1,
@@ -5787,7 +5787,7 @@ class ReceiptListViewTest(MyTestCase):
         receipt = Receipt.objects.get(listing=listing)
         receipt.owner = self.global_user1
         receipt.exchangee = self.global_user2
-        receipt.save
+        receipt.save()
 
         listing = AuctionListing.objects.create(owner=self.global_user1,
             name='Test Auction Listing', description="Just a test listing",
@@ -5798,7 +5798,12 @@ class ReceiptListViewTest(MyTestCase):
         receipt = Receipt.objects.get(listing=listing)
         receipt.owner = self.global_user1
         receipt.exchangee = self.user1
-        receipt.save
+        receipt.save()
+
+        receipt = Receipt.objects.get(listing=self.global_offer_listing3)
+        receipt.owner = self.global_user1
+        receipt.exchangee = self.global_user2
+        receipt.save()
 
     #Test to ensure that a user must be logged in to view receipts
     def test_redirect_if_not_logged_in(self):

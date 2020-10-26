@@ -18,7 +18,7 @@
               <a href="{{ receipt.listing_obj.get_absolute_url }}">{{ receipt.listing_obj }}</a>
             </h6>
             <h6>Exchangee:
-              <a href="{% url 'profile-detail' pk=receipt.exchangee.profile.pk %}">
+              <a href="{% url 'profile-detail' pk=receipt.exchangee.profile.id %}">
                 {{ receipt.exchangee }}
               </a>
             </h6>
@@ -75,7 +75,7 @@
               <a href="{{ receipt.listing_obj.get_absolute_url }}">{{ receipt.listing_obj }}</a>
             </h6>
             <h6>Owner:
-              <a href="{% url 'profile-detail' pk=receipt.owner.profile.pk %}">
+              <a href="{% url 'profile-detail' pk=receipt.owner.profile.id %}">
                 {{ receipt.owner }}
               </a>
             </h6>

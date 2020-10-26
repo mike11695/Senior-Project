@@ -1002,7 +1002,7 @@ class CreateBidFormTest(MyTestCase):
         user1 = self.global_user1
         user2 = self.global_user2
         user3 = User.objects.create(username="mikey", password="example",
-            email="example4@text.com", paypalEmail="example4@text.com",
+            email="example5@text.com", paypalEmail="examplepassword5@text.com",
             invitesOpen=True, inquiriesOpen=True)
 
         date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)

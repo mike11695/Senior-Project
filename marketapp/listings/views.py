@@ -533,7 +533,7 @@ def create_offer_listing(request):
             elif clean_choice == '3d':
                 #Set end time to 3 days from current time if choice was 3ds
                 date = timezone.localtime(timezone.now()) + timedelta(days=3)
-            else:
+            elif clean_choice == '7d':
                 #Set end time to 7 days from current time
                 date = timezone.localtime(timezone.now()) + timedelta(days=7)
 
@@ -2376,7 +2376,7 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
             else:
                 listing_obj = AuctionListing.objects.get(receipt=receipt)
 
-            receipt.listing_obj = listing_obj=listing_obj
+            receipt.listing_obj = listing_obj
 
         return receipts
 
