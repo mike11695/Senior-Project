@@ -116,4 +116,6 @@ urlpatterns = [
         name="create-payment-receipt"),
     path('receipts/<int:pk>/payment-made', views.paypal_payment_made,
         name="payment-made"),
+    #path('receipts/<int:pk>/delete', views.ReceiptDeleteView.as_view(),
+        #name='delete-receipt'),
 ]

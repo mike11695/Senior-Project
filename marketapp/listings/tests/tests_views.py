@@ -6030,21 +6030,111 @@ class PaypalPaymentMadeViewTest(MyTestCase):
     def setUp(self):
         super(PaypalPaymentMadeViewTest, self).setUp()
 
-    """#Test to ensure that a user must be logged in to view payment receipt
+        #Create user for testing with
+        self.user1 = User.objects.create_user(username="mikey", password="example",
+            email="example@text.com", paypalEmail="example@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
+        #Get the current date and time for testing and create inactive endtime
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+
+        #Create completed listings for testing with
+        self.completed_offer_listing_payment_made = OfferListing.objects.create(owner=self.global_user1,
+            name='Test Offer Listing', description="Just a test listing",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended, listingCompleted=True)
+        self.completed_offer_listing_payment_not_made = OfferListing.objects.create(owner=self.global_user1,
+            name='Test Offer Listing', description="Just a test listing",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended, listingCompleted=True)
+
+        #Create accepted offers associated with listings
+        self.accepted_offer_payment_made = Offer.objects.create(
+            offerListing=self.completed_offer_listing_payment_made,
+            owner=self.global_user2, amount=5.00, offerAccepted=True)
+        self.accepted_offer_payment_not_made = Offer.objects.create(
+            offerListing=self.completed_offer_listing_payment_not_made,
+            owner=self.global_user2, amount=5.00, offerAccepted=True)
+
+        #Edit the receipts associated with the listings
+        self.payment_made_receipt = Receipt.objects.get(
+            listing=self.completed_offer_listing_payment_made)
+        self.payment_made_receipt.owner = self.global_user1
+        self.payment_made_receipt.exchangee = self.global_user2
+        self.payment_made_receipt.save()
+
+        self.payment_not_made_receipt = Receipt.objects.get(
+            listing=self.completed_offer_listing_payment_not_made)
+        self.payment_not_made_receipt.owner = self.global_user1
+        self.payment_not_made_receipt.exchangee = self.global_user2
+        self.payment_not_made_receipt.save()
+
+        #Create payment receipt
+        self.payment_receipt = PaymentReceipt.objects.create(
+            receipt=self.payment_made_receipt, orderID="15c55f7vb3",
+            status="COMPLETE", amountPaid="5.00",
+            paymentDate="October 31st 2020, 5:00 PM")
+
+    #Test to ensure that a user must be logged in to view payment receipt
     def test_redirect_if_not_logged_in(self):
-        receipt = self.completed_offer_listing_receipt
-        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
+        receipt = self.payment_made_receipt
+        response = self.client.get(reverse('payment-made', args=[str(receipt.id)]))
         self.assertRedirects(response,
-            '/accounts/login/?next=/listings/receipts/{0}/send-payment'.format(receipt.id))
+            '/accounts/login/?next=/listings/receipts/{0}/payment-made'.format(receipt.id))
 
     #Test to ensure user is redirected if logged in and is not the
-    #receipt exchangee for an offer listing
-    def test_redirect_if_logged_in_offer_listing_not_exchangee(self):
+    #receipt exchangee or owner for receipt
+    def test_redirect_if_logged_in_not_owner_or_exchangee_on_receipt(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        receipt = self.payment_made_receipt
+        response = self.client.get(reverse('payment-made', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in and is the
+    #receipt exchangee for receipt for receipt that has been paid
+    def test_no_redirect_if_logged_in_exchangee_on_receipt(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.payment_made_receipt
+        response = self.client.get(reverse('payment-made', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in and is the
+    #receipt owner for receipt for receipt that has been paid
+    def test_no_redirect_if_logged_in_owner_on_receipt(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
-        receipt = self.completed_offer_listing_receipt
-        response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
-        self.assertRedirects(response, '/listings/')"""
+        receipt = self.payment_made_receipt
+        response = self.client.get(reverse('payment-made', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in and is the receipt
+    #exchangee for receipt, but receipt has not been paid
+    def test_redirect_if_logged_in_exchangee_on_receipt_no_payment(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.payment_not_made_receipt
+        response = self.client.get(reverse('payment-made', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is redirected if logged in and is the receipt
+    #owner for receipt, but receipt has not been paid
+    def test_redirect_if_logged_in_owner_on_receipt_no_payment(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.payment_not_made_receipt
+        response = self.client.get(reverse('payment-made', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.payment_made_receipt
+        response = self.client.get(reverse('payment-made', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'receipts/payment_made.html')
 
 class CreatePaymentReceiptViewTest(MyTestCase):
     def setUp(self):
@@ -6115,3 +6205,73 @@ class CreatePaymentReceiptViewTest(MyTestCase):
         self.assertTrue(payment_receipt.orderID, "f5g1g5ghh5v26d")
         self.assertTrue(payment_receipt.status, "Complete")
         self.assertTrue(payment_receipt.amountPaid, 5.00)
+
+class ReceiptDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(ReceiptDeleteViewTest, self).setUp()
+
+        #Get the current date and time for testing and create active and inactive endtimes
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create objects that will be deleted upon receipt deletion
+        #if the last remaining user deletes it
+        test_image_1 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        self.image_to_delete_1 = Image.objects.create(owner=None,
+            image=test_image_1, name="Image to be deleted")
+        self.image_to_delete_1_id = self.image_to_delete_1.id
+        test_image_2 = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+        self.image_to_delete_2 = Image.objects.create(owner=None,
+            image=test_image_2, name="Image to be deleted")
+        self.image_to_delete_2_id = self.image_to_delete_2.id
+
+        self.item_to_delete_1 = Item.objects.create(name="Item to Delete",
+            description="An item to test with deletion", owner=None)
+        self.item_to_delete_1.images.add(self.image_to_delete_1)
+        self.item_to_delete_1.save
+        self.item_to_delete_1_id = self.item_to_delete_1.id
+
+        self.item_to_delete_2 = Item.objects.create(name="Item to Delete",
+            description="An item to test with deletion", owner=None)
+        self.item_to_delete_2.images.add(self.image_to_delete_2)
+        self.item_to_delete_2.save
+        self.item_to_delete_2_id = self.item_to_delete_1.id
+
+        self.offer_listing_to_delete = OfferListing.objects.create(owner=None,
+            name='Listing to delete', description="To test deletion",
+            openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
+            notes="Just offer", endTime=date_ended, listingCompleted=True)
+        self.offer_listing_to_delete.items.add(self.item_to_delete_1)
+        self.offer_listing_to_delete.save
+        self.offer_listing_to_delete_id = self.listing_to_delete.id
+
+        self.offer_to_delete = Offer.objects.create(
+            offerListing=self.offer_listing_to_delete,
+            owner=None, amount=5.00, offerAccepted=True)
+        self.offer_to_delete.items.add(self.item_to_delete_2)
+        self.offer_to_delete.save
+        self.offer_to_delete_id = self.offer_to_delete.id
+
+        self.ol_receipt = Receipt.objects.get(listing=self.offer_listing_to_delete)
+        self.ol_receipt.owner = self.global_user1
+        self.ol_receipt.exchangee = self.global_user2
+        self.ol_receipt.save()
+        self.ol_receipt_id = self.receipt.id
+
+        self.ol_payment_receipt = PaymentReceipt.objects.create(
+            receipt=self.ol_receipt, orderID="15c55f7vb3",
+            status="COMPLETE", amountPaid="5.00",
+            paymentDate="October 31st 2020, 5:00 PM")
+        self.ol_payment_receipt_id = self.payment_receipt.id
+
+        self.auction_listing_to_delete = AuctionListing.objects.create(
+            owner=None, name='listing to delete',
+            description="To test for deletion", startingBid=5.00,
+            minimumIncrement=1.00, autobuy=25.00, endTime=date_ended)
+
+    #Test to ensure that a user must be logged in to view payment receipt
+    """def test_redirect_if_not_logged_in(self):
+        receipt = self.receipt
+        response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/receipts/{0}/delete'.format(receipt.id))"""

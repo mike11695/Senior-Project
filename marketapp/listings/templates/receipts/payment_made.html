@@ -5,8 +5,26 @@
     <div class="center-block" style="text-align: center;">
       <div>
         <h1>Payment Details</h1>
-        {{ receipt }}
+        {{ receipt.listing.name }}
       </div>
+    </div>
+  </div>
+  <div class="center-block col-lg-4" style="text-align: center;">
+    <div>
+      <b>Payment Date: </b><br>
+      {{ receipt.payment_receipt.paymentDate }}
+    </div><br>
+    <div>
+      <b>Order ID: </b><br>
+      {{ receipt.payment_receipt.orderID }}
+    </div><br>
+    <div>
+      <b>Status: </b><br>
+      {{ receipt.payment_receipt.status }}
+    </div><br>
+    <div>
+      <b>Amount Paid: </b><br>
+      ${{ receipt.payment_receipt.amountPaid }}
     </div>
   </div>
 {% endblock %}

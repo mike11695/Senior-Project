@@ -271,6 +271,12 @@ class ItemDeleteView(LoginRequiredMixin, generic.DeleteView):
                 #the item
                 soft_delete = False
 
+                #If item is in user's wishlist, simply remove it
+                if Wishlist.objects.filter(owner=self.object.owner).exists():
+                    wishlist = Wishlist.objects.get(owner=self.object.owner)
+                    if self.object in wishlist.items.all():
+                        wishlist.items.remove(self.object)
+
                 #Check to see if any active offer listings have offers.
                 #If so, don't allow deletion
                 if offer_listings:
@@ -352,14 +358,25 @@ class ItemDeleteView(LoginRequiredMixin, generic.DeleteView):
                     self.object.owner = None
                     self.object.save()
                 else:
+                    #Delete the item and any related images if they are not
+                    #related to any other items
+                    for image in self.object.images.all():
+                        if (image.owner == None
+                            and Item.objects.filter(images__pk=image.pk).exclude(
+                                id=self.object.id).exists() != True):
+                            image.delete()
+
                     self.object.delete()
 
                 return HttpResponseRedirect(self.get_success_url())
            else:
                 #Item has no relationships, delete it
-                #Delete any images that have no owner
+                #Delete any images that have no owner and are not related to
+                #any other item
                 for image in self.object.images.all():
-                    if image.owner == None:
+                    if (image.owner == None
+                        and Item.objects.filter(images__pk=image.pk).exclude(
+                            id=self.object.id).exists() != True):
                         image.delete()
 
                 self.object.delete()
@@ -737,13 +754,23 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                     #Allow the user to delete the listing if there are no offers
 
                     #Go through items and delete any that don't have an owner
+                    #and are not related to any other listing/offer
                     for item in self.object.items.all():
-                        if item.owner == None:
-                            #Go through images and delete any that don't have an owner
-                            for image in item.images.all():
-                                if image.owner == None:
-                                    image.delete()
-                            item.delete()
+                        if (item.owner == None
+                            and Listing.objects.filter(items__pk=item.pk).exclude(
+                                id=self.object.id).exists() != True
+                            and Offer.objects.filter(items__pk=item.pk).exists()
+                                != True
+                            and Wishlist.objects.filter(items__pk=item.pk).exists()
+                                != True):
+                                #Go through images and delete any that don't have an owner
+                                for image in item.images.all():
+                                    if (image.owner == None
+                                        and Item.objects.filter(images__pk=image.pk).exclude(
+                                            id=item.id).exists() != True):
+                                        image.delete()
+
+                                item.delete()
 
                     self.object.delete()
                     return HttpResponseRedirect(self.get_success_url())
@@ -755,13 +782,23 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                     self.object.save()
                 else:
                     #Go through items and delete any that don't have an owner
+                    #and have no other relationships
                     for item in self.object.items.all():
-                        if item.owner == None:
-                            #Go through images and delete any that don't have an owner
-                            for image in item.images.all():
-                                if image.owner == None:
-                                    image.delete()
-                            item.delete()
+                        if (item.owner == None
+                            and Listing.objects.filter(items__pk=item.pk).exclude(
+                                id=self.object.id).exists() != True
+                            and Offer.objects.filter(items__pk=item.pk).exists()
+                                != True
+                            and Wishlist.objects.filter(items__pk=item.pk).exists()
+                                != True):
+                                #Go through images and delete any that don't have an owner
+                                for image in item.images.all():
+                                    if (image.owner == None
+                                        and Item.objects.filter(images__pk=image.pk).exclude(
+                                            id=item.id).exists() != True):
+                                        image.delete()
+
+                                item.delete()
 
                     self.object.delete()
 
@@ -1136,12 +1173,21 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
 
                #Go through items and delete any that don't have an owner
                for item in self.object.items.all():
-                   if item.owner == None:
-                       #Go through images and delete any that don't have an owner
-                       for image in item.images.all():
-                           if image.owner == None:
-                               image.delete()
-                       item.delete()
+                   if (item.owner == None
+                       and Listing.objects.filter(items__pk=item.pk).exists()
+                        != True
+                       and Offer.objects.filter(items__pk=item.pk).exclude(
+                           id=self.object.id).exists() != True
+                       and Wishlist.objects.filter(items__pk=item.pk).exists()
+                           != True):
+                           #Go through images and delete any that don't have an owner
+                           for image in item.images.all():
+                               if (image.owner == None
+                                   and Item.objects.filter(images__pk=image.pk).exclude(
+                                       id=item.id).exists() != True):
+                                   image.delete()
+
+                           item.delete()
 
                self.object.delete()
            return HttpResponseRedirect(self.get_success_url(listing))
@@ -1151,12 +1197,21 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
 
                #Go through items and delete any that don't have an owner
                for item in self.object.items.all():
-                   if item.owner == None:
-                       #Go through images and delete any that don't have an owner
-                       for image in item.images.all():
-                           if image.owner == None:
-                               image.delete()
-                       item.delete()
+                   if (item.owner == None
+                       and Listing.objects.filter(items__pk=item.pk).exists()
+                        != True
+                       and Offer.objects.filter(items__pk=item.pk).exclude(
+                           id=self.object.id).exists() != True
+                       and Wishlist.objects.filter(items__pk=item.pk).exists()
+                           != True):
+                           #Go through images and delete any that don't have an owner
+                           for image in item.images.all():
+                               if (image.owner == None
+                                   and Item.objects.filter(images__pk=image.pk).exclude(
+                                       id=item.id).exists() != True):
+                                   image.delete()
+
+                           item.delete()
 
                self.object.delete()
                return HttpResponseRedirect(self.get_success_url(listing))
@@ -1296,12 +1351,21 @@ class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):
            else:
                #Go through items and delete any that don't have an owner
                for item in self.object.items.all():
-                   if item.owner == None:
-                       #Go through images and delete any that don't have an owner
-                       for image in item.images.all():
-                           if image.owner == None:
-                               image.delete()
-                       item.delete()
+                   if (item.owner == None
+                       and Listing.objects.filter(items__pk=item.pk).exclude(
+                           id=self.object.id).exists() != True
+                       and Offer.objects.filter(items__pk=item.pk).exists()
+                           != True
+                       and Wishlist.objects.filter(items__pk=item.pk).exists()
+                           != True):
+                           #Go through images and delete any that don't have an owner
+                           for image in item.images.all():
+                               if (image.owner == None
+                                   and Item.objects.filter(images__pk=image.pk).exclude(
+                                       id=item.id).exists() != True):
+                                   image.delete()
+
+                           item.delete()
 
                self.object.delete()
 
@@ -2378,6 +2442,11 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
 
             receipt.listing_obj = listing_obj
 
+            if PaymentReceipt.objects.filter(receipt=receipt).exists():
+                receipt.payment_made = True
+            else:
+                receipt.payment_made = False
+
         return receipts
 
 #Form view for user to make a payment
@@ -2451,11 +2520,12 @@ def paypal_payment_made(request, pk):
     #Get the receipt object to work with
     receipt = get_object_or_404(Receipt, pk=pk)
 
-    if receipt.exchangee == request.user:
-        context = {
-            'receipt': receipt,
-        }
-        return render(request, 'receipts/payment_made.html', context=context)
+    if ((receipt.exchangee == request.user or receipt.owner == request.user)
+        and PaymentReceipt.objects.filter(receipt=receipt).exists()):
+            context = {
+                'receipt': receipt,
+            }
+            return render(request, 'receipts/payment_made.html', context=context)
     else:
         return redirect('index')
 
