@@ -2346,7 +2346,8 @@ class ConversationDeleteView(LoginRequiredMixin, generic.DeleteView):
     template_name = "conversations/conversation_delete.html"
     context_object_name = 'conversation'
 
-    #Checks to make sure owner of listing clicked to delete, redirects otherwise
+    #Checks to make sure sender or recipient of conversation clicked to delete
+    #redirects otherwise
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.sender == self.request.user:
@@ -2393,8 +2394,9 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
         if offer_listings:
             for listing in offer_listings:
                 receipt = Receipt.objects.get(listing=listing)
-                if receipt:
-                    all_receipt_ids.append(receipt.id)
+                if receipt and (receipt.owner == self.request.user
+                    or receipt.exchangee == self.request.user):
+                        all_receipt_ids.append(receipt.id)
 
         #Get user's completed auction listings, and the receipts for listings
         auction_listing_ids = [listing.id for listing
@@ -2404,8 +2406,9 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
         if auction_listings:
             for listing in auction_listings:
                 receipt = Receipt.objects.get(listing=listing)
-                if receipt:
-                    all_receipt_ids.append(receipt.id)
+                if receipt and (receipt.owner == self.request.user
+                    or receipt.exchangee == self.request.user):
+                        all_receipt_ids.append(receipt.id)
 
         #Get users accepted offers, and the receipts for offers
         offers = Offer.objects.filter(owner=self.request.user, offerAccepted=True)
@@ -2415,8 +2418,9 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
             if listings:
                 for listing in listings:
                     receipt = Receipt.objects.get(listing=listing)
-                    if receipt:
-                        all_receipt_ids.append(receipt.id)
+                    if receipt and (receipt.owner == self.request.user
+                        or receipt.exchangee == self.request.user):
+                            all_receipt_ids.append(receipt.id)
 
         #Get user's winning bids, and the receipts for bids
         bid_ids = [bid.id for bid
@@ -2429,8 +2433,9 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
             if listings:
                 for listing in listings:
                     receipt = Receipt.objects.get(listing=listing)
-                    if receipt:
-                        all_receipt_ids.append(receipt.id)
+                    if receipt and (receipt.owner == self.request.user
+                        or receipt.exchangee == self.request.user):
+                            all_receipt_ids.append(receipt.id)
 
         receipts = Receipt.objects.filter(id__in=all_receipt_ids).order_by('id')
         for receipt in receipts:
@@ -2554,3 +2559,159 @@ def create_payment_receipt(request):
     else:
         #Nothing happens
         return HttpResponse('nothing happened', status=200)
+
+#View for a user to delete an receipt they are the owner or exchangee on it
+#Receipt will only truly be deleted after both users have removed themselves
+class ReceiptDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = Receipt
+    success_url = reverse_lazy('receipts')
+    template_name = "receipts/receipt_delete.html"
+    context_object_name = 'receipt'
+
+    #Checks to make sure owner or exchangee of reciept clicked to delete
+    #Redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+
+        if OfferListing.objects.filter(receipt=obj).exists():
+            related_listing = OfferListing.objects.get(receipt=obj)
+            offer_listing = True
+        else:
+            related_listing = AuctionListing.objects.get(receipt=obj)
+            offer_listing = False
+
+        if offer_listing:
+            if (related_listing.listingEnded == True and related_listing.listingCompleted
+                and (obj.owner == self.request.user or obj.exchangee == self.request.user)):
+                    return super(ReceiptDeleteView, self).dispatch(request, *args, **kwargs)
+            else:
+                return redirect('index')
+        else:
+            if (related_listing.listingEnded == True and related_listing.bids.count() > 0
+                and (obj.owner == self.request.user or obj.exchangee == self.request.user)):
+                    return super(ReceiptDeleteView, self).dispatch(request, *args, **kwargs)
+            else:
+                return redirect('index')
+
+    #Handles deletion of the receipt so that it will only be deleted once
+    #both users are removed
+    def delete(self, request, *args, **kwargs):
+       self.object = self.get_object()
+       offer_listing = False
+       remove_owner = False
+       remove_exchangee = False
+       delete_receipt = False
+
+       #Get the listing related to the receipt
+       if OfferListing.objects.filter(receipt=self.object).exists():
+           listing = OfferListing.objects.get(receipt=self.object)
+           offer_listing = True
+       else:
+           listing = AuctionListing.objects.get(receipt=self.object)
+           offer_listing = False
+
+       #Redirect if listing has not ended yet
+       if offer_listing:
+           if(self.object.owner == self.request.user
+                or self.object.exchangee == self.request.user):
+                    if (self.object.owner != None and self.object.exchangee != None):
+                        #Just remove the current user from receipt, do not delete
+                        #But only if a payment has been made if money was offered
+                        accepted_offer = listing.offerlisting.last()
+
+                        if (accepted_offer.amount > 0.00
+                            and PaymentReceipt.objects.filter(
+                            receipt=self.object).exists() != True):
+                                raise Http404(("You cannot delete this " +
+                                    "receipt as a payment has not been " +
+                                    "made yet."))
+                        elif self.object.owner == self.request.user:
+                            remove_owner = True
+                        else:
+                            remove_exchangee = True
+                    else:
+                        #Delete the receipt
+                        delete_receipt = True
+           else:
+               return redirect('index')
+       else:
+           if(self.object.owner == self.request.user
+                or self.object.exchangee == self.request.user):
+                    if (self.object.owner != None and self.object.exchangee != None):
+                        #Just remove the current user from receipt, do not delete
+                        #But only if a payment has been made
+                        if PaymentReceipt.objects.filter(
+                            receipt=self.object).exists() != True:
+                                raise Http404(("You cannot delete this " +
+                                    "receipt as a payment has not been " +
+                                    "made yet."))
+                        elif self.object.owner == self.request.user:
+                            remove_owner = True
+                        else:
+                            remove_exchangee = True
+                    else:
+                        #Delete the receipt
+                        delete_receipt = True
+           else:
+               return redirect('index')
+
+       if remove_owner:
+           self.object.owner = None
+           self.object.save()
+       elif remove_exchangee:
+           self.object.exchangee = None
+           self.object.save()
+       elif delete_receipt:
+           #Delete the receipt, the related payment receipt and related listing
+           #For the related listing, go through items and delete if owner is
+           #none and has no relations to other objects
+           #For each image for the item, delete if owner is none and has no
+           #relations to other items
+           #For offer listings, delete the items in the accepted offer that have
+           #an owner of none and are not related to any other objects
+           #Do the same as above for the item's images
+
+           #Delete the items for the accepted offer if offer listing
+           if offer_listing:
+               accepted_offer = listing.offerlisting.last()
+               if accepted_offer.items.count() > 0:
+                   for item in accepted_offer.items.all():
+                       if (item.owner == None
+                           and Listing.objects.filter(
+                               items__pk=item.pk).exists() != True
+                           and Offer.objects.filter(items__pk=item.pk).exclude(
+                               id=accepted_offer.id).exists() != True
+                           and Wishlist.objects.filter(items__pk=item.pk).exists()
+                               != True):
+                               #Go through images and delete any that don't have an owner
+                               for image in item.images.all():
+                                   if (image.owner == None
+                                       and Item.objects.filter(images__pk=image.pk).exclude(
+                                           id=item.id).exists() != True):
+                                       image.delete()
+
+                               item.delete()
+
+           #Delete the items in the related listing
+           for item in listing.items.all():
+               if (item.owner == None
+                   and Listing.objects.filter(items__pk=item.pk).exclude(
+                       id=listing.id).exists() != True
+                   and Offer.objects.filter(items__pk=item.pk).exists() != True
+                   and Wishlist.objects.filter(items__pk=item.pk).exists() != True):
+                       #Go through images and delete any that don't have an owner
+                       for image in item.images.all():
+                           if (image.owner == None
+                               and Item.objects.filter(images__pk=image.pk).exclude(
+                                   id=item.id).exists() != True):
+                               image.delete()
+
+                       item.delete()
+
+           #Delete the related listing
+           listing.delete()
+
+           #Delete the receipt, which will delete the related payment receipt
+           self.object.delete()
+
+       return HttpResponseRedirect(self.get_success_url())

@@ -36,8 +36,8 @@ admin.site.register(User, UserAdmin)
 
 # Define the Listing admin class
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ('owner', 'name', 'endTime', 'listingEnded')
-    fields = ('owner', 'name', 'endTime', 'listingEnded', 'items')
+    list_display = ('owner', 'name', 'endTime')
+    fields = ('owner', 'name', 'endTime', 'items')
 
 # Register the admin admin class with the associated model
 admin.site.register(Listing, ListingAdmin)

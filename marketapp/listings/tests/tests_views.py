@@ -61,7 +61,8 @@ class MyTestCase(TestCase):
         #Create a global offer listing that is active
         self.global_offer_listing1 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
-            maxRange=10.00, notes="Just offer", endTime=date_active)
+            maxRange=10.00, notes="Just offer", endTime=date_active,
+            listingCompleted=False)
         self.global_offer_listing1.items.add(self.global_item1)
         self.global_offer_listing1.save
 
@@ -6210,6 +6211,11 @@ class ReceiptDeleteViewTest(MyTestCase):
     def setUp(self):
         super(ReceiptDeleteViewTest, self).setUp()
 
+        #Create a new user for testing with
+        self.user = User.objects.create_user(username="mikey", password="example",
+            email="exampley@text.com", paypalEmail="exampley@text.com",
+            invitesOpen=True, inquiriesOpen=True)
+
         #Get the current date and time for testing and create active and inactive endtimes
         date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
         date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
@@ -6235,15 +6241,15 @@ class ReceiptDeleteViewTest(MyTestCase):
             description="An item to test with deletion", owner=None)
         self.item_to_delete_2.images.add(self.image_to_delete_2)
         self.item_to_delete_2.save
-        self.item_to_delete_2_id = self.item_to_delete_1.id
+        self.item_to_delete_2_id = self.item_to_delete_2.id
 
         self.offer_listing_to_delete = OfferListing.objects.create(owner=None,
-            name='Listing to delete', description="To test deletion",
+            name='Offer Listing to delete', description="To test deletion",
             openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
             notes="Just offer", endTime=date_ended, listingCompleted=True)
         self.offer_listing_to_delete.items.add(self.item_to_delete_1)
         self.offer_listing_to_delete.save
-        self.offer_listing_to_delete_id = self.listing_to_delete.id
+        self.offer_listing_to_delete_id = self.offer_listing_to_delete.id
 
         self.offer_to_delete = Offer.objects.create(
             offerListing=self.offer_listing_to_delete,
@@ -6256,22 +6262,183 @@ class ReceiptDeleteViewTest(MyTestCase):
         self.ol_receipt.owner = self.global_user1
         self.ol_receipt.exchangee = self.global_user2
         self.ol_receipt.save()
-        self.ol_receipt_id = self.receipt.id
+        self.ol_receipt_id = self.ol_receipt.id
 
         self.ol_payment_receipt = PaymentReceipt.objects.create(
             receipt=self.ol_receipt, orderID="15c55f7vb3",
             status="COMPLETE", amountPaid="5.00",
             paymentDate="October 31st 2020, 5:00 PM")
-        self.ol_payment_receipt_id = self.payment_receipt.id
+        self.ol_payment_receipt_id = self.ol_payment_receipt.id
 
         self.auction_listing_to_delete = AuctionListing.objects.create(
-            owner=None, name='listing to delete',
+            owner=None, name='auction listing to delete',
             description="To test for deletion", startingBid=5.00,
             minimumIncrement=1.00, autobuy=25.00, endTime=date_ended)
+        self.auction_listing_to_delete.items.add(self.item_to_delete_1)
+        self.auction_listing_to_delete.save
+        self.auction_listing_to_delete_id = self.auction_listing_to_delete.id
 
-    #Test to ensure that a user must be logged in to view payment receipt
-    """def test_redirect_if_not_logged_in(self):
-        receipt = self.receipt
+        self.bid_to_delete = Bid.objects.create(
+            auctionListing=self.auction_listing_to_delete,
+            bidder=self.global_user2, amount=5.00, winningBid=True)
+        self.bid_to_delete_id = self.bid_to_delete.id
+
+        self.al_receipt = Receipt.objects.get(listing=self.auction_listing_to_delete)
+        self.al_receipt.owner = self.global_user1
+        self.al_receipt.exchangee = self.global_user2
+        self.al_receipt.save()
+        self.al_receipt_id = self.al_receipt.id
+
+        self.al_payment_receipt = PaymentReceipt.objects.create(
+            receipt=self.al_receipt, orderID="15c55f7vb3",
+            status="COMPLETE", amountPaid="5.00",
+            paymentDate="October 31st 2020, 5:00 PM")
+        self.al_payment_receipt_id = self.al_payment_receipt.id
+
+        self.active_receipt = Receipt.objects.get(listing=self.global_offer_listing1)
+        self.active_receipt.owner = self.global_user1
+        self.active_receipt.exchangee = self.global_user2
+        self.active_receipt.save()
+        self.active_receipt_id = self.active_receipt.id
+
+    #Test to ensure that a user must be logged in to delete a receipt
+    def test_redirect_if_not_logged_in(self):
+        receipt = self.ol_receipt
         response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
-        self.assertRedirects(response,
-            '/accounts/login/?next=/listings/receipts/{0}/delete'.format(receipt.id))"""
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure that a user is redirected if they are not the owner
+    #or exchangee of the receipt
+    def test_redirect_if_logged_in_not_owner_or_exchangee(self):
+        login = self.client.login(username='mikey', password='example')
+        self.assertTrue(login)
+        receipt = self.ol_receipt
+        response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if the are the owner
+    #on the receipt
+    def test_no_redirect_if_logged_in_owner(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.ol_receipt
+        response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in if the are the exchangee
+    #on the receipt
+    def test_no_redirect_if_logged_in_exchangee(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        receipt = self.ol_receipt
+        response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.ol_receipt
+        response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'receipts/receipt_delete.html')
+
+    #Test to ensure receipt is not deleted if one user removes themselves
+    #from receipt but other user hasn't yet, for offer listing receipts
+    def test_successful_removal_of_user_ol_receipt(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.ol_receipt
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertTrue(Receipt.objects.filter(id=self.ol_receipt_id).exists())
+
+    #Test to ensure conversation is deleted if the last user removes themselves
+    #from the conversation, for offer listing receipts
+    def test_successful_deletion_ol_receipt(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.ol_receipt
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertTrue(Receipt.objects.filter(id=self.ol_receipt_id).exists())
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertFalse(Receipt.objects.filter(id=self.ol_receipt_id).exists())
+
+    #Test to ensure receipt is not deleted if one user removes themselves
+    #from receipt but other user hasn't yet, for auction listing receipts
+    def test_successful_removal_of_user_al_receipt(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.al_receipt
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertTrue(Receipt.objects.filter(id=self.al_receipt_id).exists())
+
+    #Test to ensure conversation is deleted if the last user removes themselves
+    #from the conversation, for auction listing receipts
+    def test_successful_deletion_al_receipt(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.al_receipt
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertTrue(Receipt.objects.filter(id=self.al_receipt_id).exists())
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertFalse(Receipt.objects.filter(id=self.al_receipt_id).exists())
+
+    #Test to ensure related items to receipt are deleted if owner is none,
+    #unless object has relations to other objects, for offer listing receipts
+    def test_successful_deletion_ol_receipt_relationships_deleted(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.ol_receipt
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertTrue(Receipt.objects.filter(id=self.ol_receipt_id).exists())
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertFalse(Receipt.objects.filter(id=self.ol_receipt_id).exists())
+        self.assertFalse(PaymentReceipt.objects.filter(id=self.ol_payment_receipt_id).exists())
+        self.assertFalse(Listing.objects.filter(id=self.offer_listing_to_delete_id).exists())
+        self.assertFalse(Offer.objects.filter(id=self.offer_to_delete_id).exists())
+        self.assertTrue(Item.objects.filter(id=self.item_to_delete_1_id).exists())
+        self.assertFalse(Item.objects.filter(id=self.item_to_delete_2_id).exists())
+        self.assertTrue(Image.objects.filter(id=self.image_to_delete_1_id).exists())
+        self.assertFalse(Image.objects.filter(id=self.image_to_delete_2_id).exists())
+
+    #Test to ensure related items to receipt are deleted if owner is none,
+    #unless object has relations to other objects, for auction listing receipts
+    def test_successful_deletion_al_receipt_relationships_deleted(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.al_receipt
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertTrue(Receipt.objects.filter(id=self.al_receipt_id).exists())
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertFalse(Receipt.objects.filter(id=self.al_receipt_id).exists())
+        self.assertFalse(PaymentReceipt.objects.filter(id=self.al_payment_receipt_id).exists())
+        self.assertFalse(Listing.objects.filter(id=self.auction_listing_to_delete_id).exists())
+        self.assertFalse(Bid.objects.filter(id=self.bid_to_delete_id).exists())
+        self.assertTrue(Item.objects.filter(id=self.item_to_delete_1_id).exists())
+        self.assertTrue(Image.objects.filter(id=self.image_to_delete_1_id).exists())
+
+    #Test to ensure user is redirected if trying to delete an active receipt
+    def test_redirect_if_logged_in_active_receipt(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.active_receipt
+        response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(response, '/listings/')

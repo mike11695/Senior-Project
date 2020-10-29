@@ -17,11 +17,13 @@
             <h6>For Your Listing:<br>
               <a href="{{ receipt.listing_obj.get_absolute_url }}">{{ receipt.listing_obj }}</a>
             </h6>
-            <h6>Exchangee:
-              <a href="{% url 'profile-detail' pk=receipt.exchangee.profile.id %}">
-                {{ receipt.exchangee }}
-              </a>
-            </h6>
+            {% if receipt.exchangee != None %}
+              <h6>Exchangee:
+                <a href="{% url 'profile-detail' pk=receipt.exchangee.profile.id %}">
+                  {{ receipt.exchangee }}
+                </a>
+              </h6>
+            {% endif %}
             <div class="receipt-exchange-details">
               <div class="receipt-owner-owners-offer col-lg-5">
                 Offered<br>
@@ -60,11 +62,13 @@
             <div class="receipt-buttons">
               {% if receipt.payment_made %}
                 <div style="margin-bottom: 5px;">
-                  <a href="{% url 'start-conversation' pk=receipt.exchangee.pk %}">
-                    <div class="btn btn-blue">
-                      Message {{ receipt.exchangee }}
-                    </div>
-                  </a>
+                  {% if receipt.exchangee != None %}
+                    <a href="{% url 'start-conversation' pk=receipt.exchangee.pk %}">
+                      <div class="btn btn-blue">
+                        Message {{ receipt.exchangee }}
+                      </div>
+                    </a>
+                  {% endif %}
                   <a href="{% url 'payment-made' pk=receipt.pk %}">
                     <div class="btn btn-blue">
                       Payment Details
@@ -72,13 +76,15 @@
                   </a><br>
                 </div>
               {% else %}
-                <a href="{% url 'start-conversation' pk=receipt.exchangee.pk %}">
-                  <div class="btn btn-blue">
-                    Message {{ receipt.exchangee }}
-                  </div>
-                </a>
+                {% if receipt.exchangee != None %}
+                  <a href="{% url 'start-conversation' pk=receipt.exchangee.pk %}">
+                    <div class="btn btn-blue">
+                      Message {{ receipt.exchangee }}
+                    </div>
+                  </a>
+                {% endif %}
               {% endif %}
-              <a href="">
+              <a href="{% url 'delete-receipt' pk=receipt.pk %}">
                 <div class="btn btn-red">
                   Delete
                 </div>
@@ -89,11 +95,13 @@
             <h6>For Listing:<br>
               <a href="{{ receipt.listing_obj.get_absolute_url }}">{{ receipt.listing_obj }}</a>
             </h6>
-            <h6>Owner:
-              <a href="{% url 'profile-detail' pk=receipt.owner.profile.id %}">
-                {{ receipt.owner }}
-              </a>
-            </h6>
+            {% if receipt.owner != None %}
+              <h6>Owner:
+                <a href="{% url 'profile-detail' pk=receipt.owner.profile.id %}">
+                  {{ receipt.owner }}
+                </a>
+              </h6>
+            {% endif %}
             <div class="receipt-exchange-details">
               <div class="receipt-exchangee-exchangee-offer col-lg-5">
                 Offered
@@ -132,11 +140,13 @@
             <div class="receipt-buttons">
               {% if receipt.listing_obj.bids.all.last.amount %}
                 <div style="margin-bottom: 5px;">
-                  <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
-                    <div class="btn btn-blue">
-                      Message {{ receipt.owner }}
-                    </div>
-                  </a>
+                  {% if receipt.owner != None %}
+                    <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
+                      <div class="btn btn-blue">
+                        Message {{ receipt.owner }}
+                      </div>
+                    </a>
+                  {% endif %}
                   {% if receipt.payment_made != True %}
                     <a href="{% url 'send-payment' pk=receipt.pk %}">
                       <div class="btn btn-blue">
@@ -152,12 +162,14 @@
                   {% endif %}
                 </div>
               {% elif receipt.listing_obj.offerlisting.all.last.amount > 0.00 %}
-                <div style="margin-bottom: 5px;"
-                  <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
-                    <div class="btn btn-blue">
-                      Message {{ receipt.owner }}
-                    </div>
-                  </a>
+                <div style="margin-bottom: 5px;">
+                  {% if receipt.owner != None %}
+                    <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
+                      <div class="btn btn-blue">
+                        Message {{ receipt.owner }}
+                      </div>
+                    </a>
+                  {% endif %}
                   {% if receipt.payment_made != True %}
                     <a href="{% url 'send-payment' pk=receipt.pk %}">
                       <div class="btn btn-blue">
@@ -173,13 +185,15 @@
                   {% endif %}
                 </div>
               {% else %}
-                <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
-                  <div class="btn btn-blue">
-                    Message {{ receipt.owner }}
-                  </div>
-                </a>
+                {% if receipt.owner != None %}
+                  <a href="{% url 'start-conversation' pk=receipt.owner.pk %}">
+                    <div class="btn btn-blue">
+                      Message {{ receipt.owner }}
+                    </div>
+                  </a>
+                {% endif %}
               {% endif %}
-              <a href="">
+              <a href="{% url 'delete-receipt' pk=receipt.pk %}">
                 <div class="btn btn-red">
                   Delete
                 </div>
