@@ -465,10 +465,9 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         obj = self.get_object()
-        if obj.owner == self.request.user:
-            context['offers'] = Offer.objects.filter(offerListing=obj)
-        else:
-            context['offers'] = None
+
+        context['offers'] = Offer.objects.filter(offerListing=obj)
+        
         return context
 
     #Checks to ensure that only the user that created the listing and user that made offer

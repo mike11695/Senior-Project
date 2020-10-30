@@ -520,3 +520,78 @@ class PaymentReceipt(models.Model):
     def __str__(self):
         #String for representing the PaymentReceipt object.
         return f'Payment receipt for {self.receipt.listing.name}'
+
+#Model for Notifications, made when most actions occur on site
+#Fields needed: Content, creationDate
+class Notification(models.Model):
+    #Fields for ModelName
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+        related_name="notification", null=True)
+    content = models.TextField(max_length=250)
+    creationDate = models.DateTimeField()
+
+    @property
+    def active(self):
+        return timezone.localtime(timezone.now()) > self.creationDate
+
+    def __str__(self):
+        #String for representing the ModelName object.
+        return f'{self.content}'
+
+#Subclass for RatingNotification, a notification made when a user leaves feedback
+#on another user's profile
+#Fields needed: Profile, rater
+class RatingNotification(Notification):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    rater = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+#Subclass for WarningNotification, a notification made when a user receives a
+#warning
+#Fields needed: Warning
+class WarningNotification(Notification):
+    warning = models.ForeignKey(Warning, on_delete=models.CASCADE)
+
+#Subclass for EventNotification, a notification made when a user joins or leaves
+#an event
+#Fields needed: Event, participant
+class EventNotification(Notification):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    participant = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+#Subclass for InvitationNotification, a notification made when a user receives
+#an invitation to an event
+#Fields needed: Invitation, participant
+class InvitationNotification(Notification):
+    invitation = models.ForeignKey(Invitation, on_delete=models.CASCADE)
+
+#Subclass for ListingNotification, a notification made when a listing ends
+#is deleted, or an offer is made or rejected
+#Fields needed: Listing
+class ListingNotification(Notification):
+    listing = models.ForeignKey(Listing, on_delete=models.SET_NULL,
+        null=True)
+
+#Subclass for OfferNotification, a notification made when an offer is made,
+#edited, retracted/rejected or accepted
+#Fields needed: Listing, offer
+class OfferNotification(Notification):
+    listing = models.ForeignKey(Listing, on_delete=models.SET_NULL,
+        null=True)
+    offer = models.ForeignKey(Offer, on_delete=models.SET_NULL,
+        null=True)
+
+#Subclass for BidNotification, a notification made when a bid is succeeded by
+#a higher bid.  One is created for winning bid upon auction listing creation
+#Fields needed: Listing, bid
+class BidNotification(Notification):
+    listing = models.ForeignKey(Listing, on_delete=models.SET_NULL,
+        null=True)
+    bid = models.ForeignKey(Bid, on_delete=models.SET_NULL,
+        null=True)
+
+#Subclass for PaymentNotification, a notification made when a user makes a
+#payment to another user
+#Fields needed: Receipt
+class PaymentNotification(Notification):
+    receipt = models.ForeignKey(Receipt, on_delete=models.SET_NULL,
+        null=True)

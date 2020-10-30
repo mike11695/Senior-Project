@@ -130,4 +130,42 @@
       {% endif %}
     {% endif %}
   {% endif %}
+  {% if offerlisting.listingCompleted %}
+    {% with offers|first as offer %}
+      {% if offer.owner == request.user %}
+        <h2 class="center-block" style="text-align: center;">Your Accepted Offer:</h2>
+
+        <div class="offer-container center-block">
+          <div class="offer-header">
+            <a href="{{ offer.get_absolute_url }}">
+              <h5 style="display: inline-block;">
+                Offer from {{ offer.owner }}:
+              </h5>
+            </a>
+            {% if offer.amount > 0.00 %}
+              <div class="amount-offer">Amount Offered: ${{ offer.amount }}</div>
+            {% endif %}
+            {% if offer.items %}
+              <div class="offer-items">
+                {% for item in offer.items.all %}
+                  {% if item.images %}
+                    {% with item.images.all|first as image %}
+                      <a href="{{ item.get_absolute_url }}">
+                        <img src="{{ image.image.url }}" class="offer-image">
+                        </img>
+                      </a>
+                      <div class="item-details">
+                        <b>{{ item.name }}</b><br>
+                        {{ item.description|truncatechars:100 }}
+                      </div><br>
+                    {% endwith %}
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endwith %}
+  {% endif %}
 {% endblock %}
