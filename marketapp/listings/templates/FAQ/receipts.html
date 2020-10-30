@@ -1,0 +1,90 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to View Receipts</h1>
+    <p>A receipt is made when you complete one of your listings, or an offer
+      you made is accepted or a bid you placed wins an auction.  In order to
+      view all of your active receipts, hover over "My Stuff" in the navigation
+      bar in the top right corner and in the dropdown, select "Receipts".
+      On the following page, you can see a list of all receipts, and in each
+      container for each receipt, you can view information such as what items
+      you offered or how much money you offered, and what items or cash amount
+      you'll be receiving in return.  A button is included where you can message
+      the other user to discuss how you will exchange items and anything else
+      you would like to discuss.</p>
+    <h1>Making a Payment</h1>
+    <p>If you had included a cash amount in an offer that was accepted or had a
+      winning bid in an auction, you will need to send a payment to the other user.
+      In order to do so, go to your list of receipts and for each receipt that
+      includes a cash offer from you, there will be a button at the bottom of
+      the container that says "Send Payment".  Clicking on this button will take
+      you to a form where you can select you payment type for PayPal.
+      There are three options to choose from; "PayPal", "Pay Later" and
+      "Debit or Credit Card".</p>
+    <p>If you would like to make a payment through PayPal using your PayPal account,
+      click on "PayPal".  In the following pop up box, enter your PayPal credentials
+      and then proceed on.  On the next page, you can review the amount you're paying
+      and select the payment option you want to use to pay; your PayPal balance, your
+      credit/debit card or your bank.  Once you have reviewed all the information
+      and selected your payment type, click on "Pay Now" and the transaction will
+      be processed.<p>
+    <p>The second option for paying a user is "Pay Later".  By using this option,
+      you will not have to pay the full amount in one go, but will be able to
+      make four payments towards the full amount over a six-week period.  The user
+      that you are making the payment to will still receive the payment when it's
+      made, but you will be able to make payments when they are scheduled
+      automatically by PayPal.  Be advised that this can only be done with payment
+      amounts between $30 and $600, but no fees or interest will charged as long
+      as payments are made when scheduled.</p>
+    <p>The last option to pay with is "Debit or Credit Card".  Use this option
+      if you do not have a PayPal account to make payments with.  In the form
+      that pops up, you will be asked to enter your credit or debit cards details
+      and your billing address information.  The process is secured and PayPal will
+      keep your information private, so you do not have to worry about other users
+      having access to your details.  If you use this option, you will be asked
+      to create a PayPal account by providing an e-mail address and password.
+      Once you have filled out all of the fields, click on
+      "Create Account and Pay Now" to finalize the payment.  You can then use
+      the account you created in future purchases.</p>
+    <p>Once a payment has been made, you will receive a short summary of the
+      transaction which can always be viewed again by clicking on "Payment Details"
+      for the receipt in your receipt list view.  The user you sent the payment
+      to will also receive a notification to alert them that the payment has
+      been made.</p>
+    <h1>Deleting a Receipt</h1>
+    <p>Once a payment has been made or no payment was included in the offer, you
+      can delete a receipt.  Be advised though that once you delete a receipt, you
+      will no longer be able to view the information included on it.  The other
+      user will still be able to view the receipt however.  It is advised that
+      you should only delete receipts once both parties have received their items
+      and/or payments and are happy.<p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Receipts</h1>
+    <h3 class="faq-question">What happens if I don't make a payment?</h3>
+    <p>If you fail to make a payment to another user without communicating with
+      them the reasons why, you will receive a strike to your account.  If you
+      receive too many strikes, you will be restricted from listing items and
+      placing offers/bids on other listings, or you may have your account banned
+      entirely.</p>
+    <h3 class="faq-question">What happens if I don't receive a payment?</h3>
+    <p>If you don't receive a payment from another user and they have failed to
+      communicate with you the reasons why, please submit a ticket for the issue
+      to be reviewed, and action will be taken if appropriate.  If you have already
+      exchanged the items with the other user and received no payment, please
+      submit a ticket as well.</p>
+    <h3 class="faq-question">I made a payment but received different items/items
+      in worse quality than what was advertised, what should I do?</h3>
+    <p>If you happen to be in this situation where you received different items
+      than advertised or items in worse quality than advertised and you already
+      had made a payment to the other user, please submit a ticket so that the
+      issue can be reviewed, and action will be taken if appropriate.</p>
+    <h3 class="faq-question">I made a payment but never received the items I
+      had paid for, what should I do?</h3>
+    <p>If this happens and the seller refuses to communicate with you the issues
+      on why you haven't received your items, please submit a ticket so that the
+      issue can be reviewed, and action can be taken if approriate.</p>
+  </div>
+{% endblock %}

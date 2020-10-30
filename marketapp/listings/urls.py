@@ -21,6 +21,7 @@ urlpatterns = [
     path('FAQ/profiles', views.faq_profiles, name='faq-profiles'),
     path('FAQ/accounts', views.faq_accounts, name='faq-accounts'),
     path('FAQ/conversations', views.faq_conversations, name='faq-conversations'),
+    path('FAQ/receipts', views.faq_receipts, name='faq-receipts'),
 
     #Items
     path('images/', views.ImageListView.as_view(), name='images'),
