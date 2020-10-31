@@ -1155,6 +1155,19 @@ def accept_offer(request, pk):
             current_listing = OfferListing.objects.get(id=current_offer.offerListing.id)
             current_listing.listingCompleted = True
 
+            #Retrieve the old notification for the listing ending do it can
+            #be deleted
+            notifications = ListingNotification.objects.filter(listing=current_listing)
+            old_notification = notifications.first()
+            old_notification.delete()
+
+            #Create a notification for the accepted offer
+            content = (current_listing.owner.username + 'has accepted your' +
+                ' offer on the listing "' + current_listing.name + '".')
+            OfferNotification.objects.create(listing=current_listing,
+                offer=current_offer, user=current_offer.owner,
+                content=content, creationDate=timezone.localtime(timezone.now()))
+
             #Set endTime for listing to current date and time so that it ends after accepting offer
             date = timezone.localtime(timezone.now())
             current_listing.endTime = date
@@ -1164,6 +1177,13 @@ def accept_offer(request, pk):
             other_offers = Offer.objects.filter(offerListing=current_listing)
             for offer in other_offers:
                 if offer.offerAccepted != True:
+                    #Create a notification for the user that a dfferent offer was
+                    #accepted
+                    content = (current_listing.owner.username + 'has accepted a' +
+                        ' different offer on the listing "' + current_listing.name + '".')
+                    OfferNotification.objects.create(listing=current_listing,
+                        user=offer.owner, content=content,
+                        creationDate=timezone.localtime(timezone.now()))
                     #Destroy the object
                     offer.delete()
 

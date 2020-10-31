@@ -3021,6 +3021,14 @@ class AcceptOfferViewTest(MyTestCase):
         expired_offer2 = Offer.objects.create(offerListing=self.global_offer_listing2,
             owner=self.global_user2, amount=7.00)
 
+        content = ('Your listing "' + self.global_offer_listing1.name
+            + '" has expired.')
+        self.ending_notification = ListingNotification.objects.create(
+            listing=self.global_offer_listing1, user=self.global_user1,
+            creationDate=self.global_offer_listing1.endTime,
+            content=content)
+        self.ending_notification_id = self.ending_notification.id
+
     #Test to ensure that a user must be logged in to accept an offer
     def test_redirect_if_not_logged_in(self):
         offer = self.offer
@@ -3044,6 +3052,7 @@ class AcceptOfferViewTest(MyTestCase):
         self.assertRedirects(response, '/listings/')
 
     #Test to ensure that the offer field offerAccepted is updated
+    #and that a notification is created for the offer owner
     def test_offer_accepted_field_becomes_true(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -3052,6 +3061,8 @@ class AcceptOfferViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         updated_offer = Offer.objects.get(id=offer.id)
         self.assertEqual(updated_offer.offerAccepted, True)
+        self.assertTrue(OfferNotification.objects.filter(
+            listing=self.offer.offerListing, offer=self.offer).exists())
 
     #Test to ensure that the offerListing field listingCompleted is updated
     def test_listing_completed_field_becomes_true(self):
@@ -3126,6 +3137,33 @@ class AcceptOfferViewTest(MyTestCase):
         self.assertRedirects(response, '/listings/offer-listings/{0}'.format(offer.offerListing.id))
         all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing2)
         self.assertEqual(len(all_listing_offers), 2)
+
+    #Test to ensure that the ending notification for the listing was deleted
+    def test_offer_accepted_ending_notification_deleted(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(ListingNotification.objects.filter(id=self.ending_notification_id).exists())
+
+    #Test to ensure that the correct number of notifications was made for offers
+    #of the listing
+    def test_offer_accepted_notifications_made(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        self.assertEqual(len(OfferNotification.objects.filter(listing=self.offer.offerListing)), 5)
+        acceptance_content = (self.offer.offerListing.owner.username + 'has accepted your' +
+            ' offer on the listing "' + self.offer.offerListing.name + '".')
+        rejection_content = (self.offer.offerListing.owner.username + 'has accepted a' +
+            ' different offer on the listing "' + self.offer.offerListing.name + '".')
+        self.assertEqual(len(OfferNotification.objects.filter(
+            listing=self.offer.offerListing, content=rejection_content)), 4)
+        self.assertEqual(len(OfferNotification.objects.filter(
+            listing=self.offer.offerListing, content=acceptance_content)), 1)
 
 class OfferDeleteViewTest(MyTestCase):
     def setUp(self):
