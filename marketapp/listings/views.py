@@ -14,7 +14,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
-    Conversation, Message, Receipt, PaymentReceipt)
+    Conversation, Message, Receipt, PaymentReceipt, ListingNotification,
+    OfferNotification)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -467,7 +468,7 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
         obj = self.get_object()
 
         context['offers'] = Offer.objects.filter(offerListing=obj)
-        
+
         return context
 
     #Checks to ensure that only the user that created the listing and user that made offer
@@ -592,6 +593,14 @@ def create_offer_listing(request):
                 receipt.owner = request.user
                 receipt.save()
 
+            #Create an ending notification for listing that will be active
+            #when the listing ends
+            content = ('Your listing "' + created_listing.name
+                + '" has expired.')
+            ListingNotification.objects.create(user=request.user,
+                listing=created_listing, content=content,
+                creationDate=created_listing.endTime)
+
             return redirect('offer-listings')
     else:
         form = OfferListingForm(user=request.user)
@@ -659,10 +668,29 @@ def relist_offer_listing(request, pk):
             if request.method == 'POST':
                 form = OfferListingForm(data=request.POST, user=request.user, instance=current_listing)
                 if form.is_valid():
+                    #Retrieve the old notification for the listing ending
+                    #so it can be updated
+                    notifications = ListingNotification.objects.filter(listing=current_listing)
+                    old_notification = notifications.first()
+
                     current_listing = form.save(commit=False)
 
                     #Delete the previous existing offers
-                    existing_offers.delete()
+                    for offer in existing_offers:
+                        notifications = OfferNotification.objects.filter(offer=offer)
+                        if notifications:
+                            content_to_search_for = (offer.owner.username +
+                                ' has placed an offer on your listing "' +
+                                offer.offerListing.name + '".')
+                            for notification in notifications:
+                                #Will ensure that rejection and listing expired
+                                #notifications remain for the offer after it's
+                                #deleted
+                                if notification.content == content_to_search_for:
+                                    notification.delete()
+
+                        offer.delete()
+                    #existing_offers.delete()
 
                     #Get openToMoneyOffers value from form
                     clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
@@ -721,6 +749,11 @@ def relist_offer_listing(request, pk):
                     current_listing.endTime = date
 
                     current_listing.save()
+
+                    #Update the ending notification
+                    old_notification.creationDate = current_listing.endTime
+                    old_notification.save()
+
                     return redirect('offer-listing-detail', pk=current_listing.pk)
             else:
                 form = OfferListingForm(user=request.user, instance=current_listing)

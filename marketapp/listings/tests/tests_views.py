@@ -1,7 +1,8 @@
 from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
-    Profile, Conversation, Message, Receipt, PaymentReceipt)
+    Profile, Conversation, Message, Receipt, PaymentReceipt,
+    ListingNotification, OfferNotification)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -1592,7 +1593,8 @@ class CreateOfferListingViewTest(MyTestCase):
         self.assertTemplateUsed(response, 'listings/create_offer_listing.html')
 
     #Test to ensure that a user is able to create an offer listing and
-    #have it relate to them, and that a receipt is made for the listing
+    #have it relate to them, a receipt is made for the listing, and a
+    #ending notification was made
     def test_offer_listing_is_created(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
@@ -1611,6 +1613,10 @@ class CreateOfferListingViewTest(MyTestCase):
         self.assertTrue(Receipt.objects.filter(listing=new_offer_listing).exists())
         receipt = Receipt.objects.get(listing=new_offer_listing)
         self.assertEqual(receipt.owner, post_response.wsgi_request.user)
+        new_notification = ListingNotification.objects.last()
+        self.assertEqual(new_notification.listing.name, new_offer_listing.name)
+        self.assertEqual(new_notification.creationDate, new_offer_listing.endTime)
+        self.assertEqual(new_notification.user, post_response.wsgi_request.user)
 
     #Test to ensure that an offer listing created to end in 1 hour has correct end time
     def test_offer_listing_is_created_correct_1h(self):
@@ -1911,11 +1917,28 @@ class RelistOfferListingViewTest(MyTestCase):
         #create some offers for the listing to test they are deleted when listing is relisted
         number_of_offers = 6
 
+        self.offer_ids = [0 for number in range(number_of_offers)]
+
         for offer in range(number_of_offers):
             new_offer = Offer.objects.create(offerListing=self.global_offer_listing2, owner=self.global_user2,
                 amount=7.00)
             new_offer.items.add(self.global_item2)
             new_offer.save
+            self.offer_ids[offer] = new_offer.id
+            content = (self.global_user2.username +
+                ' has placed an offer on your listing "' +
+                self.global_offer_listing2.name + '".')
+            OfferNotification.objects.create(listing=self.global_offer_listing2,
+                offer=new_offer, user=self.global_user1,
+                creationDate=timezone.localtime(timezone.now()),
+                content=content)
+
+        content = ('Your listing "' + self.global_offer_listing2.name
+            + '" has expired.')
+        self.ending_notification = ListingNotification.objects.create(
+            listing=self.global_offer_listing2, user=self.global_user1,
+            creationDate=self.global_offer_listing2.endTime,
+            content=content)
 
     #Test to ensure that a user must be logged in to relist a listing
     def test_redirect_if_not_logged_in(self):
@@ -1965,6 +1988,7 @@ class RelistOfferListingViewTest(MyTestCase):
         self.assertTemplateUsed(response, 'listings/relist_offer_listing.html')
 
     #Test to ensure that relisting the listing works
+    #Ensure that the ending notification was updated with new endTime
     def test_succesful_listing_relist(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -1983,6 +2007,9 @@ class RelistOfferListingViewTest(MyTestCase):
         end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=8)
         to_tz = timezone.get_default_timezone()
         self.assertEqual(relisted_listing.endTime.astimezone(to_tz).hour, end_time_check.hour)
+        updated_notification = ListingNotification.objects.get(id=self.ending_notification.id)
+        self.assertEqual(updated_notification.listing.name, relisted_listing.name)
+        self.assertEqual(updated_notification.creationDate, relisted_listing.endTime)
 
     #Test to ensure that previous offers were deleted upon succesful relisting
     def test_succesful_listing_relist_offers_deleted(self):
@@ -1998,6 +2025,8 @@ class RelistOfferListingViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         relisted_listing = OfferListing.objects.get(id=listing.id)
         self.assertFalse(Offer.objects.filter(offerListing=relisted_listing).exists())
+        for offer_id in self.offer_ids:
+            self.assertFalse(OfferNotification.objects.filter(offer__id=offer_id).exists())
 
 class OfferListingDeleteViewTest(MyTestCase):
     def setUp(self):
