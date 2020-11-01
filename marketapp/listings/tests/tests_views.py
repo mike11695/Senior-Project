@@ -2557,6 +2557,7 @@ class CreateAuctionListingViewTest(MyTestCase):
 
     #Test to ensure a user is able to create an auction listing and have it
     #relate to them.  Also test to ensure receipt for listing was created
+    #and an ending notification was made
     def test_auction_listing_is_created(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
@@ -2573,6 +2574,10 @@ class CreateAuctionListingViewTest(MyTestCase):
         self.assertTrue(Receipt.objects.filter(listing=new_auction_listing).exists())
         receipt = Receipt.objects.get(listing=new_auction_listing)
         self.assertEqual(receipt.owner, post_response.wsgi_request.user)
+        new_notification = ListingNotification.objects.last()
+        self.assertEqual(new_notification.listing.name, new_auction_listing.name)
+        self.assertEqual(new_notification.creationDate, new_auction_listing.endTime)
+        self.assertEqual(new_notification.user, post_response.wsgi_request.user)
 
     #Test to ensure autobuy is set to 0.00 if left blank and auction listing is created successfully
     def test_auction_listing_autobuy_set_to_0_if_blank(self):
@@ -2725,6 +2730,17 @@ class CreateAuctionListingViewTest(MyTestCase):
         self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
 
 class RelistAuctionListingViewTest(MyTestCase):
+    def setUp(self):
+        super(RelistAuctionListingViewTest, self).setUp()
+
+        #Ending notification for the listing
+        content = ('Your listing "' + self.global_auction_listing2.name
+            + '" has expired.')
+        self.ending_notification = ListingNotification.objects.create(
+            listing=self.global_auction_listing2, user=self.global_user1,
+            creationDate=self.global_auction_listing2.endTime,
+            content=content, type="Listing Ended")
+
     #Test to ensure that a user must be logged in to relist a listing
     def test_redirect_if_not_logged_in(self):
         listing = self.global_auction_listing2
@@ -2774,7 +2790,8 @@ class RelistAuctionListingViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/relist_auction_listing.html')
 
-    #Test to ensure that relisting the listing works
+    #Test to ensure that relisting the listing works, and that the ending
+    #notification is updated
     def test_succesful_listing_relist(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -2794,6 +2811,9 @@ class RelistAuctionListingViewTest(MyTestCase):
         end_time_check = timezone.localtime(timezone.now()) + timedelta(hours=4)
         to_tz = timezone.get_default_timezone()
         self.assertEqual(relisted_listing.endTime.astimezone(to_tz).hour, end_time_check.hour)
+        updated_notification = ListingNotification.objects.get(id=self.ending_notification.id)
+        self.assertEqual(updated_notification.listing.name, relisted_listing.name)
+        self.assertEqual(updated_notification.creationDate, relisted_listing.endTime)
 
 class CreateOfferViewTest(MyTestCase):
     def setUp(self):
@@ -3414,6 +3434,14 @@ class AuctionListingDeleteViewTest(MyTestCase):
         self.inactive_auction_listing.save
         self.inactive_auction_listing_id = self.inactive_auction_listing.id
 
+        content = ('Your listing "' + self.inactive_auction_listing.name
+            + '" has expired.')
+        self.inactive_auction_listing_notification = ListingNotification.objects.create(
+            listing=self.inactive_auction_listing, user=self.global_user1,
+            creationDate=self.inactive_auction_listing.endTime,
+            content=content, type="Listing Ended")
+        self.inactive_auction_listing_notification_id = self.inactive_auction_listing_notification.id
+
         self.inactive_auction_listing_no_bids = AuctionListing.objects.create(owner=self.global_user1,
             name='Test Auction Listing', description="Just a test listing", startingBid=5.00,
             minimumIncrement=1.00, autobuy=25.00, endTime=date_inactive)
@@ -3421,21 +3449,49 @@ class AuctionListingDeleteViewTest(MyTestCase):
         self.inactive_auction_listing_no_bids.save
         self.inactive_auction_listing_no_bids_id = self.inactive_auction_listing_no_bids.id
 
+        content = ('Your listing "' + self.inactive_auction_listing_no_bids.name
+            + '" has expired.')
+        self.inactive_auction_listing_no_bids_notification = ListingNotification.objects.create(
+            listing=self.inactive_auction_listing_no_bids, user=self.global_user1,
+            creationDate=self.inactive_auction_listing_no_bids.endTime,
+            content=content, type="Listing Ended")
+        self.inactive_auction_listing_no_bids_notification_id = self.inactive_auction_listing_no_bids_notification.id
+
         self.active_auction_listing = AuctionListing.objects.create(owner=self.global_user1,
             name='Test Auction Listing', description="Just a test listing", startingBid=5.00,
             minimumIncrement=1.00, autobuy=25.00, endTime=date_active)
         self.active_auction_listing.items.add = self.global_item1
         self.active_auction_listing.save
 
+        content = ('Your listing "' + self.active_auction_listing.name
+            + '" has expired.')
+        self.active_auction_listing_notification = ListingNotification.objects.create(
+            listing=self.active_auction_listing, user=self.global_user1,
+            creationDate=self.active_auction_listing.endTime,
+            content=content, type="Listing Ended")
+        self.active_auction_listing_notification_id = self.active_auction_listing_notification.id
+
         #create some bids for the listing
         number_of_bids = 3
 
         self.bid_IDs = [0 for number in range(number_of_bids)]
 
+        #Create the winning bid notification
+        """content = ('Your bid of $' + new_bid.amount + self.active_auction_listing.name
+            + '" has ended with a winning bid of.')
+        self.auction_completed_owner_notification = ListingNotification.objects.create(
+            listing=self.active_auction_listing, user=self.global_user1,
+            creationDate=self.active_auction_listing.endTime,
+            content=content, type="Listing Completed")"""
+
         for count in range(number_of_bids):
             new_bid = Bid.objects.create(auctionListing=self.inactive_auction_listing, bidder=self.global_user2,
                 amount=(5.00 + (1.00 * count)))
             self.bid_IDs[count] = new_bid.id
+
+            #Update the winning bid notification to match new bid
+
+            #Update the listing ending notification to show what bid won
 
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
@@ -3485,6 +3541,7 @@ class AuctionListingDeleteViewTest(MyTestCase):
         post_response = self.client.post(reverse('delete-auction-listing', args=[str(listing.id)]))
         self.assertRedirects(post_response, reverse('auction-listings'))
         self.assertFalse(AuctionListing.objects.filter(id=self.inactive_auction_listing_no_bids_id).exists())
+        self.assertFalse(ListingNotification.objects.filter(id=self.inactive_auction_listing_no_bids_notification_id).exists())
 
     #Test to ensure that user can soft delete an expired auction listing
     #with bids
@@ -3497,6 +3554,7 @@ class AuctionListingDeleteViewTest(MyTestCase):
         self.assertTrue(AuctionListing.objects.filter(id=self.inactive_auction_listing_id).exists())
         updated_listing = AuctionListing.objects.get(id=self.inactive_auction_listing_id)
         self.assertEqual(updated_listing.owner, None)
+        self.assertFalse(ListingNotification.objects.filter(id=self.inactive_auction_listing_id).exists())
 
 class EventListViewTest(MyTestCase):
     def setUp(self):

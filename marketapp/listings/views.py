@@ -820,6 +820,7 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                     self.object.owner = None
                     self.object.save()
 
+                    #Delete any notifications that were relevant to listing
                     notifications = ListingNotification.objects.filter(listing=self.object)
                     old_notification = notifications.first()
                     old_notification.delete()
@@ -988,6 +989,15 @@ def create_auction_listing(request):
                 receipt.owner = request.user
                 receipt.save()
 
+            #Create an ending notification for listing that will be active
+            #when the listing ends
+            content = ('Your listing "' + created_listing.name
+                + '" has expired.')
+            ListingNotification.objects.create(user=request.user,
+                listing=created_listing, content=content,
+                creationDate=created_listing.endTime,
+                type="Listing Ended")
+
             return redirect('auction-listings')
     else:
         form = AuctionListingForm(user=request.user)
@@ -1004,6 +1014,11 @@ def relist_auction_listing(request, pk):
             if request.method == 'POST':
                 form = AuctionListingForm(data=request.POST, user=request.user, instance=current_listing)
                 if form.is_valid():
+                    #Retrieve the old notification for the listing ending
+                    #so it can be updated
+                    notifications = ListingNotification.objects.filter(listing=current_listing)
+                    old_notification = notifications.first()
+
                     current_listing = form.save(commit=False)
 
                     #Clear the current items from the listing
@@ -1056,6 +1071,11 @@ def relist_auction_listing(request, pk):
                         current_listing.autobuy = 0.00
 
                     current_listing.save()
+
+                    #Update the ending notification
+                    old_notification.creationDate = current_listing.endTime
+                    old_notification.save()
+
                     return redirect('auction-listing-detail', pk=current_listing.pk)
             else:
                 form = AuctionListingForm(user=request.user, instance=current_listing)
@@ -1417,6 +1437,11 @@ class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):
            if Bid.objects.filter(auctionListing=self.object).exists():
                self.object.owner = None
                self.object.save()
+
+               #Delete any notifications that were related to listing
+               notifications = ListingNotification.objects.filter(listing=self.object)
+               old_notification = notifications.first()
+               old_notification.delete()
            else:
                #Go through items and delete any that don't have an owner
                for item in self.object.items.all():
