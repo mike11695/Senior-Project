@@ -1931,14 +1931,14 @@ class RelistOfferListingViewTest(MyTestCase):
             OfferNotification.objects.create(listing=self.global_offer_listing2,
                 offer=new_offer, user=self.global_user1,
                 creationDate=timezone.localtime(timezone.now()),
-                content=content)
+                content=content, type="Offer Made")
 
         content = ('Your listing "' + self.global_offer_listing2.name
             + '" has expired.')
         self.ending_notification = ListingNotification.objects.create(
             listing=self.global_offer_listing2, user=self.global_user1,
             creationDate=self.global_offer_listing2.endTime,
-            content=content)
+            content=content, type="Listing Ended")
 
     #Test to ensure that a user must be logged in to relist a listing
     def test_redirect_if_not_logged_in(self):
@@ -2045,6 +2045,14 @@ class OfferListingDeleteViewTest(MyTestCase):
         self.active_offer_listing_no_offers.save
         self.active_offer_listing_no_offers_id = self.active_offer_listing_no_offers.id
 
+        content = ('Your listing "' + self.active_offer_listing_no_offers.name
+            + '" has expired.')
+        self.active_no_offers_listing_notification = ListingNotification.objects.create(
+            listing=self.active_offer_listing_no_offers, user=self.global_user1,
+            creationDate=self.active_offer_listing_no_offers.endTime,
+            content=content, type="Listing Ended")
+        self.active_no_offers_listing_notification_id = self.active_no_offers_listing_notification.id
+
         self.active_offer_listing_offers = OfferListing.objects.create(owner=self.global_user1,
             name="My Items For Offers", description="A few items up for offers",
             openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
@@ -2052,6 +2060,14 @@ class OfferListingDeleteViewTest(MyTestCase):
         self.active_offer_listing_offers.items.add = self.global_item1
         self.active_offer_listing_offers.save
         self.active_offer_listing_offers_id = self.active_offer_listing_offers.id
+
+        content = ('Your listing "' + self.active_offer_listing_offers.name
+            + '" has expired.')
+        self.active_offers_listing_notification = ListingNotification.objects.create(
+            listing=self.active_offer_listing_offers, user=self.global_user1,
+            creationDate=self.active_offer_listing_offers.endTime,
+            content=content, type="Listing Ended")
+        self.active_offers_listing_notification_id = self.active_offers_listing_notification.id
 
         #Inactive listings
         self.inactive_offer_listing_no_offers = OfferListing.objects.create(owner=self.global_user1,
@@ -2062,6 +2078,14 @@ class OfferListingDeleteViewTest(MyTestCase):
         self.inactive_offer_listing_no_offers.save
         self.inactive_offer_listing_no_offers_id = self.inactive_offer_listing_no_offers.id
 
+        content = ('Your listing "' + self.inactive_offer_listing_no_offers.name
+            + '" has expired.')
+        self.inactive_no_offers_listing_notification = ListingNotification.objects.create(
+            listing=self.inactive_offer_listing_no_offers, user=self.global_user1,
+            creationDate=self.inactive_offer_listing_no_offers.endTime,
+            content=content, type="Listing Ended")
+        self.inactive_no_offers_listing_notification_id = self.inactive_no_offers_listing_notification.id
+
         self.inactive_offer_listing_offers = OfferListing.objects.create(owner=self.global_user1,
             name="My Items For Offers", description="A few items up for offers",
             openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
@@ -2070,6 +2094,14 @@ class OfferListingDeleteViewTest(MyTestCase):
         self.inactive_offer_listing_offers.save
         self.inactive_offer_listing_offers_id = self.inactive_offer_listing_offers.id
 
+        content = ('Your listing "' + self.inactive_offer_listing_offers.name
+            + '" has expired.')
+        self.inactive_offers_listing_notification = ListingNotification.objects.create(
+            listing=self.inactive_offer_listing_offers, user=self.global_user1,
+            creationDate=self.inactive_offer_listing_offers.endTime,
+            content=content, type="Listing Ended")
+        self.inactive_offers_listing_notification_id = self.inactive_offers_listing_notification.id
+
         self.inactive_offer_listing_completed = OfferListing.objects.create(owner=self.global_user1,
             name="My Items For Offers", description="A few items up for offers",
             openToMoneyOffers=True, minRange=5.00, maxRange=10.00,
@@ -2077,6 +2109,14 @@ class OfferListingDeleteViewTest(MyTestCase):
         self.inactive_offer_listing_completed.items.add = self.global_item1
         self.inactive_offer_listing_completed.save
         self.inactive_offer_listing_completed_id = self.inactive_offer_listing_completed.id
+
+        content = ('Your listing "' + self.inactive_offer_listing_completed.name
+            + '" has expired.')
+        self.inactive_completed_listing_notification = ListingNotification.objects.create(
+            listing=self.inactive_offer_listing_completed, user=self.global_user1,
+            creationDate=self.inactive_offer_listing_completed.endTime,
+            content=content, type="Listing Ended")
+        self.inactive_completed_listing_notification_id = self.inactive_completed_listing_notification.id
 
         #create some offers for listings
         number_of_offers = 3
@@ -2090,6 +2130,13 @@ class OfferListingDeleteViewTest(MyTestCase):
             new_offer.items.add(self.global_item2)
             new_offer.save
             self.active_offer_listing_offers_offer_ids[offer] = new_offer.id
+            content = (self.global_user2.username +
+                ' has placed an offer on your listing "' +
+                self.active_offer_listing_offers.name + '".')
+            OfferNotification.objects.create(listing=self.active_offer_listing_offers,
+                offer=new_offer, user=self.global_user1,
+                creationDate=timezone.localtime(timezone.now()),
+                content=content, type="Offer Made")
 
         for offer in range(number_of_offers):
             new_offer = Offer.objects.create(offerListing=self.inactive_offer_listing_offers,
@@ -2097,6 +2144,13 @@ class OfferListingDeleteViewTest(MyTestCase):
             new_offer.items.add(self.global_item2)
             new_offer.save
             self.inactive_offer_listing_offers_offer_ids[offer] = new_offer.id
+            content = (self.global_user2.username +
+                ' has placed an offer on your listing "' +
+                self.inactive_offer_listing_offers.name + '".')
+            OfferNotification.objects.create(listing=self.inactive_offer_listing_offers,
+                offer=new_offer, user=self.global_user1,
+                creationDate=timezone.localtime(timezone.now()),
+                content=content, type="Offer Made")
 
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
@@ -2137,6 +2191,7 @@ class OfferListingDeleteViewTest(MyTestCase):
         post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
         self.assertRedirects(post_response, reverse('offer-listings'))
         self.assertFalse(OfferListing.objects.filter(id=self.active_offer_listing_no_offers_id).exists())
+        self.assertFalse(ListingNotification.objects.filter(id=self.active_no_offers_listing_notification_id).exists())
 
     #Test to ensure user cannot delete an active offer listing with offers
     def test_unsuccessful_deletion_active_listing_offers(self):
@@ -2145,6 +2200,7 @@ class OfferListingDeleteViewTest(MyTestCase):
         listing = self.active_offer_listing_offers
         post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
         self.assertEqual(post_response.status_code, 404)
+        self.assertTrue(ListingNotification.objects.filter(id=self.active_offers_listing_notification_id).exists())
 
     #Test to ensure that user can delete an inactive offer listing the was not
     #completed with no offers
@@ -2155,9 +2211,11 @@ class OfferListingDeleteViewTest(MyTestCase):
         post_response = self.client.post(reverse('delete-offer-listing', args=[str(listing.id)]))
         self.assertRedirects(post_response, reverse('offer-listings'))
         self.assertFalse(OfferListing.objects.filter(id=self.inactive_offer_listing_no_offers_id).exists())
+        self.assertFalse(ListingNotification.objects.filter(id=self.inactive_no_offers_listing_notification_id).exists())
 
     #Test to ensure that user can delete an inactive offer listing the was not
-    #completed with offers and offers are deleted
+    #completed with offers and offers are deleted, as well as notifications
+    #for offers made
     def test_successful_deletion_inactive_listing_offers(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -2167,6 +2225,8 @@ class OfferListingDeleteViewTest(MyTestCase):
         self.assertFalse(OfferListing.objects.filter(id=self.inactive_offer_listing_offers_id).exists())
         for offer_id in self.inactive_offer_listing_offers_offer_ids:
             self.assertFalse(Offer.objects.filter(id=offer_id).exists())
+            self.assertFalse(OfferNotification.objects.filter(offer__id=offer_id).exists())
+        self.assertFalse(ListingNotification.objects.filter(id=self.inactive_offers_listing_notification_id).exists())
 
     #Test to ensure user can soft delete an offer listing that was completed
     def test_successful_soft_deletion_inactive_listing_completed(self):
@@ -2178,6 +2238,7 @@ class OfferListingDeleteViewTest(MyTestCase):
         self.assertTrue(OfferListing.objects.filter(id=self.inactive_offer_listing_completed_id).exists())
         updated_listing = OfferListing.objects.get(id=self.inactive_offer_listing_completed_id)
         self.assertEqual(updated_listing.owner, None)
+        self.assertFalse(ListingNotification.objects.filter(id=self.inactive_completed_listing_notification_id).exists())
 
 class AuctionListingsViewTest(MyTestCase):
     def setUp(self):

@@ -599,7 +599,8 @@ def create_offer_listing(request):
                 + '" has expired.')
             ListingNotification.objects.create(user=request.user,
                 listing=created_listing, content=content,
-                creationDate=created_listing.endTime)
+                creationDate=created_listing.endTime,
+                type="Listing Ended")
 
             return redirect('offer-listings')
     else:
@@ -818,6 +819,10 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                 if self.object.listingCompleted:
                     self.object.owner = None
                     self.object.save()
+
+                    notifications = ListingNotification.objects.filter(listing=self.object)
+                    old_notification = notifications.first()
+                    old_notification.delete()
                 else:
                     #Go through items and delete any that don't have an owner
                     #and have no other relationships
@@ -837,6 +842,12 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
                                         image.delete()
 
                                 item.delete()
+
+                    #Delete offer notifications associated with listing and owner
+                    offer_notifications = OfferNotification.objects.filter(
+                        listing=self.object, user=self.request.user)
+                    for notification in offer_notifications:
+                        notification.delete()
 
                     self.object.delete()
 

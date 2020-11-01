@@ -528,6 +528,7 @@ class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
         related_name="notification", null=True)
     content = models.TextField(max_length=250)
+    type = models.TextField(max_length=50, null=True)
     creationDate = models.DateTimeField()
 
     @property
@@ -568,7 +569,7 @@ class InvitationNotification(Notification):
 #is deleted, or an offer is made or rejected
 #Fields needed: Listing
 class ListingNotification(Notification):
-    listing = models.ForeignKey(Listing, on_delete=models.SET_NULL,
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE,
         null=True)
 
 #Subclass for OfferNotification, a notification made when an offer is made,
