@@ -1192,6 +1192,11 @@ def accept_offer(request, pk):
             old_notification = notifications.first()
             old_notification.delete()
 
+            #Delete current offer notifications for the listing
+            offer_notifications = OfferNotification.objects.filter(listing=current_listing)
+            for notification in offer_notifications:
+                notification.delete()
+
             #Create a notification for the accepted offer
             content = (current_listing.owner.username + 'has accepted your' +
                 ' offer on the listing "' + current_listing.name + '".')
@@ -1206,15 +1211,18 @@ def accept_offer(request, pk):
 
             #Retrieve the other offers for the listing and destroy them if not accepted
             other_offers = Offer.objects.filter(offerListing=current_listing)
+            users = []
             for offer in other_offers:
                 if offer.offerAccepted != True:
                     #Create a notification for the user that a dfferent offer was
                     #accepted
-                    content = (current_listing.owner.username + 'has accepted a' +
-                        ' different offer on the listing "' + current_listing.name + '".')
-                    OfferNotification.objects.create(listing=current_listing,
-                        user=offer.owner, content=content,
-                        creationDate=timezone.localtime(timezone.now()))
+                    if offer.owner not in users and offer.owner != current_offer.owner:
+                        content = (current_listing.owner.username + 'has accepted a' +
+                            ' different offer on the listing "' + current_listing.name + '".')
+                        OfferNotification.objects.create(listing=current_listing,
+                            user=offer.owner, content=content,
+                            creationDate=timezone.localtime(timezone.now()))
+                        users.append(offer.owner)
                     #Destroy the object
                     offer.delete()
 

@@ -3096,6 +3096,14 @@ class AcceptOfferViewTest(MyTestCase):
             if offer == 4:
                 self.offer = new_offer
 
+            #Create ending notifications for each offer
+            content = ('Your offer on "' + self.global_offer_listing1.name
+                + '" has expired.')
+            OfferNotification.objects.create(
+                listing=self.global_offer_listing1, user=self.global_user2,
+                creationDate=self.global_offer_listing1.endTime,
+                content=content)
+
         #create offers for an inactive listing to test that a user cannot accept an offer once ended
         self.expired_offer = Offer.objects.create(offerListing=self.global_offer_listing2,
             owner=self.global_user2, amount=7.00)
@@ -3209,7 +3217,8 @@ class AcceptOfferViewTest(MyTestCase):
         all_listing_offers = Offer.objects.filter(offerListing=self.global_offer_listing1)
         self.assertEqual(len(all_listing_offers), 1)
 
-    #Test to ensure that a user cannot accept an offer once listing has ended, also ensure the same amount of offers remain
+    #Test to ensure that a user cannot accept an offer once listing has ended,
+    #also ensure the same amount of offers remain
     def test_offer_not_accepted_listing_ended(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -3236,13 +3245,13 @@ class AcceptOfferViewTest(MyTestCase):
         offer = self.offer
         post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
         self.assertEqual(post_response.status_code, 302)
-        self.assertEqual(len(OfferNotification.objects.filter(listing=self.offer.offerListing)), 5)
+        self.assertEqual(len(OfferNotification.objects.filter(listing=self.offer.offerListing)), 1)
         acceptance_content = (self.offer.offerListing.owner.username + 'has accepted your' +
             ' offer on the listing "' + self.offer.offerListing.name + '".')
         rejection_content = (self.offer.offerListing.owner.username + 'has accepted a' +
             ' different offer on the listing "' + self.offer.offerListing.name + '".')
         self.assertEqual(len(OfferNotification.objects.filter(
-            listing=self.offer.offerListing, content=rejection_content)), 4)
+            listing=self.offer.offerListing, content=rejection_content)), 0)
         self.assertEqual(len(OfferNotification.objects.filter(
             listing=self.offer.offerListing, content=acceptance_content)), 1)
 
@@ -3478,11 +3487,13 @@ class AuctionListingDeleteViewTest(MyTestCase):
 
         #Create the winning bid notification
         """content = ('Your bid of $' + new_bid.amount + self.active_auction_listing.name
-            + '" has ended with a winning bid of.')
-        self.auction_completed_owner_notification = ListingNotification.objects.create(
-            listing=self.active_auction_listing, user=self.global_user1,
-            creationDate=self.active_auction_listing.endTime,
-            content=content, type="Listing Completed")"""
+            + '" has ended with a winning bid of.')"""
+        content = "Nothing"
+        self.auction_completed_winner_notification = ListingNotification.objects.create(
+            listing=self.inactive_auction_listing, user=self.global_user1,
+            creationDate=self.inactive_auction_listing.endTime,
+            content=content, type="Listing Completed")
+        self.auction_completed_winner_notification_id = self.auction_completed_winner_notification.id
 
         for count in range(number_of_bids):
             new_bid = Bid.objects.create(auctionListing=self.inactive_auction_listing, bidder=self.global_user2,
@@ -3490,8 +3501,17 @@ class AuctionListingDeleteViewTest(MyTestCase):
             self.bid_IDs[count] = new_bid.id
 
             #Update the winning bid notification to match new bid
+            content = ('Your bid of $' + str(new_bid.amount) + ' won the listing "' +
+                self.inactive_auction_listing.name + '".')
+            self.auction_completed_winner_notification.owner = self.global_user2
+            self.auction_completed_winner_notification.content = content
+            self.auction_completed_winner_notification.save()
 
             #Update the listing ending notification to show what bid won
+            content = ('Your listing "' + self.active_auction_listing.name
+                + '" has ended with a winning bid of $' + str(new_bid.amount) + '.')
+            self.inactive_auction_listing_notification.content = content
+            self.inactive_auction_listing_notification.save()
 
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
