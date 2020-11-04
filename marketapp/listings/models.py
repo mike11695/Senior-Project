@@ -530,6 +530,7 @@ class Notification(models.Model):
     content = models.TextField(max_length=250)
     type = models.TextField(max_length=50, null=True)
     creationDate = models.DateTimeField()
+    unread = models.BooleanField(default=True)
 
     @property
     def active(self):

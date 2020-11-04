@@ -1133,7 +1133,7 @@ def create_offer(request, pk):
                     content = ('Your offer on the listing "' + created_offer.offerListing.name
                         + '" has expired.')
                     OfferNotification.objects.create(
-                        listing=created_offer.offerListing,
+                        listing=created_offer.offerListing, offer=created_offer,
                         user=created_offer.owner, content=content,
                         creationDate=created_offer.offerListing.endTime,
                         type="Listing Expired")
@@ -1183,6 +1183,18 @@ def edit_offer(request, pk):
                         edited_offer.items.add(item)
 
                     edited_offer.save()
+
+                    #Create notification to notify the offer listing owner that
+                    #an offer was updated
+                    content = (edited_offer.owner.username + 'has updated an ' +
+                         'offer on the listing "' + edited_offer.offerListing.name
+                        + '".')
+                    OfferNotification.objects.create(
+                        listing=edited_offer.offerListing,
+                        user=edited_offer.offerListing.owner, content=content,
+                        creationDate=timezone.localtime(timezone.now()),
+                        type="Offer Updated")
+
                     return redirect('offer-detail', pk=edited_offer.pk)
             else:
                 form = EditOfferForm(user=request.user, instance=current_offer, listing=current_offer.offerListing)
@@ -1310,6 +1322,24 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
 
                            item.delete()
 
+               #Delete ending notification related to the offer
+               content = ('Your offer on the listing "' + self.object.offerListing.name
+                   + '" has expired.')
+               notification = OfferNotification.objects.filter(offer=self.object,
+                    user=self.object.owner, content=content)
+               notification.delete()
+
+               #Create notification to notify the offer listing owner that
+               #an offer was retracted
+               content = (self.object.owner.username + 'has retracted an ' +
+                    'offer on the listing "' + self.object.offerListing.name
+                   + '".')
+               OfferNotification.objects.create(
+                   listing=self.object.offerListing,
+                   user=self.object.offerListing.owner, content=content,
+                   creationDate=timezone.localtime(timezone.now()),
+                   type="Offer Retracted")
+
                self.object.delete()
            return HttpResponseRedirect(self.get_success_url(listing))
        elif self.object.offerListing.owner == self.request.user:
@@ -1333,6 +1363,24 @@ class OfferDeleteView(LoginRequiredMixin, generic.DeleteView):
                                    image.delete()
 
                            item.delete()
+
+               #Delete ending notification related to the offer
+               content = ('Your offer on the listing "' + self.object.offerListing.name
+                   + '" has expired.')
+               notification = OfferNotification.objects.filter(offer=self.object,
+                    user=self.object.owner, content=content)
+               notification.delete()
+
+               #Create notification to notify the offer owner that their
+               #offer was rejected
+               content = (self.object.offerListing.owner.username + 'has ' +
+                    'rejected your offer on the listing "' +
+                    self.object.offerListing.name + '".')
+               OfferNotification.objects.create(
+                   listing=self.object.offerListing,
+                   user=self.object.owner, content=content,
+                   creationDate=timezone.localtime(timezone.now()),
+                   type="Offer Rejected")
 
                self.object.delete()
                return HttpResponseRedirect(self.get_success_url(listing))

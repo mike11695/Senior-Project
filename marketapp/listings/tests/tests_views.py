@@ -2900,7 +2900,7 @@ class CreateOfferViewTest(MyTestCase):
             listing=created_offer.offerListing, offer=created_offer,
             user=created_offer.offerListing.owner).exists())
         self.assertTrue(OfferNotification.objects.filter(
-            listing=created_offer.offerListing,
+            listing=created_offer.offerListing, offer=created_offer,
             user=created_offer.owner).exists())
         self.assertRedirects(post_response, '/listings/offer-listings/offer/{0}'.format(created_offer.id))
 
@@ -3283,12 +3283,28 @@ class OfferDeleteViewTest(MyTestCase):
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
 
-        #Create offers for testing deletion with
+        #Create offers for testing deletion with along with ending notifications
         self.regular_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
             owner=self.global_user2, amount=7.00, offerAccepted=False)
+        content = ('Your offer on the listing "' + self.regular_offer.offerListing.name
+            + '" has expired.')
+        self.regular_offer_notification = OfferNotification.objects.create(
+            listing=self.regular_offer.offerListing, offer=self.regular_offer,
+            user=self.regular_offer.owner, content=content,
+            creationDate=self.regular_offer.offerListing.endTime,
+            type="Listing Expired")
+        self.regular_offer_notification_id = self.regular_offer_notification.id
 
         self.accepted_offer = Offer.objects.create(offerListing=self.global_offer_listing1,
             owner=self.global_user2, amount=7.00, offerAccepted=True)
+        content = ('Your offer on the listing "' + self.accepted_offer.offerListing.name
+            + '" has expired.')
+        self.accepted_offer_notification = OfferNotification.objects.create(
+            listing=self.accepted_offer.offerListing, offer=self.accepted_offer,
+            user=self.accepted_offer.owner, content=content,
+            creationDate=self.accepted_offer.offerListing.endTime,
+            type="Listing Expired")
+        self.accepted_offer_notification_id = self.accepted_offer_notification.id
 
     #Test to ensure that a user must be logged in to delete an offer
     def test_redirect_if_not_logged_in(self):
@@ -3329,25 +3345,41 @@ class OfferDeleteViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_delete.html')
 
-    #Test to ensure object can be deleted by listing owner
+    #Test to ensure object can be deleted by listing owner, and that a notification
+    #is made for offer owner and end notification for offer was deleted
     def test_successful_deletion_by_listing_owner(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         offer = self.regular_offer
         offer_id = self.regular_offer.id
+        offer_owner = offer.owner
+        offer_listing = offer.offerListing
         post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
         self.assertRedirects(post_response, reverse('offer-listing-detail', args=[str(self.global_offer_listing1.id)]))
         self.assertFalse(Offer.objects.filter(id=offer_id).exists())
+        notification = OfferNotification.objects.last()
+        self.assertTrue(notification.listing, offer_listing)
+        self.assertTrue(notification.user, offer_owner)
+        self.assertTrue(notification.type, "Offer Rejected")
+        self.assertFalse(OfferNotification.objects.filter(id=self.regular_offer_notification_id).exists())
 
-    #Test to ensure object can be deleted by offer owner
+    #Test to ensure object can be deleted by offer owner, and that a notification
+    #is made for listing owner and end notification for offer was deleted
     def test_successful_deletion_by_offer_owner(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         offer = self.regular_offer
         offer_id = self.regular_offer.id
+        listing_owner = offer.offerListing.owner
+        offer_listing = offer.offerListing
         post_response = self.client.post(reverse('delete-offer', args=[str(offer.id)]))
         self.assertRedirects(post_response, '/listings/offer-listings/my-offers')
         self.assertFalse(Offer.objects.filter(id=offer_id).exists())
+        notification = OfferNotification.objects.last()
+        self.assertTrue(notification.listing, offer_listing)
+        self.assertTrue(notification.user, listing_owner)
+        self.assertTrue(notification.type, "Offer Retracted")
+        self.assertFalse(OfferNotification.objects.filter(id=self.regular_offer_notification_id).exists())
 
     #Test to ensure an accepted offer cannot be soft deleted by listing owner
     def test_unsuccessful_soft_deletion_accepted_offer_by_listing_owner(self):
@@ -3435,7 +3467,8 @@ class OfferEditViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_edit.html')
 
-    #Test to ensure object is edited
+    #Test to ensure object is edited and listing owner receives notification
+    #that offer was updated
     def test_succesful_edit(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
@@ -3447,6 +3480,10 @@ class OfferEditViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         edited_offer = Offer.objects.get(id=offer.id)
         self.assertEqual(edited_offer.amount, 10.00)
+        notification = OfferNotification.objects.last()
+        self.assertTrue(notification.listing, offer.offerListing)
+        self.assertTrue(notification.user, offer.offerListing.owner)
+        self.assertTrue(notification.type, "Offer Updated")
 
 class AuctionListingDeleteViewTest(MyTestCase):
     def setUp(self):
