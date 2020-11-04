@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
     Conversation, Message, Receipt, PaymentReceipt, ListingNotification,
-    OfferNotification)
+    OfferNotification, BidNotification, PaymentNotification)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -1442,6 +1442,39 @@ def create_bid(request, pk):
 
                             created_bid.save()
 
+                            #Create winning notifications for the current bid that will
+                            #become visible when listing ends
+                            bid = Bid.objects.get(id=created_bid.id)
+                            content = ('Your bid of $' + str(bid.amount) +
+                                ' won the listing "' + current_listing.name
+                                + '".')
+                            BidNotification.objects.create(
+                                listing=current_listing, user=request.user,
+                                bid=created_bid,
+                                creationDate=current_listing.endTime,
+                                content=content, type="Winning Bid")
+
+                            content = ('Your listing "' + current_listing.name
+                                + '" has ended with a winning bid of $' + str(bid.amount) + '.')
+                            notifications = ListingNotification.objects.filter(listing=current_listing)
+                            old_notification = notifications.first()
+                            if current_listing.autobuy == bid_amount:
+                                old_notification.creationDate = current_listing.endTime
+                            old_notification.content = content
+                            old_notification.type = "Listing Completed"
+                            old_notification.save()
+
+                            #Create a notification for the previous bidder
+                            #to notify them they've been outbid
+                            content = ('Your bid of $' + str(previous_winning_bid.amount) +
+                                ' has been outbidded by a bid of $' + str(bid.amount)
+                                + '.')
+                            previous_bid_notification = BidNotification.objects.get(bid=previous_winning_bid)
+                            previous_bid_notification.content = content
+                            previous_bid_notification.creationDate = timezone.localtime(timezone.now())
+                            previous_bid_notification.type = "Outbidded"
+                            previous_bid_notification.save()
+
                             #Update the receipt for the listing
                             receipt = Receipt.objects.get(listing=current_listing)
                             receipt.exchangee = request.user
@@ -1475,6 +1508,29 @@ def create_bid(request, pk):
                         created_bid.winningBid = True
 
                         created_bid.save()
+
+                        #Create winning notifications for the current bid that will
+                        #become visible when listing ends
+                        bid = Bid.objects.get(id=created_bid.id)
+                        content = ('Your bid of $' + str(bid.amount) +
+                            ' won the listing "' + current_listing.name
+                            + '".')
+                        BidNotification.objects.create(
+                            listing=current_listing, user=request.user,
+                            bid=created_bid,
+                            creationDate=current_listing.endTime,
+                            content=content, type="Winning Bid")
+
+                        content = ('Your listing "' + current_listing.name
+                            + '" has ended with a winning bid of $' + str(bid.amount) + '.')
+                        print(created_bid.amount)
+                        notifications = ListingNotification.objects.filter(listing=current_listing)
+                        old_notification = notifications.first()
+                        if current_listing.autobuy == bid_amount:
+                            old_notification.creationDate = current_listing.endTime
+                        old_notification.content = content
+                        old_notification.type = "Listing Completed"
+                        old_notification.save()
 
                         #Update the receipt for the listing
                         receipt = Receipt.objects.get(listing=current_listing)
@@ -2723,9 +2779,19 @@ def create_payment_receipt(request):
                     status = request.POST['status']
                     amount = request.POST['amount']
 
-                    PaymentReceipt.objects.create(receipt=receipt,
-                        orderID=order_id, status=status, amountPaid=amount,
+                    payment_receipt = PaymentReceipt.objects.create(
+                        receipt=receipt, orderID=order_id, status=status,
+                        amountPaid=amount,
                         paymentDate=str(timezone.localtime(timezone.now())))
+
+                    #Create notification for owner that payment was made
+                    content = (receipt.exchangee.username + ' has made a ' +
+                        'payment of $' + "{:.2f}".format(float(payment_receipt.amountPaid))
+                        + ' on the listing "' + receipt.listing.name + '".')
+                    PaymentNotification.objects.create(receipt=receipt,
+                        user=receipt.owner, content=content,
+                        type="Payment Made",
+                        creationDate=timezone.localtime(timezone.now()))
             return HttpResponse('success', status=200)
         else:
             #Something went wrong

@@ -2,7 +2,8 @@ from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
-    ListingNotification, OfferNotification)
+    ListingNotification, OfferNotification, BidNotification,
+    PaymentNotification)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -2928,7 +2929,24 @@ class CreateBidViewTest(MyTestCase):
             invitesOpen=True, inquiriesOpen=True)
 
         self.active_listing = self.global_auction_listing1
+
+        #Ending notification for the listing
+        content = ('Your listing "' + self.active_listing.name
+            + '" has expired.')
+        self.ending_notification = ListingNotification.objects.create(
+            listing=self.active_listing, user=self.global_user1,
+            creationDate=self.active_listing.endTime,
+            content=content, type="Listing Ended")
+
         self.inactive_listing = self.global_auction_listing2
+
+        #Ending notification for the listing
+        content = ('Your listing "' + self.inactive_listing.name
+            + '" has expired.')
+        self.ending_notification = ListingNotification.objects.create(
+            listing=self.inactive_listing, user=self.global_user1,
+            creationDate=self.inactive_listing.endTime,
+            content=content, type="Listing Ended")
 
     #Test to ensure that a user must be logged in to create a bid
     def test_redirect_if_not_logged_in(self):
@@ -2997,6 +3015,27 @@ class CreateBidViewTest(MyTestCase):
         created_bid = Bid.objects.last()
         self.assertEqual(created_bid.auctionListing, listing)
 
+    #Test to ensure that a bid is created succesfully and a notification is
+    #made for the bidder and the ending notification for listing is updated
+    def test_successful_bid_creation_notification_made_and_updated(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
+            data={'amount': 5.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_bid = Bid.objects.last()
+        listing_notification = ListingNotification.objects.filter(listing=listing).first()
+        content = ('Your listing "' + listing.name
+            + '" has ended with a winning bid of $' + str(created_bid.amount) + '.')
+        self.assertEqual(listing_notification.content, content)
+        bid_notification = BidNotification.objects.last()
+        self.assertEqual(bid_notification.bid, created_bid)
+        self.assertEqual(bid_notification.listing.name, listing.name)
+        self.assertEqual(bid_notification.user, post_response.wsgi_request.user)
+
     #Test to ensure that listing receipt is updated when bid is placed
     def test_successful_bid_receipt_is_updated(self):
         listing = self.active_listing
@@ -3024,8 +3063,12 @@ class CreateBidViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         updated_listing = AuctionListing.objects.get(id=listing.id)
         self.assertEqual(updated_listing.listingEnded, True)
+        listing_notification = ListingNotification.objects.filter(listing=listing).first()
+        self.assertEqual(listing_notification.active, True)
 
-    #Test to ensure that previous winning bid is set to false and current bid is winning bid
+    #Test to ensure that previous winning bid is set to false and current bid
+    #is winning bid, andthat a new notification is made for new bid and
+    #notification for previous bid is updated
     def test_successful_bid_creation_previous_bid_changed(self):
         listing = self.active_listing
         login = self.client.login(username='mike', password='example')
@@ -3047,6 +3090,15 @@ class CreateBidViewTest(MyTestCase):
         created_bid2 = Bid.objects.last()
         self.assertEqual(edited_bid1.winningBid, False)
         self.assertEqual(created_bid2.winningBid, True)
+        bid_notification = BidNotification.objects.last()
+        self.assertEqual(bid_notification.bid, created_bid2)
+        self.assertEqual(bid_notification.listing.name, listing.name)
+        self.assertEqual(bid_notification.user, post_response.wsgi_request.user)
+        previous_bid_notification = BidNotification.objects.get(bid=edited_bid1)
+        content = ('Your bid of $' + str(created_bid1.amount) +
+            ' has been outbidded by a bid of $' + str(created_bid2.amount) + '.')
+        self.assertEqual(previous_bid_notification.content, content)
+        self.assertEqual(previous_bid_notification.active, True)
 
 class OfferDetailViewTest(MyTestCase):
     def setUp(self):
@@ -3543,10 +3595,8 @@ class AuctionListingDeleteViewTest(MyTestCase):
         self.bid_IDs = [0 for number in range(number_of_bids)]
 
         #Create the winning bid notification
-        """content = ('Your bid of $' + new_bid.amount + self.active_auction_listing.name
-            + '" has ended with a winning bid of.')"""
         content = "Nothing"
-        self.auction_completed_winner_notification = ListingNotification.objects.create(
+        self.auction_completed_winner_notification = BidNotification.objects.create(
             listing=self.inactive_auction_listing, user=self.global_user1,
             creationDate=self.inactive_auction_listing.endTime,
             content=content, type="Listing Completed")
@@ -3562,6 +3612,7 @@ class AuctionListingDeleteViewTest(MyTestCase):
                 self.inactive_auction_listing.name + '".')
             self.auction_completed_winner_notification.owner = self.global_user2
             self.auction_completed_winner_notification.content = content
+            self.auction_completed_winner_notification.bid = new_bid
             self.auction_completed_winner_notification.save()
 
             #Update the listing ending notification to show what bid won
@@ -6474,7 +6525,8 @@ class CreatePaymentReceiptViewTest(MyTestCase):
             data={'receipt_id': [str(self.completed_offer_listing_receipt.id)]})
         self.assertEqual(post_response.status_code, 200)
 
-    #Test to ensure that a payment receipt is made using details from paypal
+    #Test to ensure that a payment receipt is made using details from paypal,
+    #and that receipt owner receives a notificationthat payment was made
     def test_view_creates_payment_receipt(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
@@ -6490,6 +6542,16 @@ class CreatePaymentReceiptViewTest(MyTestCase):
         self.assertTrue(payment_receipt.orderID, "f5g1g5ghh5v26d")
         self.assertTrue(payment_receipt.status, "Complete")
         self.assertTrue(payment_receipt.amountPaid, 5.00)
+        payment_notification = PaymentNotification.objects.last()
+        content = (self.completed_offer_listing_receipt.exchangee.username +
+            ' has made a ' + 'payment of $5.00' + ' on the listing "' +
+            self.completed_offer_listing_receipt.listing.name + '".')
+        self.assertEqual(payment_notification.content, content)
+        self.assertEqual(payment_notification.user,
+            self.completed_offer_listing_receipt.owner)
+        self.assertEqual(payment_notification.receipt,
+            self.completed_offer_listing_receipt)
+        self.assertEqual(payment_notification.type, "Payment Made")
 
 class ReceiptDeleteViewTest(MyTestCase):
     def setUp(self):
