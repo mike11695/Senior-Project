@@ -1127,6 +1127,28 @@ def create_offer(request, pk):
 
                     created_offer.owner = request.user
                     created_offer.save()
+
+                    #Create an end notification for the offer if listing owner
+                    #does not select an offer before listing ends
+                    content = ('Your offer on the listing "' + created_offer.offerListing.name
+                        + '" has expired.')
+                    OfferNotification.objects.create(
+                        listing=created_offer.offerListing,
+                        user=created_offer.owner, content=content,
+                        creationDate=created_offer.offerListing.endTime,
+                        type="Listing Expired")
+
+                    #Create a notification for the listing owner that an offer
+                    #has been made
+                    content = (created_offer.owner.username + ' has placed an offer ' +
+                    'on your listing "' + created_offer.offerListing.name + '".')
+                    OfferNotification.objects.create(
+                        listing=created_offer.offerListing, offer=created_offer,
+                        user=created_offer.offerListing.owner,
+                        content=content,
+                        creationDate=timezone.localtime(timezone.now()),
+                        type="Offer Made")
+
                     return redirect('offer-detail', pk=created_offer.pk)
             else:
                 form = OfferForm(user=request.user, instance=current_listing, initial={'offerListing': current_listing})
@@ -1202,7 +1224,8 @@ def accept_offer(request, pk):
                 ' offer on the listing "' + current_listing.name + '".')
             OfferNotification.objects.create(listing=current_listing,
                 offer=current_offer, user=current_offer.owner,
-                content=content, creationDate=timezone.localtime(timezone.now()))
+                content=content, creationDate=timezone.localtime(timezone.now()),
+                type="Offer Accepted")
 
             #Set endTime for listing to current date and time so that it ends after accepting offer
             date = timezone.localtime(timezone.now())
@@ -1221,7 +1244,8 @@ def accept_offer(request, pk):
                             ' different offer on the listing "' + current_listing.name + '".')
                         OfferNotification.objects.create(listing=current_listing,
                             user=offer.owner, content=content,
-                            creationDate=timezone.localtime(timezone.now()))
+                            creationDate=timezone.localtime(timezone.now()),
+                            type="Offer Rejected")
                         users.append(offer.owner)
                     #Destroy the object
                     offer.delete()

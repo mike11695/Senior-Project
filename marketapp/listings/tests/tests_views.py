@@ -2884,6 +2884,26 @@ class CreateOfferViewTest(MyTestCase):
         self.assertEqual(created_offer.offerListing, listing)
         self.assertRedirects(post_response, '/listings/offer-listings/offer/{0}'.format(created_offer.id))
 
+    #Test to ensure that notifications are made when an offer is created
+    def test_succesful_offer_creation_notifications_made(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-offer', args=[str(listing.id)]),
+            data={'items': [str(self.global_item2.id)], 'amount': 7.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_offer = Offer.objects.last()
+        self.assertEqual(created_offer.offerListing, listing)
+        self.assertTrue(OfferNotification.objects.filter(
+            listing=created_offer.offerListing, offer=created_offer,
+            user=created_offer.offerListing.owner).exists())
+        self.assertTrue(OfferNotification.objects.filter(
+            listing=created_offer.offerListing,
+            user=created_offer.owner).exists())
+        self.assertRedirects(post_response, '/listings/offer-listings/offer/{0}'.format(created_offer.id))
+
     #Test to ensure a user is redirected if a listing has ended
     def test_redirect_if_listing_ended(self):
         listing = self.inactive_listing
