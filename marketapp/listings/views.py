@@ -2904,12 +2904,12 @@ class ReceiptDeleteView(LoginRequiredMixin, generic.DeleteView):
        elif delete_receipt:
            #Delete the receipt, the related payment receipt and related listing
            #For the related listing, go through items and delete if owner is
-           #none and has no relations to other objects
+           #none and has no relations to other objects, delete notifications
            #For each image for the item, delete if owner is none and has no
-           #relations to other items
+           #relations to other items, delete notifications
            #For offer listings, delete the items in the accepted offer that have
-           #an owner of none and are not related to any other objects
-           #Do the same as above for the item's images
+           #an owner of none and are not related to any other objects,
+           #delete notifications. Do the same as above for the item's images
 
            #Delete the items for the accepted offer if offer listing
            if offer_listing:
@@ -2932,6 +2932,16 @@ class ReceiptDeleteView(LoginRequiredMixin, generic.DeleteView):
 
                                item.delete()
 
+               #Delete offer notifications related to listing
+               listing_notifications = OfferNotification.objects.filter(listing=listing)
+               if listing_notifications:
+                   listing_notifications.delete()
+           else:
+               #Delete bid notifications related to listing
+               bid_notifications = BidNotification.objects.filter(listing=listing)
+               if bid_notifications:
+                   bid_notifications.delete()
+
            #Delete the items in the related listing
            for item in listing.items.all():
                if (item.owner == None
@@ -2948,8 +2958,18 @@ class ReceiptDeleteView(LoginRequiredMixin, generic.DeleteView):
 
                        item.delete()
 
+           #Delete notifications related to listing
+           listing_notifications = ListingNotification.objects.filter(listing=listing)
+           if listing_notifications:
+               listing_notifications.delete()
+
            #Delete the related listing
            listing.delete()
+
+           #Delete payment notifications
+           payment_notifications = PaymentNotification.objects.filter(receipt=self.object)
+           if payment_notifications:
+               payment_notifications.delete()
 
            #Delete the receipt, which will delete the related payment receipt
            self.object.delete()

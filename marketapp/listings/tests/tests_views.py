@@ -6647,6 +6647,46 @@ class ReceiptDeleteViewTest(MyTestCase):
         self.active_receipt.save()
         self.active_receipt_id = self.active_receipt.id
 
+        #Create notifications related to objects
+        #Offer Notification
+        content = ('Test Notification')
+        self.offer_notification = OfferNotification.objects.create(
+            listing=self.offer_to_delete.offerListing,
+            offer=self.offer_to_delete, user=self.offer_to_delete.owner,
+            content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Offer Accepted")
+
+        #Payment notification for offer listing
+        PaymentNotification.objects.create(receipt=self.ol_receipt,
+            user=self.ol_receipt.owner, content=content,
+            type="Payment Made",
+            creationDate=timezone.localtime(timezone.now()))
+
+        #Bid notification
+        BidNotification.objects.create(
+            listing=self.bid_to_delete.auctionListing,
+            user=self.bid_to_delete.bidder, bid=self.bid_to_delete,
+            creationDate=self.bid_to_delete.auctionListing.endTime,
+            content=content, type="Winning Bid")
+
+        #Payment notification for auction listing
+        PaymentNotification.objects.create(receipt=self.al_receipt,
+            user=self.al_receipt.owner, content=content,
+            type="Payment Made",
+            creationDate=timezone.localtime(timezone.now()))
+
+        #Listing Notifications
+        ListingNotification.objects.create(
+            user=self.auction_listing_to_delete.owner,
+            listing=self.auction_listing_to_delete, content=content,
+            creationDate=self.auction_listing_to_delete.endTime,
+            type="Listing Ended")
+        ListingNotification.objects.create(
+            user=self.offer_listing_to_delete.owner,
+            listing=self.offer_listing_to_delete, content=content,
+            creationDate=self.offer_listing_to_delete.endTime,
+            type="Listing Ended")
+
     #Test to ensure that a user must be logged in to delete a receipt
     def test_redirect_if_not_logged_in(self):
         receipt = self.ol_receipt
@@ -6761,6 +6801,26 @@ class ReceiptDeleteViewTest(MyTestCase):
         self.assertTrue(Image.objects.filter(id=self.image_to_delete_1_id).exists())
         self.assertFalse(Image.objects.filter(id=self.image_to_delete_2_id).exists())
 
+    #Test to ensure related notifications to receipt are deleted,
+    #for offer listing receipts
+    def test_successful_deletion_ol_receipt_notifications_deleted(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.ol_receipt
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertTrue(Receipt.objects.filter(id=self.ol_receipt_id).exists())
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertFalse(OfferNotification.objects.filter(
+            listing__id=self.offer_listing_to_delete_id).exists())
+        self.assertFalse(ListingNotification.objects.filter(
+            listing__id=self.offer_listing_to_delete_id).exists())
+        self.assertFalse(PaymentNotification.objects.filter(
+            receipt__id=self.ol_receipt_id).exists())
+
     #Test to ensure related items to receipt are deleted if owner is none,
     #unless object has relations to other objects, for auction listing receipts
     def test_successful_deletion_al_receipt_relationships_deleted(self):
@@ -6780,6 +6840,26 @@ class ReceiptDeleteViewTest(MyTestCase):
         self.assertFalse(Bid.objects.filter(id=self.bid_to_delete_id).exists())
         self.assertTrue(Item.objects.filter(id=self.item_to_delete_1_id).exists())
         self.assertTrue(Image.objects.filter(id=self.image_to_delete_1_id).exists())
+
+    #Test to ensure related notifications to receipt are deleted,
+    #for auction listing receipts
+    def test_successful_deletion_al_receipt_notifications_deleted(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        receipt = self.al_receipt
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertTrue(Receipt.objects.filter(id=self.al_receipt_id).exists())
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('delete-receipt', args=[str(receipt.id)]))
+        self.assertRedirects(post_response, reverse('receipts'))
+        self.assertFalse(BidNotification.objects.filter(
+            listing__id=self.auction_listing_to_delete_id).exists())
+        self.assertFalse(ListingNotification.objects.filter(
+            listing__id=self.auction_listing_to_delete_id).exists())
+        self.assertFalse(PaymentNotification.objects.filter(
+            receipt__id=self.al_receipt_id).exists())
 
     #Test to ensure user is redirected if trying to delete an active receipt
     def test_redirect_if_logged_in_active_receipt(self):
