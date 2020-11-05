@@ -15,7 +15,8 @@ from django.views.decorators.csrf import csrf_exempt
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
     Conversation, Message, Receipt, PaymentReceipt, ListingNotification,
-    OfferNotification, BidNotification, PaymentNotification)
+    OfferNotification, BidNotification, PaymentNotification,
+    InvitationNotification)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -1741,7 +1742,17 @@ def create_invitations(request, pk):
                 #For each user, create an invitation for them
                 for user in users:
                     if user.invitesOpen:
-                        Invitation.objects.create(event=current_event, recipient=user)
+                        invitation = Invitation.objects.create(event=current_event, recipient=user)
+
+                        #Create notification for the user that they were
+                        #invited to event
+                        content = (current_event.host.username + ' has invited you to ' +
+                            'participate in their event "' + current_event.title +
+                            '"!')
+                        InvitationNotification.objects.create(event=current_event,
+                            invitation=invitation, user=user,
+                            content=content, type="Invitation Sent",
+                            creationDate=timezone.localtime(timezone.now()))
 
                 #Return to the event detail page
                 return redirect('event-detail', pk=current_event.pk)

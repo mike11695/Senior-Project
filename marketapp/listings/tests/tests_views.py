@@ -3,7 +3,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
-    PaymentNotification)
+    PaymentNotification, InvitationNotification)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -4128,7 +4128,8 @@ class CreateInvitationsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'events/create_invitations.html')
 
-    #Test to ensure that a user is able to create invitations for all users
+    #Test to ensure that a user is able to create invitations for all users,
+    #and that notifications are created for the users
     def test_invitations_are_created(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -4138,9 +4139,18 @@ class CreateInvitationsViewTest(MyTestCase):
         post_response = self.client.post(reverse('create-invitations', args=[str(event.id)]),
             data={'users': [str(self.user1.id), str(self.user2.id), str(self.user3.id)]})
         self.assertEqual(post_response.status_code, 302)
-        self.assertTrue(Invitation.objects.filter(event=event, recipient=self.user1).exists())
-        self.assertTrue(Invitation.objects.filter(event=event, recipient=self.user2).exists())
-        self.assertTrue(Invitation.objects.filter(event=event, recipient=self.user3).exists())
+        self.assertTrue(Invitation.objects.filter(event=event,
+            recipient=self.user1).exists())
+        self.assertTrue(Invitation.objects.filter(event=event,
+            recipient=self.user2).exists())
+        self.assertTrue(Invitation.objects.filter(event=event,
+            recipient=self.user3).exists())
+        self.assertTrue(InvitationNotification.objects.filter(event=event,
+            user=self.user1).exists())
+        self.assertTrue(InvitationNotification.objects.filter(event=event,
+            user=self.user2).exists())
+        self.assertTrue(InvitationNotification.objects.filter(event=event,
+            user=self.user3).exists())
 
     #Test to ensure user is redirected to event detail if form was valid
     def test_invitations_are_created_redirect(self):

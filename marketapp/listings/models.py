@@ -564,6 +564,7 @@ class EventNotification(Notification):
 #an invitation to an event
 #Fields needed: Invitation, participant
 class InvitationNotification(Notification):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True)
     invitation = models.ForeignKey(Invitation, on_delete=models.CASCADE)
 
 #Subclass for ListingNotification, a notification made when a listing ends
