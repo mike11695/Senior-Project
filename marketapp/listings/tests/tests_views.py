@@ -3,7 +3,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
-    PaymentNotification, InvitationNotification)
+    PaymentNotification, InvitationNotification, EventNotification)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -3948,7 +3948,8 @@ class RemoveParticipantViewTest(MyTestCase):
         response = self.client.get(reverse('remove-participant', args=[str(event.id), str(self.user1.id)]))
         self.assertRedirects(response, '/listings/')
 
-    #Test to ensure that the host can remove a participant from the event
+    #Test to ensure that the host can remove a participant from the event, and
+    #removed user receives a notification
     def test_user_is_removed_by_host(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -3957,8 +3958,13 @@ class RemoveParticipantViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         updated_event = Event.objects.get(id=event.id)
         self.assertFalse(event.participants.filter(pk=self.user1.pk).exists())
+        notification = EventNotification.objects.last()
+        self.assertEqual(notification.event, event)
+        self.assertEqual(notification.user, self.user1)
+        self.assertEqual(notification.type, "Participant Removed")
 
-    #Test to ensure that a participant can remove themselves from the event
+    #Test to ensure that a participant can remove themselves from the event,
+    #and that the host receives a notification
     def test_user_can_remove_themselves(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
@@ -3967,6 +3973,10 @@ class RemoveParticipantViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         updated_event = Event.objects.get(id=event.id)
         self.assertFalse(event.participants.filter(pk=self.global_user2.pk).exists())
+        notification = EventNotification.objects.last()
+        self.assertEqual(notification.event, event)
+        self.assertEqual(notification.user, event.host)
+        self.assertEqual(notification.type, "Participant Left")
 
 class EventDeleteViewTest(MyTestCase):
     def setUp(self):
@@ -4200,7 +4210,8 @@ class AcceptInvitationViewTest(MyTestCase):
         response = self.client.get(reverse('accept-invitation', args=[str(invitation.id)]))
         self.assertRedirects(response, '/listings/')
 
-    #Test to ensure that the event's participants are updated with the user that accepted
+    #Test to ensure that the event's participants are updated with the user
+    #that accepted, and host receives notification
     def test_user_is_added_to_event(self):
         login = self.client.login(username='mikey', password='example')
         self.assertTrue(login)
@@ -4210,6 +4221,10 @@ class AcceptInvitationViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         updated_event = Event.objects.get(id=event.id)
         self.assertTrue(event.participants.filter(pk=self.user1.pk).exists())
+        notification = EventNotification.objects.last()
+        self.assertEqual(notification.event, event)
+        self.assertEqual(notification.user, event.host)
+        self.assertEqual(notification.type, "Participant Joined")
 
     #Test to ensure that the invitation is destroyed after user accepts it
     def test_invitation_destroyed_after_acceptance(self):
@@ -4256,7 +4271,8 @@ class DeclineInvitationViewTest(MyTestCase):
         response = self.client.get(reverse('decline-invitation', args=[str(invitation.id)]))
         self.assertRedirects(response, '/listings/')
 
-    #Test to ensure that the user is not added to event after declining
+    #Test to ensure that the user is not added to event after declining, and
+    #that host receives a notification
     def test_user_is_not_added_to_event(self):
         login = self.client.login(username='mikey', password='example')
         self.assertTrue(login)
@@ -4266,6 +4282,10 @@ class DeclineInvitationViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         refreshed_event = Event.objects.get(id=event.id)
         self.assertFalse(event.participants.filter(pk=self.user1.pk).exists())
+        notification = EventNotification.objects.last()
+        self.assertEqual(notification.event, event)
+        self.assertEqual(notification.user, event.host)
+        self.assertEqual(notification.type, "Participant Declined")
 
     #Test to ensure that the invitation is destroyed after user declines it
     def test_invitation_destroyed_after_declining(self):

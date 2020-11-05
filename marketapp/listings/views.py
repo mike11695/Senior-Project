@@ -16,7 +16,7 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
     Conversation, Message, Receipt, PaymentReceipt, ListingNotification,
     OfferNotification, BidNotification, PaymentNotification,
-    InvitationNotification)
+    InvitationNotification, EventNotification)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -1682,6 +1682,14 @@ def remove_participant(request, event_pk, user_pk):
         current_event.participants.remove(user)
         current_event.save()
 
+        #Create notification for the user that the host has removed them
+        #from the event
+        content = (current_event.host.username + ' has removed you from ' +
+            'the event "' + current_event.title + '".')
+        EventNotification.objects.create(event=current_event,
+            user=user, content=content, type="Participant Removed",
+            creationDate=timezone.localtime(timezone.now()))
+
         #Redirect to the event detail page
         return redirect('event-detail', pk=current_event.pk)
     elif current_event.participants.filter(pk=request.user.pk).exists():
@@ -1690,6 +1698,14 @@ def remove_participant(request, event_pk, user_pk):
             #Remove user from event
             current_event.participants.remove(user)
             current_event.save()
+
+            #Create notification for the host that the user has left
+            #the event
+            content = (user.username + ' has left the event "' +
+                current_event.title + '".')
+            EventNotification.objects.create(event=current_event,
+                user=current_event.host, content=content, type="Participant Left",
+                creationDate=timezone.localtime(timezone.now()))
 
             #Redirect to events list view page
             return redirect('events')
@@ -1776,6 +1792,15 @@ def accept_invitation(request, pk):
         event.participants.add(request.user)
         event.save()
 
+        #Create notification for the host that the user has joined
+        #the event
+        content = (request.user.username + ' has accepted the invitiation ' +
+            'to your event "' + event.title + '".')
+        EventNotification.objects.create(event=event,
+            user=current_invitation.event.host,
+            content=content, type="Participant Joined",
+            creationDate=timezone.localtime(timezone.now()))
+
         #Delete the invitation after accepting the invite
         current_invitation.delete()
 
@@ -1791,6 +1816,15 @@ def decline_invitation(request, pk):
     if request.user != current_invitation.recipient:
             return redirect('index')
     else:
+        #Create notification for the host that the user has declined to join
+        #the event
+        content = (request.user.username + ' has declined the invitiation ' +
+            'to your event "' + current_invitation.event.title + '".')
+        EventNotification.objects.create(event=current_invitation.event,
+            user=current_invitation.event.host,
+            content=content, type="Participant Declined",
+            creationDate=timezone.localtime(timezone.now()))
+
         #Delete the invitation as user declined invite
         current_invitation.delete()
 
