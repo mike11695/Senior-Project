@@ -938,3 +938,44 @@ input[type="checkbox"]{
   margin-bottom: 10px;
   width: 110px;
 }
+
+.index-header {
+  text-align: center;
+  background-color: red;
+  background: url("/static/images/head-bg.png");
+  background-size: cover;
+  padding: 50px;
+}
+
+.welcome-header {
+  font-size: 72px;
+  font-weight: bolder;
+}
+
+.index-content-box {
+  text-align: center;
+  background: #CCC;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.index-content-box:nth-child(odd) {
+  background: white;
+}
+
+.index-content-box:last-child {
+  margin-bottom: 20px;
+}
+
+.index-content-box p {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 20px;
+}
+
+.user-features-column {
+  display: inline-block;
+  margin-top: 20px;
+  vertical-align: text-top;
+}

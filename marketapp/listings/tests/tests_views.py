@@ -7016,7 +7016,7 @@ class DeleteNotificationsViewTest(MyTestCase):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         post_response = self.client.post(reverse('delete-notifications'),
-            data={'instance': self.notification_id_list})
+            data={'data': self.notification_id_list})
         self.assertRedirects(post_response, '/listings/notifications/')
         self.assertFalse(OfferNotification.objects.filter(
             id=self.offer_notification_id).exists())
@@ -7031,11 +7031,11 @@ class DeleteNotificationsViewTest(MyTestCase):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         post_response = self.client.post(reverse('delete-notifications'),
-            data={'instance': self.notification_id_list})
+            data={'data': self.notification_id_list})
         self.assertRedirects(post_response, '/listings/notifications/')
         self.assertTrue(OfferNotification.objects.filter(
             id=self.offer_notification_id).exists())
-        self.assertTrue(BidNotification.objects.filter(
+        self.assertTrue(BidNotification.objectsdata.filter(
             id=self.bid_notification_id).exists())
         self.assertTrue(PaymentNotification.objects.filter(
             id=self.payment_notification_id).exists())

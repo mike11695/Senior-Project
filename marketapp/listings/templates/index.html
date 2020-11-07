@@ -1,6 +1,62 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h1>Marketplace Home</h1>
-  <p>Welcome to Marketplace, a work in progress</p>
+  {% load static %}
+  <div class="container-fluid col-lg-12 center-block index-header"">
+    <div class="welcome-header">Welcome to List.it!</div>
+  </div>
+  <div class="index-content-box">
+    <h1>What Is List.it?</h1>
+    <p>List.it is a site where people can sell, trade or auction items that
+      they own, or find items to buy or trade for!  Users can easily upload
+      images and add items to the site, which they can then use to create their
+      own listings that they can easily manage.  Your listings will become
+      public for other users to see, and they can easily make offers or place
+      bids on those listings.</p>
+  </div>
+  <div class="index-content-box">
+    <h1>What Features Does List.it Offer?</h1>
+    <div class="col-lg-3 user-features-column">
+      <img src="{% static 'images/seller.png' %}" style="width: 100px; height: 100px;"><br>
+      <b>As A Seller...</b>
+      <span style="text-align: left;">
+        <li>Trade items for other user's items</li>
+        <li>Sell/auction items for cash</li>
+        <li>Group items together in listings</li>
+        <li>Easily manage listings</li>
+      </span>
+    </div>
+    <div class="col-lg-3 user-features-column">
+      <img src="{% static 'images/buyer.png' %}" style="width: 100px; height: 100px;"><br>
+      <b>As A Buyer...</b>
+      <span style="text-align: left;">
+        <li>Place offers of items/cash on listings</li>
+        <li>Place bids on auctions</li>
+        <li>Send payments online through PayPal</li>
+        <li>Search for items using names/tags</li>
+      </span>
+    </div>
+    <div class="col-lg-3 user-features-column">
+      <img src="{% static 'images/group.png' %}" style="width: 100px; height: 100px;"><br>
+      <b>Anyone...</b>
+      <span style="text-align: left;">
+        <li>Upload images and create items</li>
+        <li>Start conversations with other users</li>
+        <li>Create events and invite other users</li>
+        <li>Create a wishlist and search listings</li>
+      </span>
+    </div>
+  </div>
+  <div class="index-content-box">
+    <h1>But That's Not All...</h1>
+    <p>List.it has implemeted a PayPal payment system into the site so that users
+      can make payments online to other users instead of in person!  Receipts are
+      automatically made for listings once they're completed, and allows users to
+      easily make payments through them.  The receipts allow users to retain a
+      history of items they've sold and bought as well, so they can easily track
+      where items and cash went for future reference.<p>
+  </div>
+  <div class="index-content-box">
+    <h1>Sold?  Start Using List.it Today!</h1>
+  </div>
 {% endblock %}
