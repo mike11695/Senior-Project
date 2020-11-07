@@ -1,0 +1,117 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>Notifications</h1>
+      </div>
+    </div>
+  </div>
+  {% if notifications %}
+    <div class="center-block col-lg-8" style="margin-top: 20px;">
+      <tr>
+        {% for notification in notifications %}
+          {% if notification.type == "Listing Ended" or notification.type == "Auction Completed" or notification.type == "Outbid" or notification.type == "Winning Bid" %}
+            {% if notification.obj.listing != null %}
+              <a href="{{ notification.obj.listing.get_absolute_url }}" class="notification-link">
+                <div class="notification-container"><td>
+                  <input type="checkbox" value="{{ notification.id }}">
+                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <div class="notification-date">{{ notification.creationDate }}</div>
+                </td></div>
+              </a>
+            {% else %}
+              <div class="notification-container"><td>
+                <input type="checkbox" value="{{ notification.id }}">
+                <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                <div class="notification-date">{{ notification.creationDate }}</div>
+              </td></div>
+            {% endif %}
+          {% elif notification.type == "Offer Accepted" or notification.type == "Offer Made" or notification.type == "Offer Updated" %}
+            {% if notification.obj.offer != null %}
+              <a href="{{ notification.obj.offer.get_absolute_url }}" class="notification-link">
+                <div class="notification-container"><td>
+                  <input type="checkbox" value="{{ notification.id }}">
+                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <div class="notification-date">{{ notification.creationDate }}</div>
+                </td></div>
+              </a>
+            {% else %}
+              <div class="notification-container"><td>
+                <input type="checkbox" value="{{ notification.id }}">
+                <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                <div class="notification-date">{{ notification.creationDate }}</div>
+              </td></div>
+            {% endif %}
+          {% elif notification.type == "Invitation Sent" %}
+            <a href="{% url 'invitations' %}" class="notification-link">
+              <div class="notification-container"><td>
+                <input type="checkbox" value="{{ notification.id }}">
+                <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                <div class="notification-date">{{ notification.creationDate }}</div>
+              </td></div>
+            </a>
+          {% elif notification.type == "Participant Joined" or notification.type == "Participant Left" %}
+            {% if notification.obj.event != null %}
+              <a href="{{ notification.obj.event.get_absolute_url }}" class="notification-link">
+                <div class="notification-container"><td>
+                  <input type="checkbox" value="{{ notification.id }}">
+                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <div class="notification-date">{{ notification.creationDate }}</div>
+                </td></div>
+              </a>
+            {% else %}
+              <div class="notification-container"><td>
+                <input type="checkbox" value="{{ notification.id }}">
+                <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                <div class="notification-date">{{ notification.creationDate }}</div>
+              </td></div>
+            {% endif %}
+          {% elif notification.type == "Payment Made" %}
+            <a href="{% url 'receipts' %}" class="notification-link">
+              <div class="notification-container"><td>
+                <input type="checkbox" value="{{ notification.id }}">
+                <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                <div class="notification-date">{{ notification.creationDate }}</div>
+              </td></div>
+            </a>
+          {% elif notification.type == "Feedback Left" %}
+            <a href="{{ notification.obj.profile.get_absolute_url }}" class="notification-link">
+              <div class="notification-container"><td>
+                <input type="checkbox" value="{{ notification.id }}">
+                <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                <div class="notification-date">{{ notification.creationDate }}</div>
+              </td></div>
+            </a>
+          {% else %}
+            <div class="notification-container"><td>
+              <input type="checkbox" value="{{ notification.id }}">
+              <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+              <div class="notification-date">{{ notification.creationDate }}</div>
+            </td></div>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p style="text-align: center;">You don't have any notifications at this time.</p>
+  {% endif %}
+{% endblock %}

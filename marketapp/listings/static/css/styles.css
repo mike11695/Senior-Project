@@ -894,3 +894,38 @@ a:hover {
 .receipt-amount {
   margin-top: 5px;
 }
+
+.notification-container {
+  background: white;
+  border: 3px solid grey;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+input[type="checkbox"]{
+  width: 20px;
+  height: 20px;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+.notification-content {
+  display: inline-block;
+  position: relative;
+  top: -4px;
+  left: 10px;
+  font-weight: bolder;
+}
+
+.notification-date {
+  display: inline-block;
+  position: relative;
+  top: 6px;
+  float: right;
+  font-size: 12px;
+}
+
+.notification-link {
+  color: black;
+}

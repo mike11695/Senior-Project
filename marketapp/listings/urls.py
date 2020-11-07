@@ -119,4 +119,7 @@ urlpatterns = [
         name="payment-made"),
     path('receipts/<int:pk>/delete', views.ReceiptDeleteView.as_view(),
         name='delete-receipt'),
+
+    #Notifications
+    path('notifications/', views.NotificationListView.as_view(), name='notifications'),
 ]

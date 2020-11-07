@@ -3,7 +3,8 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
-    PaymentNotification, InvitationNotification, EventNotification)
+    PaymentNotification, InvitationNotification, EventNotification,
+    Notification)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -6898,3 +6899,78 @@ class ReceiptDeleteViewTest(MyTestCase):
         receipt = self.active_receipt
         response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
         self.assertRedirects(response, '/listings/')
+
+class NotificationListViewTest(MyTestCase):
+    def setUp(self):
+        super(NotificationListViewTest, self).setUp()
+
+        #Create some notifications for testing
+        content = "Test Content"
+        OfferNotification.objects.create(
+            listing=self.global_offer_listing1, user=self.global_user1,
+            content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Test")
+
+        BidNotification.objects.create(
+            listing=self.global_auction_listing1, user=self.global_user1,
+            content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Test")
+
+        self.receipt = Receipt.objects.get(listing=self.global_offer_listing3)
+        PaymentNotification.objects.create(
+            receipt=self.receipt, user=self.global_user1,
+            content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Test")
+
+        ListingNotification.objects.create(
+            listing=self.global_auction_listing2, user=self.global_user2,
+            content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Test")
+
+    #Test to ensure that a user must be logged in to view notifications
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('notifications'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/notifications/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('notifications'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'notifications/notifications.html')
+
+    #Test to ensure that the user only sees notifications related to them
+    #for user1
+    def test_list_only_notifications_user1(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['notifications']), 3)
+
+    #Test to ensure that the user only sees notifications related to them
+    #for user2
+    def test_list_only_notifications_user2(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['notifications']), 1)
+
+    #Test to ensure that notifications become read when viewing notifications
+    def test_notifications_become_read(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('notifications'))
+        self.assertEqual(response.status_code, 200)
+        notifications = Notification.objects.filter(user=self.global_user1)
+        for notification in notifications:
+            self.assertFalse(notification.unread)

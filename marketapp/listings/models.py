@@ -40,6 +40,7 @@ class User(AbstractUser):
         verbose_name="Allow Users to Contact You Through Profile",
         help_text="Leave this field checked if you are interested in being contacted by users through your profile.  If unchecked, users will only be able to contact you after you accept their offer or bid or you contact them.")
 
+    #Property to return number of unread messages for a user
     @property
     def unread_message_count(self):
         unread_count = 0
@@ -62,6 +63,19 @@ class User(AbstractUser):
 
         return unread_count
 
+    #Property to return number of unread notifications for a user
+    @property
+    def unread_notification_count(self):
+        unread_count = 0
+
+        notifications = Notification.objects.filter(user=self)
+
+        if notifications:
+            for notification in notifications:
+                if notification.unread:
+                    unread_count = unread_count + 1
+
+        return unread_count
 
 #model for Portfolios, where users can learn about one another and leave feedback
 class Profile(models.Model):

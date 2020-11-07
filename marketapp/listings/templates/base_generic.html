@@ -82,6 +82,19 @@
                 </a>
               </li>
             {% endif %}
+            {% if user.unread_notification_count > 0 %}
+              <li class="site-nav-url-alert" style="margin-left: -3px;">
+                <a href="{% url 'notifications' %}">
+                  Notifications
+                </a>
+              </li>
+            {% else %}
+              <li class="site-nav-url" style="margin-left: -3px;">
+                <a href="{% url 'notifications' %}">
+                  Notifications
+                </a>
+              </li>
+            {% endif %}
             <div class="dropdown">
               <div class="site-nav-url dropbtn" style="margin-left: -3px;">More...</div>
               <div class="dropdown-content more-dropdown">

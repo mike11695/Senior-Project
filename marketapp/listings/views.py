@@ -16,7 +16,8 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
     Conversation, Message, Receipt, PaymentReceipt, ListingNotification,
     OfferNotification, BidNotification, PaymentNotification,
-    InvitationNotification, EventNotification)
+    InvitationNotification, EventNotification, Notification,
+    RatingNotification, WarningNotification)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -2546,6 +2547,7 @@ class ConversationDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
         except self.model.DoesNotExist:
             raise Http404("Conversation could not be found.")
 
+    #Method to set messages to read in conversation
     def read_messages(self, conversation):
         #Get the messages from the conversation
         messages = Message.objects.filter(conversation=conversation)
@@ -2660,7 +2662,7 @@ class ReceiptListView(LoginRequiredMixin, generic.ListView):
     template_name = "receipts/receipts.html"
     paginate_by = 10
 
-    #Filters the list of items to only show those that belong to the current logged in user
+    #Filters the list of receipts to only show those that belong to the current logged in user
     def get_queryset(self):
         all_receipt_ids = []
 
@@ -3020,3 +3022,77 @@ class ReceiptDeleteView(LoginRequiredMixin, generic.DeleteView):
            self.object.delete()
 
        return HttpResponseRedirect(self.get_success_url())
+
+#View for a user to see a list of notifications related to them
+class NotificationListView(LoginRequiredMixin, generic.ListView):
+    model = Notification
+    context_object_name = 'notifications'
+    template_name = "notifications/notifications.html"
+    paginate_by = 20
+
+    #Filters the list of notifications to only show those that belong to
+    #the current logged in user
+    def get_queryset(self):
+        notifications = Notification.objects.filter(
+            user=self.request.user).order_by('id')
+
+        #Get the subclass objects related to the notification
+        if notifications:
+            #Have unread notifications be read
+            notifications = self.read_notifications(notifications)
+
+            for notification in notifications:
+                if (notification.type == "Listing Ended"
+                    or notification.type == "Listing Expired"
+                    or notification.type == "Auction Completed"):
+                        #Get listing notification object
+                        notification.obj = ListingNotification.objects.get(
+                            id=notification.id)
+                elif (notification.type == "Offer Accepted"
+                    or notification.type == "Offer Rejected"
+                    or notification.type == "Offer Retracted"
+                    or notification.type == "Offer Made"
+                    or notification.type == "Offer Updated"):
+                        #Get offer notification object
+                        notification.obj = OfferNotification.objects.get(
+                            id=notification.id)
+                elif (notification.type == "Outbid"
+                    or notification.type == "Winning Bid"):
+                        #Get bid notification object
+                        notification.obj = BidNotification.objects.get(
+                            id=notification.id)
+                elif (notification.type == "Invitation Sent"):
+                    #Get invitation notification object
+                    notification.obj = InvitationNotification.objects.get(
+                        id=notification.id)
+                elif (notification.type == "Participant Joined"
+                    or notification.type == "Participant Declined"
+                    or notification.type == "Participant Removed"
+                    or notification.type == "Participant Left"):
+                        #Get bid notification object
+                        notification.obj = EventNotification.objects.get(
+                            id=notification.id)
+                elif (notification.type == "Payment Made"):
+                    #Get payment notification object
+                    notification.obj = PaymentNotification.objects.get(
+                        id=notification.id)
+                elif (notification.type == "Feedback Left"):
+                    #Get rating notification object
+                    notification.obj = RatingNotification.objects.get(
+                        id=notification.id)
+                elif (notification.type == "Warning Received"):
+                    #Get warning notification object
+                    notification.obj = WarningNotification.objects.get(
+                        id=notification.id)
+
+        return notifications
+
+    #Method to set notifications to read
+    def read_notifications(self, notifications):
+        for notification in notifications:
+            #set notification to be read
+            if notification.unread:
+                notification.unread = False
+                notification.save()
+
+        return notifications
