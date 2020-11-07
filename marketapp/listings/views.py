@@ -3096,3 +3096,26 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
                 notification.save()
 
         return notifications
+
+#View method to delete a list of notifications selected by a user
+@csrf_exempt #Add this too.
+def delete_notifications(request):
+    if request.method == 'POST': #<- Checking for method type
+        notification_id_list = request.POST.getlist('instance')
+        print(notification_id_list)
+
+        for notification_id in notification_id_list:
+            #Get the notification
+            print(notification_id)
+            notification = Notification.objects.get(id=notification_id)
+
+            #Only delete the notification if the user that owns the notification
+            #is deleting it
+            if notification.user == request.user:
+                print(notification_id + "deleted.")
+                notification.delete()
+
+        #redirect to notifications list view
+        return redirect('notifications')
+    else:
+        return HttpResponse('not post', status=404)

@@ -6974,3 +6974,68 @@ class NotificationListViewTest(MyTestCase):
         notifications = Notification.objects.filter(user=self.global_user1)
         for notification in notifications:
             self.assertFalse(notification.unread)
+
+class DeleteNotificationsViewTest(MyTestCase):
+    def setUp(self):
+        super(DeleteNotificationsViewTest, self).setUp()
+
+        #Create some notifications to test for deletion
+        self.notification_id_list = []
+        content = "Test Content"
+        self.offer_notification = OfferNotification.objects.create(
+            listing=self.global_offer_listing1, user=self.global_user1,
+            content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Test")
+        self.notification_id_list.append(self.offer_notification.id)
+        self.offer_notification_id = self.offer_notification.id
+
+        self.bid_notification = BidNotification.objects.create(
+            listing=self.global_auction_listing1, user=self.global_user1,
+            content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Test")
+        self.notification_id_list.append(self.bid_notification.id)
+        self.bid_notification_id = self.bid_notification.id
+
+        self.receipt = Receipt.objects.get(listing=self.global_offer_listing3)
+        self.payment_notification = PaymentNotification.objects.create(
+            receipt=self.receipt, user=self.global_user1,
+            content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Test")
+        self.notification_id_list.append(self.payment_notification.id)
+        self.payment_notification_id = self.payment_notification.id
+
+    #Test to ensure view can be called
+    def test_view_is_called(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('delete-notifications'))
+        self.assertEqual(response.status_code, 404)
+
+    #Test to ensure that the user can delete notifications successfully
+    def test_notifications_deleted_succesfully(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('delete-notifications'),
+            data={'instance': self.notification_id_list})
+        self.assertRedirects(post_response, '/listings/notifications/')
+        self.assertFalse(OfferNotification.objects.filter(
+            id=self.offer_notification_id).exists())
+        self.assertFalse(BidNotification.objects.filter(
+            id=self.bid_notification_id).exists())
+        self.assertFalse(PaymentNotification.objects.filter(
+            id=self.payment_notification_id).exists())
+
+    #Test to ensure that the user can not delete notifications that are not
+    #related to them
+    def test_notifications_not_deleted_user_not_related(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        post_response = self.client.post(reverse('delete-notifications'),
+            data={'instance': self.notification_id_list})
+        self.assertRedirects(post_response, '/listings/notifications/')
+        self.assertTrue(OfferNotification.objects.filter(
+            id=self.offer_notification_id).exists())
+        self.assertTrue(BidNotification.objects.filter(
+            id=self.bid_notification_id).exists())
+        self.assertTrue(PaymentNotification.objects.filter(
+            id=self.payment_notification_id).exists())

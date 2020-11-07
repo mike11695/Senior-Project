@@ -122,4 +122,5 @@ urlpatterns = [
 
     #Notifications
     path('notifications/', views.NotificationListView.as_view(), name='notifications'),
+    path('notifications/delete', views.delete_notifications, name='delete-notifications'),
 ]

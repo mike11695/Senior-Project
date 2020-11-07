@@ -929,3 +929,12 @@ input[type="checkbox"]{
 .notification-link {
   color: black;
 }
+
+.notification-delete-btn {
+  margin-bottom: 10px;
+}
+
+.notification-select-btn {
+  margin-bottom: 10px;
+  width: 110px;
+}
