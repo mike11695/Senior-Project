@@ -68,7 +68,11 @@ class User(AbstractUser):
     def unread_notification_count(self):
         unread_count = 0
 
-        notifications = Notification.objects.filter(user=self)
+        notifications_ids = [notification.id for notification
+            in Notification.objects.all()
+            if (notification.active == True
+            and notification.user == self)]
+        notifications = Notification.objects.filter(id__in=notifications_ids)
 
         if notifications:
             for notification in notifications:

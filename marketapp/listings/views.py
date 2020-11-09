@@ -3040,13 +3040,12 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
             in Notification.objects.all()
             if (notification.active == True
             and notification.user == self.request.user)]
-        notifications = Notification.objects.filter(id__in=notifications_ids).order_by('id')
+        notifications = Notification.objects.filter(id__in=notifications_ids).order_by('id').reverse()
         #notifications = Notification.objects.filter(user=self.request.user).order_by('id')
 
         #Get the subclass objects related to the notification
         if notifications:
             #Have unread notifications be read
-            print(notifications)
             notifications = self.read_notifications(notifications)
 
             for notification in notifications:
@@ -3098,8 +3097,6 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
     #Method to set notifications to read
     def read_notifications(self, notifications):
         for notification in notifications:
-            print(notification)
-            print(notification.unread)
             #set notification to be read
             if notification.unread:
                 notification.unread = False

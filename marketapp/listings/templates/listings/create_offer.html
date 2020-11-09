@@ -1,21 +1,36 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-<h2>Make an Offer</h2>
-<form enctype="multipart/form-data" method="post" action="">
-  {% csrf_token %}
-  {% for field in form %}
-    <p>
-      {{ field.label_tag }}
-      {{ field }}
-      {% if field.help_text %}
-        <br><small style="color: grey">{{ field.help_text }}</small>
-      {% endif %}
-      {% for error in field.errors %}
-        <p style="color: red">{{ error }}</p>
-      {% endfor %}
-    </p>
-  {% endfor %}
-  <button type="btn submit" class="btn btn-blue">Make Offer</button>
-</form>
+  <div class="center-block col-lg-10">
+    <h2 style="text-align: center;">Make an Offer</h2>
+    <div class="form-container-offers center-block">
+      <form enctype="multipart/form-data" method="post" action="">
+        {% csrf_token %}
+        {% for field in form %}
+          <p>
+            {% if field.label != "Items" %}
+              <div style="block">
+              <div style="display: inline-block;">
+                {{ field.label_tag }}
+              </div>
+              <div class="form-field-items">
+                {{ field }}
+              </div>
+              </div>
+              {% if field.help_text %}
+                <small style="color: grey">{{ field.help_text }}</small>
+              {% endif %}
+              {% for error in field.errors %}
+                <p style="color: red">{{ error }}</p>
+              {% endfor %}
+            {% else %}
+              <div>{{ field.label_tag }}</div>
+              <div class="item-tag-selection">{{ field }}</div>
+            {% endif %}
+          </p>
+        {% endfor %}
+        <button type="btn submit" class="btn btn-blue form-button">Create</button>
+      </form>
+    </div>
+  </div>
 {% endblock %}

@@ -131,16 +131,24 @@ class OfferListingForm(ModelForm):
             else:
                 raise ValidationError("You must have at least a minimum range if open to money offers.")
 
-    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), help_text="An item is required.")
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
+        help_text="An item is required.", widget=forms.CheckboxSelectMultiple)
     name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
     minRange = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
-        help_text="Minimum money offers you'll consider.")
+        help_text="Minimum money offers you'll consider.", label="Minimum Offer Range")
     maxRange = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
-        help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).")
+        help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).",
+        label="Maximum Offer Range")
+    description = forms.CharField(max_length=500, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text="A short description of what the listing obtains.")
+    notes = forms.CharField(max_length=500, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text="Include here what offers you're seeking.")
 
     class Meta:
         model = OfferListing
-        fields = ['name', 'description', 'items', 'endTimeChoices', 'openToMoneyOffers',
+        fields = ['name', 'items', 'description', 'endTimeChoices', 'openToMoneyOffers',
             'minRange', 'maxRange', 'notes']
         exclude = ['owner', 'endTime', 'listingEnded', 'listingCompleted']
 
@@ -289,7 +297,7 @@ class OfferForm(ModelForm):
         disabled=True, label="Offer Listing")
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
         help_text="Items are not required for an offer if user is open to money offers.",
-        required=False)
+        required=False, widget=forms.CheckboxSelectMultiple)
     amount = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Amount of cash you'd like to offer on listing (Leave blank or enter 0.00 if you do not want to offer cash).")
 
