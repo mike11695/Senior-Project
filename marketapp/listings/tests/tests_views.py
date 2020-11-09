@@ -6906,25 +6906,31 @@ class NotificationListViewTest(MyTestCase):
 
         #Create some notifications for testing
         content = "Test Content"
-        OfferNotification.objects.create(
+        future_time = timezone.localtime(timezone.now()) + timedelta(days=1)
+        self.notification_1 = OfferNotification.objects.create(
             listing=self.global_offer_listing1, user=self.global_user1,
             content=content, creationDate=timezone.localtime(timezone.now()),
             type="Test")
 
-        BidNotification.objects.create(
+        self.notification_2 = BidNotification.objects.create(
             listing=self.global_auction_listing1, user=self.global_user1,
             content=content, creationDate=timezone.localtime(timezone.now()),
             type="Test")
 
         self.receipt = Receipt.objects.get(listing=self.global_offer_listing3)
-        PaymentNotification.objects.create(
+        self.notification_3 = PaymentNotification.objects.create(
             receipt=self.receipt, user=self.global_user1,
-            content=content, creationDate=timezone.localtime(timezone.now()),
+            content=content, creationDate=future_time,
             type="Test")
 
         ListingNotification.objects.create(
             listing=self.global_auction_listing2, user=self.global_user2,
             content=content, creationDate=timezone.localtime(timezone.now()),
+            type="Test")
+
+        EventNotification.objects.create(
+            event=self.global_event, participant=self.global_user2,
+            user=self.global_user2, content=content, creationDate=future_time,
             type="Test")
 
     #Test to ensure that a user must be logged in to view notifications
@@ -6949,16 +6955,16 @@ class NotificationListViewTest(MyTestCase):
 
     #Test to ensure that the user only sees notifications related to them
     #for user1
-    def test_list_only_notifications_user1(self):
+    def test_list_only_active_notifications_user1(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('notifications'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['notifications']), 3)
+        self.assertEqual(len(response.context['notifications']), 2)
 
     #Test to ensure that the user only sees notifications related to them
     #for user2
-    def test_list_only_notifications_user2(self):
+    def test_list_only_active_notifications_user2(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('notifications'))
@@ -6966,14 +6972,17 @@ class NotificationListViewTest(MyTestCase):
         self.assertEqual(len(response.context['notifications']), 1)
 
     #Test to ensure that notifications become read when viewing notifications
-    def test_notifications_become_read(self):
+    def test_active_notifications_become_read(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('notifications'))
         self.assertEqual(response.status_code, 200)
-        notifications = Notification.objects.filter(user=self.global_user1)
-        for notification in notifications:
-            self.assertFalse(notification.unread)
+        notification = Notification.objects.get(id=self.notification_1.id)
+        self.assertFalse(notification.unread)
+        notification = Notification.objects.get(id=self.notification_2.id)
+        self.assertFalse(notification.unread)
+        notification = Notification.objects.get(id=self.notification_3.id)
+        self.assertTrue(notification.unread)
 
 class DeleteNotificationsViewTest(MyTestCase):
     def setUp(self):

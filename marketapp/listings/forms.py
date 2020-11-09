@@ -58,6 +58,8 @@ class AddImageForm(ModelForm):
             raise ValidationError("No image found")
 
     name = forms.CharField(max_length=50, required=True)
+    tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(),
+        widget=forms.CheckboxSelectMultiple, required=True, label="Tags")
 
     class Meta:
         model = Image
@@ -65,14 +67,30 @@ class AddImageForm(ModelForm):
         exclude = ['owner', 'width', 'height']
         help_texts = {'image': "Image must not be larger than 1250x1250."}
 
+#Form for a user to edit an image
+class EditImageForm(ModelForm):
+    name = forms.CharField(max_length=50, required=True)
+    tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(),
+        widget=forms.CheckboxSelectMultiple, required=True, label="Tags")
+
+    class Meta:
+        model = Image
+        fields = ['name', 'tags']
+        exclude = ['image', 'owner', 'width', 'height']
+
 #Form for a user to add and edit an item
 class ItemForm(ModelForm):
-    images = forms.ModelMultipleChoiceField(queryset=None, help_text="An image is required.")
-    name = forms.CharField(max_length=50, required=True, help_text="Name for item is required.")
+    images = forms.ModelMultipleChoiceField(queryset=None,
+        help_text="An image is required.", widget=forms.CheckboxSelectMultiple)
+    name = forms.CharField(max_length=50, required=True,
+        help_text="Name for item is required.")
+    description = forms.CharField(max_length=250, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':23}),
+        help_text="A brief description of the item in the image(s).")
 
     class Meta:
         model = Item
-        fields = ['images', 'name', 'description']
+        fields = ['name', 'description', 'images']
         exclude = ['owner']
 
     #Initializes the items dropdown with items that only relate to the current user

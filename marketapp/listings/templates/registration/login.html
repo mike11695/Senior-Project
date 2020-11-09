@@ -8,28 +8,41 @@
 
   {% if next %}
     {% if user.is_authenticated %}
-      <p>You're already logged in!/p>
+      <p>You're already logged in!</p>
     {% endif %}
   {% endif %}
 
-  <form method="post" action="{% url 'login' %}">
-    {% csrf_token %}
-    <table>
-      <tr>
-        <td>{{ form.username.label_tag }}</td>
-        <td>{{ form.username }}</td>
-      </tr>
-      <tr>
-        <td>{{ form.password.label_tag }}</td>
-        <td>{{ form.password }}</td>
-      </tr>
-    </table>
-    <input type="submit" class="btn btn-blue" value="Login" />
-    <input type="hidden" name="next" value="{{ next }}" />
-  </form>
+  {% if user.is_authenticated != True%}
+    <div class="center-block col-lg-10">
+      <h2 style="text-align: center;">Log In</h2>
+      <div class="form-container-log-in center-block">
+        <form method="post" action="{% url 'login' %}">
+          {% csrf_token %}
+              <div style="margin-bottom: 10px;">
+                <div style="display: inline-block;">
+                  {{ form.username.label_tag }}
+                </div>
+                <div class="form-field-log-in" style="display: inline-block;">
+                  {{ form.username }}
+                </div><br>
+              </div>
+              <div style="margin-bottom: 10px;">
+                <div style="display: inline-block;">
+                  {{ form.password.label_tag }}
+                </div>
+                <div class="form-field-log-in" style="display: inline-block;">
+                  {{ form.password }}
+                </div><br>
+              </div>
+          <input type="submit" class="btn btn-blue form-button" value="Login" /><br><br>
+          <input type="hidden" name="next" value="{{ next }}" />
+        </form>
 
-  {# Assumes you setup the password_reset view in your URLconf #}
-  <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
-  <p><a href="{% url 'signup' %}">Sign Up</a></p>
+        {# Assumes you setup the password_reset view in your URLconf #}
+        <div style="float: right; text-align: right;"><a href="{% url 'password_reset' %}">Lost password?</a><br>
+        <a href="{% url 'signup' %}">Sign Up</a></div>
+      </div>
+    </div>
+  {% endif %}
 
 {% endblock %}

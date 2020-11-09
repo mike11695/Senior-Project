@@ -22,7 +22,7 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
-    MessageForm)
+    MessageForm, EditImageForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -39,39 +39,42 @@ def index(request):
 
 #Form view for users to sign up to the site
 def signup(request):
-    if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            username = form.cleaned_data.get('username')
-            raw_password = form.cleaned_data.get('password1')
-            user = authenticate(username=username, password=raw_password)
-            login(request, user)
-
-            #Get the person that is registering's IP address to get location
-            #information
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            if x_forwarded_for:
-                ip = x_forwarded_for.split(',')[0]
-            else:
-                ip = request.META.get('REMOTE_ADDR')
-
-            #Gets the user's location information when not in the test
-            #enviornment
-            if ip != '127.0.0.1':
-                geo = GeoIP2()
-                user_location = geo.city(ip)
-                user.profile.country = user_location["country_name"]
-                user.profile.city = user_location["city"]
-                user.profile.state = user_location["region"] #State the user is in
-                user.profile.zipCode = user_location["postal_code"]
-
-                user.profile.save()
-
-            return redirect('index')
+    if request.user.is_authenticated:
+        return redirect('index')
     else:
-        form = SignUpForm()
-    return render(request, 'signup.html', {'form': form})
+        if request.method == 'POST':
+            form = SignUpForm(request.POST)
+            if form.is_valid():
+                user = form.save()
+                username = form.cleaned_data.get('username')
+                raw_password = form.cleaned_data.get('password1')
+                user = authenticate(username=username, password=raw_password)
+                login(request, user)
+
+                #Get the person that is registering's IP address to get location
+                #information
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR')
+
+                #Gets the user's location information when not in the test
+                #enviornment
+                if ip != '127.0.0.1':
+                    geo = GeoIP2()
+                    user_location = geo.city(ip)
+                    user.profile.country = user_location["country_name"]
+                    user.profile.city = user_location["city"]
+                    user.profile.state = user_location["region"] #State the user is in
+                    user.profile.zipCode = user_location["postal_code"]
+
+                    user.profile.save()
+
+                return redirect('index')
+        else:
+            form = SignUpForm()
+        return render(request, 'signup.html', {'form': form})
 
 #View for a user to see a list of their images
 class ImageListView(LoginRequiredMixin, generic.ListView):
@@ -117,7 +120,7 @@ def add_image(request):
 #View for a user to edit an image, but only the name and the tags
 class ImageEditView(LoginRequiredMixin, generic.UpdateView):
     model = Image
-    fields = ['name', 'tags']
+    form_class = EditImageForm
     template_name = "images/edit_image.html"
 
     #Checks to make sure owner of image is editing, redirects otherwise
@@ -3033,12 +3036,17 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
     #Filters the list of notifications to only show those that belong to
     #the current logged in user
     def get_queryset(self):
-        notifications = Notification.objects.filter(
-            user=self.request.user).order_by('id')
+        notifications_ids = [notification.id for notification
+            in Notification.objects.all()
+            if (notification.active == True
+            and notification.user == self.request.user)]
+        notifications = Notification.objects.filter(id__in=notifications_ids).order_by('id')
+        #notifications = Notification.objects.filter(user=self.request.user).order_by('id')
 
         #Get the subclass objects related to the notification
         if notifications:
             #Have unread notifications be read
+            print(notifications)
             notifications = self.read_notifications(notifications)
 
             for notification in notifications:
@@ -3090,6 +3098,8 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
     #Method to set notifications to read
     def read_notifications(self, notifications):
         for notification in notifications:
+            print(notification)
+            print(notification.unread)
             #set notification to be read
             if notification.unread:
                 notification.unread = False

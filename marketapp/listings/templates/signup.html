@@ -1,21 +1,29 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-  <h2>Sign up</h2>
-  <form method="post">
-    {% csrf_token %}
-    {% for field in form %}
-      <p>
-        {{ field.label_tag }}
-        {{ field }}
-        {% if field.help_text %}
-          <br><small style="color: grey">{{ field.help_text }}</small>
-        {% endif %}
-        {% for error in field.errors %}
-          <p style="color: red">{{ error }}</p>
+  <div class="center-block col-lg-10">
+    <h2 style="text-align: center;">Sign Up</h2>
+    <div class="form-container-sign-up center-block">
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+          <p>
+            <div style="display: inline-block;">
+              {{ field.label_tag }}
+            </div>
+            <div class="form-field-sign-up" style="display: inline-block;">
+              {{ field }}
+            </div>
+            {% if field.help_text %}
+              <br><small style="color: grey">{{ field.help_text }}</small>
+            {% endif %}
+            {% for error in field.errors %}
+              <p style="color: red">{{ error }}</p>
+            {% endfor %}
+          </p>
         {% endfor %}
-      </p>
-    {% endfor %}
-    <button type="btn submit" class="btn btn-blue">Sign up</button>
-  </form>
+        <button type="btn submit" class="btn btn-blue form-button">Sign up</button>
+      </form>
+    </div>
+  </div>
 {% endblock %}
