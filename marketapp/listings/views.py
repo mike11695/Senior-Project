@@ -1237,7 +1237,7 @@ def accept_offer(request, pk):
                 notification.delete()
 
             #Create a notification for the accepted offer
-            content = (current_listing.owner.username + 'has accepted your' +
+            content = (current_listing.owner.username + ' has accepted your' +
                 ' offer on the listing "' + current_listing.name + '".')
             OfferNotification.objects.create(listing=current_listing,
                 offer=current_offer, user=current_offer.owner,
@@ -1257,7 +1257,7 @@ def accept_offer(request, pk):
                     #Create a notification for the user that a dfferent offer was
                     #accepted
                     if offer.owner not in users and offer.owner != current_offer.owner:
-                        content = (current_listing.owner.username + 'has accepted a' +
+                        content = (current_listing.owner.username + ' has accepted a' +
                             ' different offer on the listing "' + current_listing.name + '".')
                         OfferNotification.objects.create(listing=current_listing,
                             user=offer.owner, content=content,

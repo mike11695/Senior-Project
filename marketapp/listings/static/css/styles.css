@@ -1074,7 +1074,39 @@ input[type="checkbox"]{
   height: 1090px;
 }
 
+.form-container-update-offer-listing {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 1040px;
+}
+
+.form-container-auction-listings {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 965px;
+}
+
 .form-container-offer-listings textarea {
+  display: block !important;
+  float: left;
+}
+
+.form-container-update-offer-listing textarea {
+  display: block !important;
+  float: left;
+}
+
+.form-container-auction-listings textarea {
   display: block !important;
   float: left;
 }
@@ -1090,13 +1122,115 @@ input[type="checkbox"]{
   height: 480px;
 }
 
-.image-tag-selection, .item-tag-selection ul {
+.form-container-bids {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 280px;
+}
+
+.form-container-profiles {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 460px;
+}
+
+.form-container-accounts {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 400px;
+}
+
+.form-field-accounts {
+  float: right;
+}
+
+.form-container-wishlists {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 630px;
+}
+
+.form-container-wishlist-listing {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 1000px;
+}
+
+.form-container-relist-wishlist-listing {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 950px;
+}
+
+.form-container-events {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 530px;
+}
+
+.form-container-invites {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 380px;
+}
+
+.image-tag-selection ul {
   list-style-type: none;
   padding-left: 5px;
   padding-bottom: -20px;
 }
 
-.image-tag-selection, .item-tag-selection li {
+.item-tag-selection ul {
+  list-style-type: none;
+  padding-left: 5px;
+  padding-bottom: -20px;
+}
+
+.image-tag-selection li {
+  margin: -10px 0px -10px 0px;
+}
+
+.item-tag-selection li {
   margin: -10px 0px -10px 0px;
 }
 
@@ -1111,7 +1245,12 @@ input[type="checkbox"]{
   background: white;
 }
 
-.image-tag-selection, .item-tag-selection input[type="checkbox"]{
+.image-tag-selection input[type="checkbox"]{
+  width: 15px;
+  height: 15px;
+}
+
+.item-tag-selection input[type="checkbox"]{
   width: 15px;
   height: 15px;
 }

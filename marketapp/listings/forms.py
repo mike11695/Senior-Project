@@ -151,6 +151,7 @@ class OfferListingForm(ModelForm):
         fields = ['name', 'items', 'description', 'endTimeChoices', 'openToMoneyOffers',
             'minRange', 'maxRange', 'notes']
         exclude = ['owner', 'endTime', 'listingEnded', 'listingCompleted']
+        labels = {'endTimeChoices': "Ending Time From Now"}
 
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
@@ -191,12 +192,19 @@ class UpdateOfferListingForm(ModelForm):
             else:
                 raise ValidationError("You must have at least a minimum range if open to money offers.")
 
-    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), help_text="An item is required.")
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
+        help_text="An item is required.", widget=forms.CheckboxSelectMultiple)
     name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
     minRange = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Minimum money offers you'll consider.")
     maxRange = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Maximum money offers you'll consider (leave blank if you don't have a maximum).")
+    description = forms.CharField(max_length=500, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text="A short description of what the listing obtains.")
+    notes = forms.CharField(max_length=500, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text="Include here what offers you're seeking.")
 
     class Meta:
         model = OfferListing
@@ -242,20 +250,27 @@ class AuctionListingForm(ModelForm):
 
         return
 
-    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), help_text="An item is required.")
+    items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
+        help_text="An item is required.", widget=forms.CheckboxSelectMultiple)
     name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
     startingBid = forms.DecimalField(max_digits=9, decimal_places=2, required=True,
-        help_text="Money amount bidding should start at for auction.")
+        help_text="Money amount bidding should start at for auction.",
+        label="Starting Bid")
     minimumIncrement = forms.DecimalField(max_digits=9, decimal_places=2, required=True,
-        help_text="Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).")
+        help_text="Minimum increment bid that can be placed on the auction, that cannot be greater than the starting bid (maximum increment bid will be x3 this value).",
+        label="Minimum Increment")
     autobuy = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="A bid greater than the starting bid that will automatically win the auction if placed. (Leave blank if not interested in having an autobuy price)")
+    description = forms.CharField(max_length=500, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text="A short description of what the listing obtains.")
 
     class Meta:
         model = AuctionListing
         fields = ['name', 'description', 'items', 'endTimeChoices', 'startingBid',
             'minimumIncrement', 'autobuy']
         exclude = ['owner', 'endTime', 'listingEnded']
+        labels = {'endTimeChoices': "Ending Time From Now"}
 
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
@@ -352,7 +367,7 @@ class EditOfferForm(ModelForm):
         disabled=True, label="Offer Listing")
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
         help_text="Items are not required for an offer if user is open to money offers.",
-        required=False)
+        required=False, widget=forms.CheckboxSelectMultiple)
     amount = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Amount of cash you'd like to offer on listing (Leave blank or enter 0.00 if you do not want to offer cash).")
 
@@ -498,6 +513,9 @@ class EventForm(ModelForm):
     date = forms.DateTimeField(required=True,
         help_text="Date/Time for Event ('YY-MM-DD' format or 'YY-MM-DD H:M' format).")
     location = forms.CharField(max_length=100, required=True, help_text="Address Where Event is Held.")
+    context = forms.CharField(max_length=250, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("What is the event for? What will happen/be accomplished?"))
 
     class Meta:
         model = Event
@@ -526,7 +544,7 @@ class InvitationForm(forms.Form):
             raise ValidationError("At least one user must be selected to invite.")
 
     users = forms.ModelMultipleChoiceField(queryset=User.objects.all(), label="Users to Invite",
-        help_text="Users You Would Like to Invite to Event.")
+        help_text="Users You Would Like to Invite to Event.", widget=forms.CheckboxSelectMultiple)
     event = forms.ModelChoiceField(queryset=Event.objects.all(), required=False,
         disabled=True)
 
@@ -551,10 +569,10 @@ class WishlistForm(ModelForm):
     title = forms.CharField(max_length=50, required=True, help_text="Title of Wishlist.")
     description = forms.CharField(max_length=250, required=True, help_text=("Description for Wishlist" +
         " (what it contains, how you want to accuire the items, etc.)"),
-        widget=forms.Textarea)
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}))
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(),
         help_text="Items That You Are Seeking.", label="Wishlist Items",
-        required=False)
+        required=False, widget=forms.CheckboxSelectMultiple)
 
     class Meta:
         model = Wishlist
@@ -588,22 +606,25 @@ class WishlistListingForm(ModelForm):
 
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=True,
         help_text="At least one wishlist item must be selected.",
-        label="Wishlist Items")
+        label="Wishlist Items", widget=forms.CheckboxSelectMultiple)
     itemsOffer = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=False,
         help_text="Items you would exchange for wishlist items.",
-        label="Items Being Offered")
+        label="Items Being Offered", widget=forms.CheckboxSelectMultiple)
     moneyOffer = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Monetary amount you would exchange for wishlist items.",
         label="Money Being Offered")
     name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
+    notes = forms.CharField(max_length=500, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("Any extra info about the wishlist items and what" +
+                "you're offering should go here"))
 
     class Meta:
         model = WishlistListing
         fields = ['name', 'items', 'endTimeChoices', 'moneyOffer', 'itemsOffer',
             'notes']
         exclude = ['owner', 'description', 'endTime', 'listingEnded']
-        help_texts = {'notes': ("Any extra info about the wishlist items and what" +
-                "you're offering should go here")}
+        labels = {'endTimeChoices': "Ending Time From Now"}
 
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
@@ -634,14 +655,18 @@ class EditWishlistListingForm(ModelForm):
 
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=True,
         help_text="At least one wishlist item must be selected.",
-        label="Wishlist Items")
+        label="Wishlist Items", widget=forms.CheckboxSelectMultiple)
     itemsOffer = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=False,
         help_text="Items you would exchange for wishlist items.",
-        label="Items Being Offered")
+        label="Items Being Offered", widget=forms.CheckboxSelectMultiple)
     moneyOffer = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Monetary amount you would exchange for wishlist items.",
         label="Money Being Offered")
     name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
+    notes = forms.CharField(max_length=500, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("Any extra info about the wishlist items and what" +
+                "you're offering should go here"))
 
     class Meta:
         model = WishlistListing
@@ -649,8 +674,7 @@ class EditWishlistListingForm(ModelForm):
             'notes']
         exclude = ['owner', 'description', 'endTime', 'listingEnded',
             'endTimeChoices']
-        help_texts = {'notes': ("Any extra info about the wishlist items and what" +
-                "you're offering should go here")}
+        labels = {'endTimeChoices': "Ending Time From Now"}
 
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
@@ -694,22 +718,25 @@ class QuickWishlistListingForm(ModelForm):
 
     items = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=False,
         help_text="At least one wishlist item must be selected.",
-        label="Wishlist Items")
+        label="Wishlist Items", widget=forms.CheckboxSelectMultiple)
     itemsOffer = forms.ModelMultipleChoiceField(queryset=Item.objects.all(), required=False,
         help_text="Items you would exchange for wishlist items.",
-        label="Items Being Offered")
+        label="Items Being Offered", widget=forms.CheckboxSelectMultiple)
     moneyOffer = forms.DecimalField(max_digits=9, decimal_places=2, required=False,
         help_text="Monetary amount you would exchange for wishlist items.",
         label="Money Being Offered")
     name = forms.CharField(max_length=50, required=True, help_text="Name for listing is required.")
+    notes = forms.CharField(max_length=500, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("Any extra info about the wishlist items and what" +
+                "you're offering should go here"))
 
     class Meta:
         model = WishlistListing
         fields = ['name', 'items', 'endTimeChoices', 'moneyOffer', 'itemsOffer',
             'notes']
         exclude = ['owner', 'description', 'endTime', 'listingEnded']
-        help_texts = {'notes': ("Any extra info about the wishlist items and what" +
-                "you're offering should go here")}
+        labels = {'endTimeChoices': "Ending Time From Now"}
 
     #Initializes the items dropdown with items that only relate to the current user
     def __init__(self, *args, **kwargs):
@@ -736,7 +763,7 @@ class ProfileForm(ModelForm):
 
     bio = forms.CharField(max_length=1000, required=True,
         help_text="A biography for your profile so others can know you better.",
-        label="Biography", widget=forms.Textarea)
+        label="Biography", widget=forms.Textarea(attrs={'rows':5, 'cols':49}))
     deliveryAddress = forms.CharField(max_length=100, required=False,
         help_text=("Submit an delivery address that you pick up items from." +
             "  Required if delivery check box is checked."),

@@ -3319,9 +3319,9 @@ class AcceptOfferViewTest(MyTestCase):
         post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
         self.assertEqual(post_response.status_code, 302)
         self.assertEqual(len(OfferNotification.objects.filter(listing=self.offer.offerListing)), 1)
-        acceptance_content = (self.offer.offerListing.owner.username + 'has accepted your' +
+        acceptance_content = (self.offer.offerListing.owner.username + ' has accepted your' +
             ' offer on the listing "' + self.offer.offerListing.name + '".')
-        rejection_content = (self.offer.offerListing.owner.username + 'has accepted a' +
+        rejection_content = (self.offer.offerListing.owner.username + ' has accepted a' +
             ' different offer on the listing "' + self.offer.offerListing.name + '".')
         self.assertEqual(len(OfferNotification.objects.filter(
             listing=self.offer.offerListing, content=rejection_content)), 0)
