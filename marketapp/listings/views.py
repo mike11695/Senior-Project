@@ -71,6 +71,8 @@ def signup(request):
                     user.profile.city = user_location["city"]
                     user.profile.state = user_location["region"] #State the user is in
                     user.profile.zipCode = user_location["postal_code"]
+                    user.profile.latitude = user_location["latitude"]
+                    user.profile.longitude = user_location["longitude"]
 
                     user.profile.save()
 
@@ -604,6 +606,10 @@ def create_offer_listing(request):
             for item in clean_items:
                 created_listing.items.add(item)
 
+            #Set latitude and longitude for the listing
+            created_listing.latitude = request.user.profile.latitude
+            created_listing.longitude = request.user.profile.longitude
+
             created_listing.save()
 
             #Set owner for receipt if it was created sucessfully
@@ -665,6 +671,10 @@ def update_offer_listing(request, pk):
                     clean_items = form.cleaned_data.get('items')
                     for item in clean_items:
                         current_listing.items.add(item)
+
+                    #Set latitude and longitude for the listing
+                    current_listing.latitude = request.user.profile.latitude
+                    current_listing.longitude = request.user.profile.longitude
 
                     current_listing.save()
                     return redirect('offer-listing-detail', pk=current_listing.pk)
@@ -767,6 +777,10 @@ def relist_offer_listing(request, pk):
 
                     #Set the end date for the listing
                     current_listing.endTime = date
+
+                    #Set latitude and longitude for the listing
+                    current_listing.latitude = request.user.profile.latitude
+                    current_listing.longitude = request.user.profile.longitude
 
                     current_listing.save()
 
@@ -1004,6 +1018,11 @@ def create_auction_listing(request):
 
             created_listing.endTime = date
             created_listing.owner = request.user
+
+            #Set latitude and longitude for the listing
+            created_listing.latitude = request.user.profile.latitude
+            created_listing.longitude = request.user.profile.longitude
+
             created_listing.save()
 
             #Set owner for receipt if it was created sucessfully
@@ -1092,6 +1111,10 @@ def relist_auction_listing(request, pk):
                     else:
                         #If not filled in, set it to 0.00
                         current_listing.autobuy = 0.00
+
+                    #Set latitude and longitude for the listing
+                    current_listing.latitude = request.user.profile.latitude
+                    current_listing.longitude = request.user.profile.longitude
 
                     current_listing.save()
 
@@ -2059,6 +2082,10 @@ def create_wishlist_listing(request):
                 for item in clean_offered_items:
                     created_wishlist_listing.itemsOffer.add(item)
 
+                #Set latitude and longitude for the listing
+                created_wishlist_listing.latitude = request.user.profile.latitude
+                created_wishlist_listing.longitude = request.user.profile.longitude
+
                 #Save the wishlist listing
                 created_wishlist_listing.save()
 
@@ -2116,6 +2143,10 @@ def edit_wishlist_listing(request, pk):
                         clean_offered_items = form.cleaned_data.get('itemsOffer')
                         for item in clean_offered_items:
                             updated_listing.itemsOffer.add(item)
+
+                        #Set latitude and longitude for the listing
+                        updated_listing.latitude = request.user.profile.latitude
+                        updated_listing.longitude = request.user.profile.longitude
 
                         #Save the wishlist listing
                         updated_listing.save()
@@ -2209,6 +2240,10 @@ def relist_wishlist_listing(request, pk):
                         for item in clean_offered_items:
                             relisted_listing.itemsOffer.add(item)
 
+                        #Set latitude and longitude for the listing
+                        relisted_listing.latitude = request.user.profile.latitude
+                        relisted_listing.longitude = request.user.profile.longitude
+
                         #Save the wishlist listing
                         relisted_listing.save()
 
@@ -2301,6 +2336,10 @@ def quick_wishlist_listing(request, pk):
                     clean_offered_items = form.cleaned_data.get('itemsOffer')
                     for item in clean_offered_items:
                         created_wishlist_listing.itemsOffer.add(item)
+
+                    #Set latitude and longitude for the listing
+                    created_wishlist_listing.latitude = request.user.profile.latitude
+                    created_wishlist_listing.longitude = request.user.profile.longitude
 
                     #Save the wishlist listing
                     created_wishlist_listing.save()
@@ -2435,6 +2474,8 @@ def edit_profile(request, pk):
                     edited_profile.city = user_location["city"]
                     edited_profile.state = user_location["region"] #State the user is in
                     edited_profile.zipCode = user_location["postal_code"]
+                    edited_profile.latitude = user_location["latitude"]
+                    edited_profile.longitude = user_location["longitude"]
 
                 #Save profile
                 edited_profile.save()

@@ -90,6 +90,8 @@ class Profile(models.Model):
     state = models.TextField(max_length=50, default="None") #ideally should be obtained when the user shares ther location
     city = models.TextField(max_length=50, default="None") #ideally should be obtained when the user shares ther location
     zipCode = models.TextField(max_length=10, verbose_name="Zip Code", default="None") #ideally should be obtained when the user shares ther location
+    latitude = models.DecimalField(default=0.0000, max_digits=6, decimal_places=4)
+    longitude = models.DecimalField(default=0.0000, max_digits=7, decimal_places=4)
     delivery = models.BooleanField(help_text="Check this if you are able to deliver items.", default=False)
     deliveryAddress = models.TextField(max_length=100, verbose_name="Delivery Address",
         help_text="Submit an delivery address that you pick up items from.",
@@ -364,6 +366,8 @@ class Listing(models.Model):
     endTimeChoices = models.CharField(max_length=3, choices=END_TIME_CHOICES, default=ONEHOUR)
     endTime = models.DateTimeField(blank=True, null=True)
     items = models.ManyToManyField(Item)
+    latitude = models.DecimalField(default=0.0000, max_digits=6, decimal_places=4, null=True)
+    longitude = models.DecimalField(default=0.0000, max_digits=7, decimal_places=4, null=True)
 
     @property
     def listingEnded(self):

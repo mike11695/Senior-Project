@@ -1595,6 +1595,10 @@ class CreateOfferListingViewTest(MyTestCase):
         self.item.images.add(image)
         self.item.save
 
+        user.profile.latitude = 44.0265
+        user.profile.longitude = -75.8499
+        user.profile.save()
+
     #Test to ensure that a user must be logged in to create offer listing
     def test_redirect_if_not_logged_in(self):
         response = self.client.get(reverse('create-offer-listing'))
@@ -1633,6 +1637,8 @@ class CreateOfferListingViewTest(MyTestCase):
         self.assertEqual(new_offer_listing.owner, post_response.wsgi_request.user)
         self.assertEqual(new_offer_listing.minRange, 5.00)
         self.assertEqual(new_offer_listing.maxRange, 10.00)
+        self.assertEqual(str(new_offer_listing.latitude), '44.0265')
+        self.assertEqual(str(new_offer_listing.longitude), '-75.8499')
         self.assertTrue(Receipt.objects.filter(listing=new_offer_listing).exists())
         receipt = Receipt.objects.get(listing=new_offer_listing)
         self.assertEqual(receipt.owner, post_response.wsgi_request.user)
@@ -2558,6 +2564,10 @@ class CreateAuctionListingViewTest(MyTestCase):
         self.item.images.add(image)
         self.item.save
 
+        user.profile.latitude = 44.0265
+        user.profile.longitude = -75.8499
+        user.profile.save()
+
     #Test to ensure that a user must be logged in to create auction listing
     def test_redirect_if_not_logged_in(self):
         response = self.client.get(reverse('create-auction-listing'))
@@ -2594,6 +2604,8 @@ class CreateAuctionListingViewTest(MyTestCase):
         new_auction_listing = AuctionListing.objects.last()
         self.assertEqual(new_auction_listing.owner, post_response.wsgi_request.user)
         self.assertEqual(new_auction_listing.autobuy, 50.00)
+        self.assertEqual(str(new_auction_listing.latitude), '44.0265')
+        self.assertEqual(str(new_auction_listing.longitude), '-75.8499')
         self.assertTrue(Receipt.objects.filter(listing=new_auction_listing).exists())
         receipt = Receipt.objects.get(listing=new_auction_listing)
         self.assertEqual(receipt.owner, post_response.wsgi_request.user)
@@ -4689,6 +4701,10 @@ class CreateWishlistListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateWishlistListingViewTest, self).setUp()
 
+        self.global_user1.profile.latitude = 44.0265
+        self.global_user1.profile.longitude = -75.8499
+        self.global_user1.profile.save()
+
     #Test to ensure that a user must be logged in to create wishlist listing
     def test_redirect_if_not_logged_in(self):
         response = self.client.get(reverse('create-wishlist-listing'))
@@ -4730,6 +4746,8 @@ class CreateWishlistListingViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         new_wishlist_listing = WishlistListing.objects.last()
         self.assertEqual(new_wishlist_listing.owner, post_response.wsgi_request.user)
+        self.assertEqual(str(new_wishlist_listing.latitude), '44.0265')
+        self.assertEqual(str(new_wishlist_listing.longitude), '-75.8499')
 
     #Test to ensure that a user is able to create an wishlist listing and have it
     #end in 1 hour if endtime choice is 1h
@@ -5084,6 +5102,10 @@ class QuickWishlistListingViewTest(MyTestCase):
             title="My Small Wishlist",
             description="I would be interested in getting these items in a trade.")
 
+        self.global_user1.profile.latitude = 44.0265
+        self.global_user1.profile.longitude = -75.8499
+        self.global_user1.profile.save()
+
     #Test to ensure that a user must be logged in to quickly create wishlist listing
     def test_redirect_if_not_logged_in(self):
         item = self.global_item1
@@ -5143,6 +5165,8 @@ class QuickWishlistListingViewTest(MyTestCase):
         self.assertEqual(new_wishlist_listing.owner, post_response.wsgi_request.user)
         print(new_wishlist_listing.items)
         self.assertTrue(new_wishlist_listing.items.filter(pk=item.id).exists())
+        self.assertEqual(str(new_wishlist_listing.latitude), '44.0265')
+        self.assertEqual(str(new_wishlist_listing.longitude), '-75.8499')
 
     #Test to ensure that a user is able to quick create an wishlist listing and have it
     #end in 1 hour if endtime choice is 1h
