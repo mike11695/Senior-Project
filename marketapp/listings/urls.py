@@ -123,4 +123,12 @@ urlpatterns = [
     #Notifications
     path('notifications/', views.NotificationListView.as_view(), name='notifications'),
     path('notifications/delete', views.delete_notifications, name='delete-notifications'),
+
+    #Favorites
+    path('favorites/favorite-listing', views.favorite_listing,
+        name="favorite-listing"),
+    path('favorites/', views.FavoriteListView.as_view(),
+        name="favorites"),
+    path('favorites/unfavorite-listing', views.unfavorite_listing,
+        name="unfavorite-listing"),
 ]

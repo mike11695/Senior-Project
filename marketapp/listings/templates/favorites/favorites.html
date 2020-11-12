@@ -1,0 +1,239 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>Favorited Listings</h1>
+      </div>
+    </div>
+  </div>
+  {% if favorites %}
+    {% for favorite in favorites %}
+      {% if favorite.listingType == "Offer Listing" %}
+        {% if favorite.listing_obj.endingSoon %}
+          <div class="all-listing-object-ending-soon">
+            {% with favorite.listing_obj.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ favorite.listing_obj.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ favorite.listing_obj.get_absolute_url }}" style="display: inline-block">
+                    <h4 style="display: inline-block">{{ favorite.listing_obj.name }}</h4>
+                  </a>
+                  <div class="listing-owner">
+                     Owned By: <a href="{% url 'profile-detail' pk=favorite.listing_obj.owner.profile.id %}">{{ favorite.listing_obj.owner }}</a>
+                  </div>
+                  <div class="ending-soon">
+                    Ending Soon!
+                  </div>
+                </div>
+                {% if favorite.listing_obj.openToMoneyOffers %}
+                  <div class="listing-prices">
+                    {% if favorite.listing_obj.maxRange > 0.00 %}
+                      Price Range: ${{ favorite.listing_obj.minRange }} - ${{ favorite.listing_obj.maxRange }}
+                    {% else %}
+                      Minimum Price: ${{ favorite.listing_obj.minRange }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+                <div class="listing-date">Ends: {{ favorite.listing_obj.endTime }}</div>
+              </div>
+              <div class="listing-desc">
+                {{ favorite.listing_obj.description }}
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="all-listing-object">
+            {% with favorite.listing_obj.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ favorite.listing_obj.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ favorite.listing_obj.get_absolute_url }}" style="display: inline-block">
+                    <h4 style="display: inline-block">{{ favorite.listing_obj.name }}</h4>
+                  </a>
+                  <div class="listing-owner">
+                     Owned By: <a href="{% url 'profile-detail' pk=favorite.listing_obj.owner.profile.id %}">{{ favorite.listing_obj.owner }}</a>
+                  </div>
+                </div>
+                {% if favorite.listing_obj.openToMoneyOffers %}
+                  <div class="listing-prices">
+                    {% if favorite.listing_obj.maxRange > 0.00 %}
+                      Price Range: ${{ favorite.listing_obj.minRange }} - ${{ favorite.listing_obj.maxRange }}
+                    {% else %}
+                      Minimum Price: ${{ favorite.listing_obj.minRange }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+                <div class="listing-date">Ends: {{ favorite.listing_obj.endTime }}</div>
+              </div>
+              <div class="listing-desc">
+                {{ favorite.listing_obj.description }}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% elif favorite.listingType == "Auction Listing" %}
+        {% if favorite.listing_obj.endingSoon %}
+          <div class="all-listing-object-ending-soon">
+            {% with favorite.listing_obj.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ favorite.listing_obj.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ favorite.listing_obj.get_absolute_url }}" style="display: inline-block">
+                    <h4 style="display: inline-block">{{ favorite.listing_obj.name }}</h4>
+                  </a>
+                  <div class="listing-owner">
+                     Owned By: <a href="{% url 'profile-detail' pk=favorite.listing_obj.owner.profile.id %}">{{ favorite.listing_obj.owner }}</a>
+                  </div>
+                  <div class="ending-soon">
+                    Ending Soon!
+                  </div>
+                </div>
+                <div class="listing-prices">
+                  {% if favorite.listing_obj.bids.count > 0 %}
+                    {% for bid in favorite.listing_obj.bids.all %}
+                      {% if bid.winningBid == True %}
+                        Current Bid: ${{ bid.amount }} | Minimum Increment: ${{ favorite.listing_obj.minimumIncrement }}<br>
+                      {% endif %}
+                    {% endfor %}
+                    {% if favorite.listing_obj.autobuy != 0.00 %}
+                      Autobuy: ${{ favorite.listing_obj.autobuy }}
+                    {% endif %}
+                  {% else %}
+                    Starting Bid: ${{ favorite.listing_obj.startingBid }} | Minimum Increment: ${{ favorite.listing_obj.minimumIncrement }}<br>
+                    {% if favorite.listing_obj.autobuy != 0.00 %}
+                      Autobuy: ${{ favorite.listing_obj.autobuy }}
+                    {% endif %}
+                  {% endif %}
+                </div>
+                <div class="listing-date">Ends: {{ favorite.listing_obj.endTime }}</div>
+              </div>
+              <div class="listing-desc">
+                {{ favorite.listing_obj.description }}
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="all-listing-object">
+            {% with listing.items.all|first as item %}
+              {% with item.images.all|first as image %}
+                <div class="listing-image-container">
+                  <a href="{{ favorite.listing_obj.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endwith %}
+            <div class="listing-details-container">
+              <div style="display: inline-block; width: 100%;">
+                <div class="listing-listview-header">
+                  <a href="{{ favorite.listing_obj.get_absolute_url }}" style="display: inline-block">
+                    <h4 style="display: inline-block">{{ favorite.listing_obj.name }}</h4>
+                  </a>
+                  <div class="listing-owner">
+                     Owned By: <a href="{% url 'profile-detail' pk=favorite.listing_obj.owner.profile.id %}">{{ favorite.listing_obj.owner }}</a>
+                 </div>
+                </div>
+                <div class="listing-prices">
+                  {% if favorite.listing_obj.bids.count > 0 %}
+                    {% for bid in favorite.listing_obj.bids.all %}
+                      {% if bid.winningBid == True %}
+                        Current Bid: ${{ bid.amount }} | Minimum Increment: ${{ favorite.listing_obj.minimumIncrement }}<br>
+                      {% endif %}
+                    {% endfor %}
+                    {% if favorite.listing_obj.autobuy != 0.00 %}
+                      Autobuy: ${{ favorite.listing_obj.autobuy }}
+                    {% endif %}
+                  {% else %}
+                    Starting Bid: ${{ favorite.listing_obj.startingBid }} | Minimum Increment: ${{ favorite.listing_obj.minimumIncrement }}<br>
+                    {% if favorite.listing_obj.autobuy != 0.00 %}
+                      Autobuy: ${{ favorite.listing_obj.autobuy }}
+                    {% endif %}
+                  {% endif %}
+                </div>
+                <div class="listing-date">Ends: {{ favorite.listing_obj.endTime }}</div>
+              </div>
+              <div class="listing-desc">
+                {{ favorite.listing_obj.description }}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% if favorite.listingType == "Wishlist Listing" %}
+        <div class="wishlist-listing-container">
+          <div class="wishlist-listing-header center-block col-lg-12">
+            <div class="wishlist-listing-name">
+              <a href="{% url 'wishlist-listing-detail' pk=listing.pk %}">
+                <h3 style="display: inline-block;">{{ favorite.listing_obj.name }}</h3>
+              </a>
+            </div>
+            <h5>{{ favorite.listing_obj.owner }} is searching for...</h5>
+          </div>
+          <div class="center-block col-lg-12 wishlist-listing-items-container">
+            {% for item in favorite.listing_obj.items.all %}
+              {% with item.images.all|first as image %}
+                <div class="wishlist-listing-image-container">
+                  <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endfor %}
+          </div>
+          <div class="center-block col-lg-12 wishlist-listing-offer-container">
+            <h5>{{ favorite.listing_obj.owner }} is offering...</h5>
+            {% if favorite.listing_obj.itemsOffer.count > 0 %}
+              {% for item in favorite.listing_obj.itemsOffer.all %}
+                {% with item.images.all|first as image %}
+                  <div class="wishlist-listing-image-container">
+                    <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                  </div>
+                {% endwith %}
+              {% endfor %}
+            {% endif %}
+            {% if favorite.listing_obj.moneyOffer and favorite.listing_obj.moneyOffer > 0.00 %}
+              <div class="wishlist-amount-offered"><h4>${{ favorite.listing_obj.moneyOffer }}</h4></div>
+            {% endif %}
+            {% if favorite.listing_obj.notes %}
+              <div class="wishlist-notes">{{ favorite.listing_obj.notes }}</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <div class="current" style="text-align: center;">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </div>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p style="text-align: center;">There are no wishlist listings currently.</p>
+  {% endif %}
+{% endblock %}

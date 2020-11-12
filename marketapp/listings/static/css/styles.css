@@ -1264,3 +1264,28 @@ input[type="checkbox"]{
   padding-right: 5px;
   background: white;
 }
+
+.favorite-listing {
+  float: right;
+  font-size: 24px;
+  color: #fcdf03;
+  border: none;
+  width: 28px;
+  height: 28px;
+  padding: 0px;
+  background: none;
+  margin-left: 5px;
+}
+
+.favorite-listing i {
+  position: relative;
+  top: -5px;
+}
+
+.favorite-listing:focus {
+  outline: none;
+}
+
+.favorite-listing:hover {
+  color: #d1b700;
+}

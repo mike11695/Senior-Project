@@ -29,6 +29,15 @@
                 <div class="listing-owner">
                    Owned By: <a href="{% url 'profile-detail' pk=listing.owner.profile.id %}">{{ listing.owner }}</a>
                 </div>
+                {% if listing.owner != request.user %}
+                  <button class="favorite-listing" onclick="favorite()" data-catid="{{ listing.id }}">
+                      {% if listing.favorited %}
+                        <i id="fave-btn" class="fas fa-star"></i>
+                      {% else %}
+                        <i id="fave-btn" class="far fa-star"></i>
+                      {% endif %}
+                  </button>
+                {% endif %}
                 <div class="ending-soon">
                   Ending Soon!
                 </div>
@@ -66,7 +75,16 @@
                 </a>
                 <div class="listing-owner">
                    Owned By: <a href="{% url 'profile-detail' pk=listing.owner.profile.id %}">{{ listing.owner }}</a>
-                 </div>
+                </div>
+                {% if listing.owner != request.user %}
+                  <button class="favorite-listing" onclick="favorite()" data-catid="{{ listing.id }}">
+                      {% if listing.favorited %}
+                        <i id="fave-btn" class="fas fa-star"></i>
+                      {% else %}
+                        <i id="fave-btn" class="far fa-star"></i>
+                      {% endif %}
+                  </button>
+                {% endif %}
               </div>
               {% if listing.openToMoneyOffers %}
                 <div class="listing-prices">

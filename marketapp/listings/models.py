@@ -489,17 +489,18 @@ class Offer(models.Model):
         return f'"Offer by ", {self.owner}'
 
 #Model for Favorites, so a user can save a listing and come back to it
-#Fields needed: Category, listing
-"""class Favorite(models.Model):
+#Fields needed: listingType, listing, user
+class Favorite(models.Model):
     #Fields for Favorite
-
-    def get_absolute_url(self):
-        #Returns the url to access a particular instance of Favorite.
-        return reverse('favorite-detail', args=[str(self.id)])
+    listingType = models.TextField(max_length=50, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+        related_name="favorites", null=True)
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE,
+        null=True)
 
     def __str__(self):
         #String for representing the Favorite object.
-        return f'{self.listing.name}'"""
+        return f'{self.listing.name}'
 
 #Model for Receipts, made after a transaction between users is completed
 #Fields needed: Owner, exchangee, listing

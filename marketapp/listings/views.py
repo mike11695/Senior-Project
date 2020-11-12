@@ -11,13 +11,15 @@ from django.contrib.gis.geoip2 import GeoIP2
 from django.db.models import Count, Max, OuterRef, Subquery
 from paypal.standard.forms import PayPalPaymentsForm
 from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.forms.models import model_to_dict
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
     Conversation, Message, Receipt, PaymentReceipt, ListingNotification,
     OfferNotification, BidNotification, PaymentNotification,
     InvitationNotification, EventNotification, Notification,
-    RatingNotification, WarningNotification)
+    RatingNotification, WarningNotification, Favorite)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -515,6 +517,11 @@ class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
             else:
                 obj.endingSoon = False
 
+            if Favorite.objects.filter(listing=obj, user=self.request.user).exists():
+                obj.favorited = True
+            else:
+                obj.favorited = False
+
         return queryset
 
 #View for a user to see a list of offers they have made
@@ -861,8 +868,7 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
        else:
            return redirect('index')
 
-#Form for a user to view all of their active auctions (need to come back to this
-#once listings are able to end)
+#Form for a user to view all of their active auctions
 class AuctionListingListView(LoginRequiredMixin, generic.ListView):
     model = AuctionListing
     context_object_name = 'auctionlistings'
@@ -907,6 +913,11 @@ class AllAuctionListingsListView(LoginRequiredMixin, generic.ListView):
                 obj.endingSoon = True
             else:
                 obj.endingSoon = False
+
+            if Favorite.objects.filter(listing=obj, user=self.request.user).exists():
+                obj.favorited = True
+            else:
+                obj.favorited = False
 
         return queryset
 
@@ -1962,7 +1973,15 @@ class AllWishlistListingsListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         listings_ids = [listing.id for listing in WishlistListing.objects.all()
             if listing.listingEnded == False]
-        return WishlistListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
+        queryset = WishlistListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
+
+        for obj in queryset:
+            if Favorite.objects.filter(listing=obj, user=self.request.user).exists():
+                obj.favorited = True
+            else:
+                obj.favorited = False
+
+        return queryset
 
 #Form view to create a wishlist listing for a user
 @login_required(login_url='/accounts/login/')
@@ -3123,3 +3142,103 @@ def delete_notifications(request, id=None):
         return redirect('notifications')
     else:
         return HttpResponse('not post', status=404)
+
+#View that will favorite/unfavorite a listing for a user when viewing listings
+#on all listings views
+@csrf_exempt
+def favorite_listing(request):
+    if request.method == 'POST':
+        if 'listing_id' in request.POST:
+            listing_id = request.POST['listing_id']
+            listing = get_object_or_404(Listing, pk=listing_id)
+
+            if Favorite.objects.filter(listing=listing, user=request.user).exists():
+                favorite_obj = Favorite.objects.get(listing=listing, user=request.user)
+                favorite_obj.delete()
+                return HttpResponse('Listing unfavorited', status=200)
+            else:
+                if listing.owner != request.user:
+                    if OfferListing.objects.filter(id=listing.id).exists():
+                        listing_type = "Offer Listing"
+                    elif AuctionListing.objects.filter(id=listing.id).exists():
+                        listing_type = "Auction Listing"
+                    else:
+                        listing_type = "Wishlist Listing"
+
+                    Favorite.objects.create(listingType=listing_type, listing=listing,
+                        user=request.user)
+
+                    return HttpResponse('Listing Favorited', status=200)
+                else:
+                    return HttpResponse('User cannot favorite owned listing', status=404)
+        else:
+            #Something went wrong
+            return HttpResponse('failed', status=404)
+    else:
+        #Nothing happens
+        return HttpResponse('nothing happened', status=201)
+
+#Form for a user to view all of their favorited listings
+class FavoriteListView(LoginRequiredMixin, generic.ListView):
+    model = Favorite
+    context_object_name = 'favorites'
+    template_name = "favorites/favorites.html"
+    paginate_by = 10
+
+    #Filters the list of favorites to only show those that belong to the
+    #current logged in user as long as they are active
+    def get_queryset(self):
+        favorites_ids = [favorite.id for favorite in Favorite.objects.all()
+            if (favorite.listing.listingEnded == False
+            and favorite.user == self.request.user)]
+        queryset = Favorite.objects.filter(id__in=favorites_ids).order_by('id').reverse()
+
+        for obj in queryset:
+            if obj.listingType == "Offer Listing":
+                obj.listing_obj = OfferListing.objects.get(id=obj.listing.id)
+            elif obj.listingType == "Auction Listing":
+                obj.listing_obj = AuctionListing.objects.get(id=obj.listing.id)
+            elif obj.listingType == "Wishlist Listing":
+                obj.listing_obj = WishlistListing.objects.get(id=obj.listing.id)
+
+        return queryset
+
+#View that will unfavorite a listing for a user when viewing their list of
+#favorites
+@csrf_exempt
+def unfavorite_listing(request):
+    if request.method == 'POST':
+        if 'listing_id' in request.POST:
+            listing_id = request.POST['listing_id']
+            listing = get_object_or_404(Listing, pk=listing_id)
+
+            if Favorite.objects.filter(listing=listing, user=request.user).exists():
+                favorite_obj = Favorite.objects.get(listing=listing, user=request.user)
+                favorite_obj.delete()
+
+                favorites_ids = [favorite.id for favorite in Favorite.objects.all()
+                    if (favorite.listing.listingEnded == False
+                    and favorite.user == request.user)]
+                queryset = Favorite.objects.filter(id__in=favorites_ids).values('listingType', 'listing').order_by('id').reverse()
+
+                for obj in queryset:
+                    if obj['listingType'] == "Offer Listing":
+                        obj['listing_obj'] = model_to_dict(OfferListing.objects.get(id=obj['listing']))
+                    elif obj['listingType'] == "Auction Listing":
+                        obj['listing_obj'] = model_to_dict(AuctionListing.objects.get(id=obj['listing']))
+                    elif obj['listingType'] == "Wishlist Listing":
+                        obj['listing_obj'] = model_to_dict(WishlistListing.objects.get(id=obj['listing']))
+
+                data = {
+                    'favorites': list(queryset)
+                }
+                return JsonResponse(data, safe=False)
+                #return HttpResponse('Listing unfavorited', status=200)
+            else:
+                return HttpResponse('Listing favorite does not exist', status=404)
+        else:
+            #Something went wrong
+            return HttpResponse('failed', status=404)
+    else:
+        #Nothing happens
+        return HttpResponse('nothing happened', status=201)

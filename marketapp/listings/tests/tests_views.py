@@ -4,7 +4,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
     PaymentNotification, InvitationNotification, EventNotification,
-    Notification)
+    Notification, Favorite)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7048,3 +7048,241 @@ class DeleteNotificationsViewTest(MyTestCase):
             id=self.bid_notification_id).exists())
         self.assertTrue(PaymentNotification.objects.filter(
             id=self.payment_notification_id).exists())
+
+class FavoriteListingTest(MyTestCase):
+    def setUp(self):
+        super(FavoriteListingTest, self).setUp()
+
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create a wishlist listing for testing with
+        self.wishlist_listing = WishlistListing.objects.create(
+            owner=self.global_user1, name='My Wishlist Listing',
+            endTime=date_active, moneyOffer=5.00, notes="Just a test")
+        self.wishlist_listing.items.add(self.global_item1)
+        self.wishlist_listing.itemsOffer.add(self.global_item1)
+        self.wishlist_listing.save
+
+    #Test to ensure that the view canbe called called
+    def test_view_is_called(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+
+    #Test to ensure that the view responds negatively to call if no data
+    #was sent
+    def test_view_responds_fail_no_data_sent(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={})
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure that the view responds positevely to call if data is sent
+    def test_view_responds_success_data_sent(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={'listing_id': [str(self.global_offer_listing1.id)]})
+        self.assertEqual(post_response.status_code, 200)
+
+    #Test to ensure that a listing favorite object is creating using the passed
+    #listing ID for an offer listing
+    def test_view_creates_favorite_object_offer_listing(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={'listing_id': [str(self.global_offer_listing1.id)]})
+        self.assertEqual(post_response.status_code, 200)
+        favorite = Favorite.objects.last()
+        self.assertEqual(favorite.user, post_response.wsgi_request.user)
+        self.assertEqual(favorite.listingType, "Offer Listing")
+        self.assertEqual(favorite.listing.name, self.global_offer_listing1.name)
+
+    #Test to ensure that a listing favorite object is creating using the passed
+    #listing ID for an auction listing
+    def test_view_creates_favorite_object_auction_listing(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={'listing_id': [str(self.global_auction_listing1.id)]})
+        self.assertEqual(post_response.status_code, 200)
+        favorite = Favorite.objects.last()
+        self.assertEqual(favorite.user, post_response.wsgi_request.user)
+        self.assertEqual(favorite.listingType, "Auction Listing")
+        self.assertEqual(favorite.listing.name, self.global_auction_listing1.name)
+
+    #Test to ensure that a listing favorite object is creating using the passed
+    #listing ID for an wishlist listing
+    def test_view_creates_favorite_object_wishlist_listing(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={'listing_id': [str(self.wishlist_listing.id)]})
+        self.assertEqual(post_response.status_code, 200)
+        favorite = Favorite.objects.last()
+        self.assertEqual(favorite.user, post_response.wsgi_request.user)
+        self.assertEqual(favorite.listingType, "Wishlist Listing")
+        self.assertEqual(favorite.listing.name, self.wishlist_listing.name)
+
+    #Test to ensure that a user cannot favorite one of their own listings
+    def test_view_user_cannot_favorite_owned_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={'listing_id': [str(self.wishlist_listing.id)]})
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure that a user can unfavorite a previously favorited listing
+    def test_view_user_can_unfavorite_listing(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={'listing_id': [str(self.global_offer_listing1.id)]})
+        self.assertEqual(post_response.status_code, 200)
+        favorite = Favorite.objects.last()
+        self.assertEqual(favorite.user, post_response.wsgi_request.user)
+        self.assertEqual(favorite.listingType, "Offer Listing")
+        self.assertEqual(favorite.listing.name, self.global_offer_listing1.name)
+        favorite_id = favorite.id
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={'listing_id': [str(self.global_offer_listing1.id)]})
+        self.assertEqual(post_response.status_code, 200)
+        self.assertFalse(Favorite.objects.filter(id=favorite_id).exists())
+
+class FavoritesViewTest(MyTestCase):
+    def setUp(self):
+        super(FavoritesViewTest, self).setUp()
+
+        #Create favorite objects for different users
+        Favorite.objects.create(listingType="Offer Listing",
+            user=self.global_user2, listing=self.global_offer_listing1)
+        Favorite.objects.create(listingType="Offer Listing",
+            user=self.global_user2, listing=self.global_offer_listing2)
+        Favorite.objects.create(listingType="Auction Listing",
+            user=self.global_user2, listing=self.global_auction_listing1)
+        Favorite.objects.create(listingType="Auction Listing",
+            user=self.global_user2, listing=self.global_auction_listing2)
+
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create a wishlist listing for testing with
+        self.new_listing = OfferListing.objects.create(owner=self.global_user2,
+            name='Test Offer Listing', description="Just a test listing",
+            openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=date_active,
+            listingCompleted=False)
+        self.new_listing.items.add(self.global_item2)
+        self.new_listing.save
+
+        Favorite.objects.create(listingType="Offer Listing",
+            user=self.global_user1, listing=self.new_listing)
+
+    #Test to ensure that a user must be logged in to view favorites
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('favorites'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/favorites/')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorites'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorites'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'favorites/favorites.html')
+
+    #Test to ensure that the user only sees favorites of active listings for
+    #user 1
+    def test_list_only_current_users_favorites_user1(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorites'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['favorites']) == 2)
+
+    #Test to ensure that the user only sees favorites if active listings for
+    #user 2
+    def test_list_only_current_users_favorites_user2(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorites'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['favorites']) == 1)
+
+class UnfavoriteListingTest(MyTestCase):
+    def setUp(self):
+        super(UnfavoriteListingTest, self).setUp()
+
+        self.favorite = Favorite.objects.create(listingType="Offer Listing",
+            user=self.global_user2, listing=self.global_offer_listing1)
+        self.favorite_id = self.favorite.id
+        Favorite.objects.create(listingType="Auction Listing",
+            user=self.global_user2, listing=self.global_auction_listing1)
+
+    #Test to ensure that the view can be called called
+    def test_view_is_called(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('unfavorite-listing'))
+        self.assertEqual(response.status_code, 201)
+
+    #Test to ensure that the view responds negatively to call if no data
+    #was sent
+    def test_view_responds_fail_no_data_sent(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('unfavorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('unfavorite-listing'),
+            data={})
+        self.assertEqual(post_response.status_code, 404)
+
+    #Test to ensure that the view responds positevely to call if data is sent
+    def test_view_responds_success_data_sent(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('unfavorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('unfavorite-listing'),
+            data={'listing_id': [str(self.global_offer_listing1.id)]})
+        favorites_ids = [favorite.id for favorite in Favorite.objects.all()
+            if (favorite.listing.listingEnded == False
+            and favorite.user == self.global_user2)]
+        queryset = Favorite.objects.filter(id__in=favorites_ids).order_by('id').reverse()
+        self.assertJSONEqual(
+            str(post_response.content, encoding='utf8'),
+            {'favorites': list(queryset)}
+        )
+
+    #Test to ensure that a listing favorite object is deleted using the passed
+    #listing ID
+    def test_view_destroys_favorite_object(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('favorite-listing'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.post(reverse('favorite-listing'),
+            data={'listing_id': [str(self.global_offer_listing1.id)]})
+        self.assertFalse(Favorite.objects.filter(id=self.favorite_id).exists())
