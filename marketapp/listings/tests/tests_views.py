@@ -1235,6 +1235,27 @@ class FAQReceiptsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/receipts.html')
 
+class FAQFavoritesViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to view FAQ
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('faq-favorites'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/FAQ/favorites')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-favorites'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-favorites'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'faq/favorites.html')
+
 class OfferListingsViewTest(MyTestCase):
     def setUp(self):
         super(OfferListingsViewTest, self).setUp()
@@ -7230,59 +7251,3 @@ class FavoritesViewTest(MyTestCase):
         response = self.client.get(reverse('favorites'))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['favorites']) == 1)
-
-class UnfavoriteListingTest(MyTestCase):
-    def setUp(self):
-        super(UnfavoriteListingTest, self).setUp()
-
-        self.favorite = Favorite.objects.create(listingType="Offer Listing",
-            user=self.global_user2, listing=self.global_offer_listing1)
-        self.favorite_id = self.favorite.id
-        Favorite.objects.create(listingType="Auction Listing",
-            user=self.global_user2, listing=self.global_auction_listing1)
-
-    #Test to ensure that the view can be called called
-    def test_view_is_called(self):
-        login = self.client.login(username='mike3', password='example')
-        self.assertTrue(login)
-        response = self.client.get(reverse('unfavorite-listing'))
-        self.assertEqual(response.status_code, 201)
-
-    #Test to ensure that the view responds negatively to call if no data
-    #was sent
-    def test_view_responds_fail_no_data_sent(self):
-        login = self.client.login(username='mike3', password='example')
-        self.assertTrue(login)
-        response = self.client.get(reverse('unfavorite-listing'))
-        self.assertEqual(response.status_code, 201)
-        post_response = self.client.post(reverse('unfavorite-listing'),
-            data={})
-        self.assertEqual(post_response.status_code, 404)
-
-    #Test to ensure that the view responds positevely to call if data is sent
-    def test_view_responds_success_data_sent(self):
-        login = self.client.login(username='mike3', password='example')
-        self.assertTrue(login)
-        response = self.client.get(reverse('unfavorite-listing'))
-        self.assertEqual(response.status_code, 201)
-        post_response = self.client.post(reverse('unfavorite-listing'),
-            data={'listing_id': [str(self.global_offer_listing1.id)]})
-        favorites_ids = [favorite.id for favorite in Favorite.objects.all()
-            if (favorite.listing.listingEnded == False
-            and favorite.user == self.global_user2)]
-        queryset = Favorite.objects.filter(id__in=favorites_ids).order_by('id').reverse()
-        self.assertJSONEqual(
-            str(post_response.content, encoding='utf8'),
-            {'favorites': list(queryset)}
-        )
-
-    #Test to ensure that a listing favorite object is deleted using the passed
-    #listing ID
-    def test_view_destroys_favorite_object(self):
-        login = self.client.login(username='mike3', password='example')
-        self.assertTrue(login)
-        response = self.client.get(reverse('favorite-listing'))
-        self.assertEqual(response.status_code, 201)
-        post_response = self.client.post(reverse('favorite-listing'),
-            data={'listing_id': [str(self.global_offer_listing1.id)]})
-        self.assertFalse(Favorite.objects.filter(id=self.favorite_id).exists())

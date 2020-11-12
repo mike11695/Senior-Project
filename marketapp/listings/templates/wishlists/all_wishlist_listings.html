@@ -18,11 +18,11 @@
                 <h3 style="display: inline-block;">{{ listing.name }}</h3>
               </a>
               {% if listing.owner != request.user %}
-                <button class="favorite-listing" onclick="favorite()" data-catid="{{ listing.id }}">
+                <button class="favorite-listing" id="listing{{listing.id}}" onclick="favorite({{ listing.id }})" data-catid="{{ listing.id }}">
                     {% if listing.favorited %}
-                      <i id="fave-btn" class="fas fa-star"></i>
+                      <i id="fave-btn{{listing.id}}" class="fas fa-star"></i>
                     {% else %}
-                      <i id="fave-btn" class="far fa-star"></i>
+                      <i id="fave-btn{{listing.id}}" class="far fa-star"></i>
                     {% endif %}
                 </button>
               {% endif %}

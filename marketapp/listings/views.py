@@ -13,6 +13,7 @@ from paypal.standard.forms import PayPalPaymentsForm
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
+from django.core import serializers
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
@@ -451,6 +452,12 @@ def faq_conversations(request):
 def faq_receipts(request):
     # Render the HTML template faq/receipts.html with the data in the context variable
     return render(request, 'faq/receipts.html')
+
+#FAQ page for favorites
+@login_required(login_url='/accounts/login/')
+def faq_favorites(request):
+    # Render the HTML template faq/favorites.html with the data in the context variable
+    return render(request, 'faq/favorites.html')
 
 #List view for a user to see all of the offer listings they have
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
@@ -3202,43 +3209,3 @@ class FavoriteListView(LoginRequiredMixin, generic.ListView):
                 obj.listing_obj = WishlistListing.objects.get(id=obj.listing.id)
 
         return queryset
-
-#View that will unfavorite a listing for a user when viewing their list of
-#favorites
-@csrf_exempt
-def unfavorite_listing(request):
-    if request.method == 'POST':
-        if 'listing_id' in request.POST:
-            listing_id = request.POST['listing_id']
-            listing = get_object_or_404(Listing, pk=listing_id)
-
-            if Favorite.objects.filter(listing=listing, user=request.user).exists():
-                favorite_obj = Favorite.objects.get(listing=listing, user=request.user)
-                favorite_obj.delete()
-
-                favorites_ids = [favorite.id for favorite in Favorite.objects.all()
-                    if (favorite.listing.listingEnded == False
-                    and favorite.user == request.user)]
-                queryset = Favorite.objects.filter(id__in=favorites_ids).values('listingType', 'listing').order_by('id').reverse()
-
-                for obj in queryset:
-                    if obj['listingType'] == "Offer Listing":
-                        obj['listing_obj'] = model_to_dict(OfferListing.objects.get(id=obj['listing']))
-                    elif obj['listingType'] == "Auction Listing":
-                        obj['listing_obj'] = model_to_dict(AuctionListing.objects.get(id=obj['listing']))
-                    elif obj['listingType'] == "Wishlist Listing":
-                        obj['listing_obj'] = model_to_dict(WishlistListing.objects.get(id=obj['listing']))
-
-                data = {
-                    'favorites': list(queryset)
-                }
-                return JsonResponse(data, safe=False)
-                #return HttpResponse('Listing unfavorited', status=200)
-            else:
-                return HttpResponse('Listing favorite does not exist', status=404)
-        else:
-            #Something went wrong
-            return HttpResponse('failed', status=404)
-    else:
-        #Nothing happens
-        return HttpResponse('nothing happened', status=201)

@@ -22,6 +22,7 @@ urlpatterns = [
     path('FAQ/accounts', views.faq_accounts, name='faq-accounts'),
     path('FAQ/conversations', views.faq_conversations, name='faq-conversations'),
     path('FAQ/receipts', views.faq_receipts, name='faq-receipts'),
+    path('FAQ/favorites', views.faq_favorites, name='faq-favorites'),
 
     #Items
     path('images/', views.ImageListView.as_view(), name='images'),
@@ -129,6 +130,4 @@ urlpatterns = [
         name="favorite-listing"),
     path('favorites/', views.FavoriteListView.as_view(),
         name="favorites"),
-    path('favorites/unfavorite-listing', views.unfavorite_listing,
-        name="unfavorite-listing"),
 ]

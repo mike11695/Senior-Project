@@ -1,0 +1,30 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to Favorite a Listing</h1>
+    <p>Favoriting a listing is very easy.  First, go to a page that lists all of a
+      type of listing on the site (offer/auction/wishlist).  On that page, for each
+      listing, there will be a star in the top right corner of the container.  By
+      clicking on the star, you will be able to favorite the listing.  After clicking
+      on it, the star will be filled in to show that it is a listing that you have
+      favorited.  To unfavorite a listing, simply click on the star again, and the
+      star will lose it's filling to show that the listing is not favorited.</p>
+    <h1>How to View Your Favorites</h1>
+    <p>To view all of the listings that you have favorited, hover over "All Listings"
+      in the top right navigation bar and in the drop down select "Favorites".  The
+      following page will display a list of all acitve listings that you have favorited.
+      Inactive listings will not appear in this list unless they happen to be relisted
+      again.  You can unfavorite any of the listings in the list by simply clicking
+      on the star in the top right of any container and the star will lose it's
+      filling to show that the listing is not favorited.</p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Favorites</h1>
+    <h3 class="faq-question">How many listings can I favorite?</h3>
+    <p>You are allowed to favorite as many listings as you want to.</p>
+    <h3 class="faq-question">Can I favorite my own listings?</h3>
+    <p>No, you cannot favorite your own listings.</p>
+</div>
+{% endblock %}

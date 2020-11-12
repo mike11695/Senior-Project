@@ -10,8 +10,8 @@ function deselect_all()  {
      $('#select-btn').text('Select All')
 }
 
-function favorite() {
-    var catid = $('.favorite-listing').attr("data-catid");
+function favorite(id) {
+    var catid = $('#listing' + id).attr("data-catid");
     var data = {'listing_id': catid}
     $.ajax(
     {
@@ -20,12 +20,12 @@ function favorite() {
         data: data,
         success: function()
         {
-            if (document.getElementById("fave-btn").classList.contains('fas')) {
-              document.getElementById("fave-btn").classList.remove('fas');
-              document.getElementById("fave-btn").classList.add('far');
+            if (document.getElementById("fave-btn" + id).classList.contains('fas')) {
+              document.getElementById("fave-btn" + id).classList.remove('fas');
+              document.getElementById("fave-btn" + id).classList.add('far');
             } else {
-              document.getElementById("fave-btn").classList.remove('far');
-              document.getElementById("fave-btn").classList.add('fas');
+              document.getElementById("fave-btn" + id).classList.remove('far');
+              document.getElementById("fave-btn" + id).classList.add('fas');
             }
         }
      })
