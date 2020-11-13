@@ -11,9 +11,7 @@ from django.contrib.gis.geoip2 import GeoIP2
 from django.db.models import Count, Max, OuterRef, Subquery
 from paypal.standard.forms import PayPalPaymentsForm
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.forms.models import model_to_dict
-from django.core import serializers
+from decimal import Decimal
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
@@ -513,9 +511,22 @@ class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
     #Filters the list of offer listings to only show those that have not
     #ended yet
     def get_queryset(self):
+        #Get the latitude and longitude range using user's location
+        user_latitude = self.request.user.profile.latitude
+        min_latitude = user_latitude - Decimal.from_float(0.3400)
+        max_latitude = user_latitude + Decimal.from_float(0.3400)
+
+        user_longitude = self.request.user.profile.longitude
+        min_longitude = user_longitude - Decimal.from_float(0.3400)
+        max_longitude = user_longitude + Decimal.from_float(0.3400)
+
         listings_ids = [listing.id for listing in OfferListing.objects.all() if listing.listingEnded == False
             and listing.listingCompleted == False]
-        queryset = OfferListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
+        queryset = OfferListing.objects.filter(
+            id__in=listings_ids,
+            latitude__range=[min_latitude, max_latitude],
+            longitude__range=[min_longitude, max_longitude],
+            ).order_by('id').reverse()
 
         current_date = timezone.localtime(timezone.now())
 
@@ -923,8 +934,21 @@ class AllAuctionListingsListView(LoginRequiredMixin, generic.ListView):
     #Filters the list of auction listings to only show those that have not
     #ended yet
     def get_queryset(self):
+        #Get the latitude and longitude range using user's location
+        user_latitude = self.request.user.profile.latitude
+        min_latitude = user_latitude - Decimal.from_float(0.3400)
+        max_latitude = user_latitude + Decimal.from_float(0.3400)
+
+        user_longitude = self.request.user.profile.longitude
+        min_longitude = user_longitude - Decimal.from_float(0.3400)
+        max_longitude = user_longitude + Decimal.from_float(0.3400)
+
         listings_ids = [listing.id for listing in AuctionListing.objects.all() if listing.listingEnded == False]
-        queryset = AuctionListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
+        queryset = AuctionListing.objects.filter(
+            id__in=listings_ids,
+            latitude__range=[min_latitude, max_latitude],
+            longitude__range=[min_longitude, max_longitude],
+        ).order_by('id').reverse()
 
         current_date = timezone.localtime(timezone.now())
 
@@ -2001,9 +2025,22 @@ class AllWishlistListingsListView(LoginRequiredMixin, generic.ListView):
     #Filters the list of wishlist listings to only show those that
     #Have not ended yet
     def get_queryset(self):
+        #Get the latitude and longitude range using user's location
+        user_latitude = self.request.user.profile.latitude
+        min_latitude = user_latitude - Decimal.from_float(0.3400)
+        max_latitude = user_latitude + Decimal.from_float(0.3400)
+
+        user_longitude = self.request.user.profile.longitude
+        min_longitude = user_longitude - Decimal.from_float(0.3400)
+        max_longitude = user_longitude + Decimal.from_float(0.3400)
+
         listings_ids = [listing.id for listing in WishlistListing.objects.all()
             if listing.listingEnded == False]
-        queryset = WishlistListing.objects.filter(id__in=listings_ids).order_by('id').reverse()
+        queryset = WishlistListing.objects.filter(
+            id__in=listings_ids,
+            latitude__range=[min_latitude, max_latitude],
+            longitude__range=[min_longitude, max_longitude],
+        ).order_by('id').reverse()
 
         for obj in queryset:
             if Favorite.objects.filter(listing=obj, user=self.request.user).exists():

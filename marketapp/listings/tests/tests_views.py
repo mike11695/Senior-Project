@@ -65,35 +65,36 @@ class MyTestCase(TestCase):
         self.global_offer_listing1 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
             maxRange=10.00, notes="Just offer", endTime=date_active,
-            listingCompleted=False)
+            listingCompleted=False, latitude=40.0200, longitude=-75.0300)
         self.global_offer_listing1.items.add(self.global_item1)
         self.global_offer_listing1.save
 
         #Create a global offer listing that is not active
         self.global_offer_listing2 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
-            maxRange=10.00, notes="Just offer", endTime=date_ended)
+            maxRange=10.00, notes="Just offer", endTime=date_ended, latitude=40.0200, longitude=-75.0300)
         self.global_offer_listing2.items.add(self.global_item1)
         self.global_offer_listing2.save
 
         #Create a global offer listing that has completed
         self.global_offer_listing3 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
             description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
-            maxRange=10.00, notes="Just offer", endTime=date_ended, listingCompleted=True)
+            maxRange=10.00, notes="Just offer", endTime=date_ended, listingCompleted=True,
+            latitude=40.0200, longitude=-75.0300)
         self.global_offer_listing3.items.add(self.global_item1)
         self.global_offer_listing3.save
 
         #Create a global auction listing that is active
         self.global_auction_listing1 = AuctionListing.objects.create(owner=user1, name='Test Auction Listing',
             description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
-            endTime=date_active)
+            endTime=date_active, latitude=40.0200, longitude=-75.0300)
         self.global_auction_listing1.items.add(self.global_item1)
         self.global_auction_listing1.save
 
         #Create a global auction listing that is inactive
         self.global_auction_listing2 = AuctionListing.objects.create(owner=user1, name='Test Auction Listing',
             description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
-            endTime=date_ended)
+            endTime=date_ended, latitude=40.0200, longitude=-75.0300)
         self.global_auction_listing2.items.add(self.global_item1)
         self.global_auction_listing2.save
 
@@ -1441,21 +1442,28 @@ class AllOfferListingsViewTest(MyTestCase):
 
         #Create a variety of listings to test with
         #Number of active listings should be 10 as there is a global active listing
-        number_of_active_listings_user1 = 4
+        number_of_active_listings_user1 = 6
         number_of_active_listings_user2 = 5
         number_of_inactive_listings_user1 = 2
         number_of_completed_listings_user2 = 3
 
-        self.num_active_listings = 10
-
         date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
         date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Set the locations of the users
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 41.0000
+        self.global_user2.profile.longitude = -69.0000
+        self.global_user2.profile.save()
 
         for num in range(number_of_active_listings_user1):
             listing = OfferListing.objects.create(owner=self.global_user1,
                 name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
                 openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
-                endTime=date_active)
+                endTime=date_active, latitude=40.0000, longitude=-75.0000)
             listing.items.add(self.global_item1)
             listing.save
 
@@ -1463,7 +1471,7 @@ class AllOfferListingsViewTest(MyTestCase):
             listing = OfferListing.objects.create(owner=self.global_user2,
                 name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
                 openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
-                endTime=date_active)
+                endTime=date_active, latitude=41.0000, longitude=-69.0000)
             listing.items.add(self.global_item2)
             listing.save
 
@@ -1471,7 +1479,7 @@ class AllOfferListingsViewTest(MyTestCase):
             listing = OfferListing.objects.create(owner=self.global_user1,
                 name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
                 openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
-                endTime=date_ended)
+                endTime=date_ended, latitude=40.0000, longitude=-75.0000)
             listing.items.add(self.global_item1)
             listing.save
 
@@ -1479,7 +1487,7 @@ class AllOfferListingsViewTest(MyTestCase):
             listing = OfferListing.objects.create(owner=self.global_user2,
                 name='Test Offer Listing #{0}'.format(num), description="Just a test listing",
                 openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
-                endTime=date_active, listingCompleted=True)
+                endTime=date_active, listingCompleted=True, latitude=41.0000, longitude=-69.0000)
             listing.items.add(self.global_item2)
             listing.save
 
@@ -1503,21 +1511,23 @@ class AllOfferListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/all_offer_listings.html')
 
-    #Test to ensure that a user sees the correct amount of active listings
+    #Test to ensure that a user sees the correct amount of active listings relative
+    #to their location
     def test_list_only_active_listings(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('all-offer-listings'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['offerlistings']), self.num_active_listings)
+        self.assertEqual(len(response.context['offerlistings']), 7)
 
-    #Test to ensure that  different user sees the correct amount of active listings
+    #Test to ensure that a different user sees the correct amount of active listings
+    #relative to their location
     def test_list_only_active_listings_new_user(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('all-offer-listings'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['offerlistings']), self.num_active_listings)
+        self.assertEqual(len(response.context['offerlistings']), 5)
 
 class MyOffersViewTest(MyTestCase):
     def setUp(self):
@@ -2417,17 +2427,26 @@ class AllAuctionListingsViewTest(MyTestCase):
         date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
         date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
 
+        #Set the locations of the users
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 41.0000
+        self.global_user2.profile.longitude = -69.0000
+        self.global_user2.profile.save()
+
         for num in range(number_of_active_listings_user1):
             listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
                 description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
-                endTime=date_active)
+                endTime=date_active, latitude=40.0000, longitude=-75.0000)
             listing.items.add(self.global_item1)
             listing.save
 
         for num in range(number_of_active_listings_user2):
             listing = AuctionListing.objects.create(owner=self.global_user2, name='Test Auction Listing',
                 description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
-                endTime=date_active)
+                endTime=date_active, latitude=41.0000, longitude=-69.0000)
             listing.items.add(self.global_item2)
             listing.save
             print(num)
@@ -2435,7 +2454,7 @@ class AllAuctionListingsViewTest(MyTestCase):
         for num in range(number_of_inactive_listings_user1):
             listing = AuctionListing.objects.create(owner=self.global_user1, name='Test Auction Listing',
                 description="Just a test listing", startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
-                endTime=date_ended)
+                endTime=date_ended, latitude=40.0000, longitude=-75.0000)
             listing.items.add(self.global_item1)
             listing.save
 
@@ -2459,37 +2478,23 @@ class AllAuctionListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/all_auction_listings.html')
 
-    #Test to ensure that a user sees the correct amount of active listings for first page
+    #Test to ensure that a user sees the correct amount of active listings
+    #for first page relative to their location
     def test_list_only_active_listings_page_1(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('all-auction-listings'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['auctionlistings']), 10)
+        self.assertEqual(len(response.context['auctionlistings']), 8)
 
-    #Test to ensure that a user sees the correct amount of active listings for second page
-    def test_list_only_active_listings_page_2(self):
-        login = self.client.login(username='mike2', password='example')
-        self.assertTrue(login)
-        response = self.client.get(reverse('all-auction-listings')+'?page=2')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['auctionlistings']), 3)
-
-    #Test to ensure that  different user sees the correct amount of active listings for first page
+    #Test to ensure that a different user sees the correct amount of active
+    #listings for first page  relative to their location
     def test_list_only_active_listings_new_user_page_1(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('all-auction-listings'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['auctionlistings']), 10)
-
-    #Test to ensure that  different user sees the correct amount of active listings for second page
-    def test_list_only_active_listings_new_user_page_2(self):
-        login = self.client.login(username='mike3', password='example')
-        self.assertTrue(login)
-        response = self.client.get(reverse('all-auction-listings')+'?page=2')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['auctionlistings']), 3)
+        self.assertEqual(len(response.context['auctionlistings']), 5)
 
 class MyBidsViewTest(MyTestCase):
     def setUp(self):
@@ -4636,13 +4641,23 @@ class AllWishlistListingsViewTest(MyTestCase):
         number_of_active_listings_user2 = 6
         number_of_inactive_listings_user1 = 7
 
+        #Set the locations of the users
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 41.0000
+        self.global_user2.profile.longitude = -69.0000
+        self.global_user2.profile.save()
+
         date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
         date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
 
         for num in range(number_of_active_listings_user1):
             listing = WishlistListing.objects.create(owner=self.global_user1,
                 name='My Wishlist Listing #{0}'.format(num), endTime=date_active,
-                moneyOffer=5.00, notes="Just a test")
+                moneyOffer=5.00, notes="Just a test", latitude=40.0300,
+                longitude=-74.9800)
             listing.items.add(self.global_item1)
             listing.itemsOffer.add(self.global_non_wishlist_item)
             listing.save
@@ -4650,14 +4665,16 @@ class AllWishlistListingsViewTest(MyTestCase):
         for num in range(number_of_active_listings_user2):
             listing = WishlistListing.objects.create(owner=self.global_user2,
                 name='My Wishlist Listing #{0}'.format(num), endTime=date_active,
-                moneyOffer=5.00, notes="Just a test")
+                moneyOffer=5.00, notes="Just a test", latitude=40.9800,
+                longitude=-69.0200)
             listing.items.add(self.global_item2)
             listing.save
 
         for num in range(number_of_inactive_listings_user1):
             listing = WishlistListing.objects.create(owner=self.global_user1,
                 name='My Wishlist Listing #{0}'.format(num), endTime=date_ended,
-                moneyOffer=5.00, notes="Just a test")
+                moneyOffer=5.00, notes="Just a test", latitude=40.0300,
+                longitude=-74.9800)
             listing.items.add(self.global_item1)
             listing.save
 
@@ -4687,7 +4704,7 @@ class AllWishlistListingsViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('all-wishlist-listings'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['wishlistlistings']), 9)
+        self.assertEqual(len(response.context['wishlistlistings']), 3)
 
     #Test to ensure that different user sees the correct amount of active listings
     def test_list_only_active_listings_new_user_page_1(self):
@@ -4695,7 +4712,7 @@ class AllWishlistListingsViewTest(MyTestCase):
         self.assertTrue(login)
         response = self.client.get(reverse('all-wishlist-listings'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context['wishlistlistings']), 9)
+        self.assertEqual(len(response.context['wishlistlistings']), 6)
 
 class CreateWishlistListingViewTest(MyTestCase):
     def setUp(self):
