@@ -7292,3 +7292,108 @@ class FavoritesViewTest(MyTestCase):
         response = self.client.get(reverse('favorites'))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['favorites']) == 1)
+
+class SearchListingsViewTest(MyTestCase):
+    def setUp(self):
+        super(SearchListingsViewTest, self).setUp()
+
+        #Set the locations of the users
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 41.0000
+        self.global_user2.profile.longitude = -69.0000
+        self.global_user2.profile.save()
+
+        #Get the current date and time for testing and create active and inactive endtimes
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create a variety of images to test with
+        test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
+
+        self.image1 = Image.objects.create(owner=self.global_user1,
+            image=test_image, name="Test Image")
+        tags = ["Home", "Art", "Living Room"]
+        for tag_name in tags:
+            tag = Tag.objects.create(name=tag_name)
+            self.image1.tags.add(tag)
+        self.image1.save
+
+        self.image2 = Image.objects.create(owner=self.global_user1,
+            image=test_image, name="Test Image")
+        tags = ["Home", "Kitchen"]
+        for tag_name in tags:
+            tag = Tag.objects.create(name=tag_name)
+            self.image2.tags.add(tag)
+        self.image2.save
+
+        self.image3 = Image.objects.create(owner=self.global_user1,
+            image=test_image, name="Test Image")
+        tag = Tag.objects.create(name="Bathroom")
+        self.image3.tags.add(tag)
+        self.image3.save
+
+        #Create items for testing with
+        self.item1 = Item.objects.create(name="Art",
+            description="Lovely art to test with", owner=self.global_user1)
+        self.item1.images.add(self.image1)
+        self.item1.images.add(self.image2)
+        self.item1.save
+
+        self.item2 = Item.objects.create(name="Art",
+            description="Lovely art to test with", owner=self.global_user1)
+        self.item2.images.add(self.image2)
+        self.item2.save
+
+        self.item3 = Item.objects.create(name="Art",
+            description="Lovely art to test with", owner=self.global_user2)
+        self.item3.images.add(self.image3)
+        self.item3.save
+
+        #Create a variety of listings to test for searching
+        #Offer Listings for user 1
+        self.offer_listing_1 = OfferListing.objects.create(owner=self.global_user1,
+            name='Art for your living room and bathroom',
+            description="Just a test listing", openToMoneyOffers=True,
+            minRange=5.00, maxRange=10.00, notes="Just offer", endTime=date_active,
+            listingCompleted=False, latitude=self.global_user1.profile.latitude,
+            longitude=self.global_user1.profile.longitude)
+        self.offer_listing_1.items.add(self.item1)
+        self.offer_listing_1.save
+
+        self.offer_listing_2 = OfferListing.objects.create(owner=self.global_user1,
+            name='Just more art I guess',
+            description="Just a test listing", openToMoneyOffers=True,
+            minRange=5.00, maxRange=10.00, notes="Just offer", endTime=date_active,
+            listingCompleted=False, latitude=self.global_user1.profile.latitude,
+            longitude=self.global_user1.profile.longitude)
+        self.offer_listing_2.items.add(self.item1)
+        self.offer_listing_2.items.add(self.item2)
+        self.offer_listing_2.save
+
+        self.offer_listing_3 = OfferListing.objects.create(owner=self.global_user2,
+            name="Guess what?  It's Art",
+            description="Just a test listing", openToMoneyOffers=True,
+            minRange=5.00, maxRange=10.00, notes="Just offer", endTime=date_active,
+            listingCompleted=False, latitude=self.global_user2.profile.latitude,
+            longitude=self.global_user2.profile.longitude)
+        self.offer_listing_3.items.add(self.item3)
+        self.offer_listing_3.save
+
+    #Test to ensure that the view can be called called
+    def test_view_is_called(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 201)
+
+    #Test to ensure that the view responds if data is sent
+    def test_view_responds_with_no_data(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 201)
+        post_response = self.client.get('/listings/search-listings/', {'type': 'Offers'})
+        self.assertEqual(post_response.status_code, 200)

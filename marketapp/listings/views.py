@@ -3287,3 +3287,434 @@ class FavoriteListView(LoginRequiredMixin, generic.ListView):
                 obj.listing_obj = WishlistListing.objects.get(id=obj.listing.id)
 
         return queryset
+
+#View method for a user to search for listings
+@login_required(login_url='/accounts/login/')
+def search_listings(request):
+    #Credit to https://openfolder.sh/ for the tutorial on implementing a search
+    #using AJAX with Django
+
+    context = {}
+    items = []
+    current_date = timezone.localtime(timezone.now())
+
+    print(request)
+
+    listing_type = request.GET.get("type", None)
+    name_parameters = request.GET.get("name", None)
+    tag_parameters = request.GET.get("tags", None)
+    mile_radius = request.GET.get("searchRadius", None)
+
+    print(listing_type)
+
+    if mile_radius:
+        #Get the latitude and longitude range using user's location
+        user_latitude = request.user.profile.latitude
+        min_latitude = user_latitude - Decimal.from_float(mile_radius)
+        max_latitude = user_latitude + Decimal.from_float(mile_radius)
+
+        user_longitude = request.user.profile.longitude
+        min_longitude = user_longitude - Decimal.from_float(mile_radius)
+        max_longitude = user_longitude + Decimal.from_float(mile_radius)
+    else:
+        #Get the latitude and longitude range using user's location
+        user_latitude = request.user.profile.latitude
+        min_latitude = user_latitude - Decimal.from_float(0.3400)
+        max_latitude = user_latitude + Decimal.from_float(0.3400)
+
+        user_longitude = request.user.profile.longitude
+        min_longitude = user_longitude - Decimal.from_float(0.3400)
+        max_longitude = user_longitude + Decimal.from_float(0.3400)
+
+    if name_parameters:
+        if ' ' in name_parameters and ',' in name_parameters:
+            name_param_list = name_parameters.replace(' ', '').split(',')
+        elif ',' in name_parameters:
+            name_param_list = name_parameters.split(',')
+        else:
+            name_param_list = name_parameters
+
+    if tag_parameters:
+        #Retrieve the tags requested:
+        tags = Tag.objects.filter(name__in=tag_parameters)
+
+        #Retrieve the images that include the tags request
+        if tags:
+            images = Image.objects.filter(tags__in=tags)
+
+        #Retrieve the items that contain the images
+        if images:
+            items = Item.objects.filter(images__in=images)
+
+    if listing_type and name_parameters and tag_parameters:
+        #Search listings using name and tag parameters
+        if listing_type == "Offers":
+            #Retrieve all active offer listings that match the params
+            listings_ids = [listing.id for listing in OfferListing.objects.all()
+                if listing.listingEnded == False]
+
+            if items:
+                queryset = OfferListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    name__icontains=name_param_list,
+                    items__in=items
+                ).order_by('id').reverse()
+            else:
+                queryset = OfferListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    name__icontains=name_param_list
+                ).order_by('id').reverse()
+
+            for obj in queryset:
+                time_left = obj.endTime - current_date
+                if time_left.total_seconds() <= 1800:
+                    obj.endingSoon = True
+                else:
+                    obj.endingSoon = False
+
+                if Favorite.objects.filter(listing=obj, user=request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show offer listings only to a user
+            return render(request, "search/offer_listings.html", context=context)
+        elif listing_type == "Auctions":
+            #Retrieve all active auction listings that match the params
+            listings_ids = [listing.id for listing in AuctionListing.objects.all()
+                if listing.listingEnded == False]
+
+            if items:
+                queryset = AuctionListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    name__icontains=name_param_list,
+                    items__in=items
+                ).order_by('id').reverse()
+            else:
+                queryset = AuctionListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    name__icontains=name_param_list
+                ).order_by('id').reverse()
+
+            for obj in queryset:
+                time_left = obj.endTime - current_date
+                if time_left.total_seconds() <= 1800:
+                    obj.endingSoon = True
+                else:
+                    obj.endingSoon = False
+
+                if Favorite.objects.filter(listing=obj, user=
+                request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show auction listings only to a user
+            return render(request, "search/auction_listings.html", context=context)
+        else:
+            #Retrieve all active wishlist listings that match the params
+            listings_ids = [listing.id for listing in WishlistListing.objects.all()
+                if listing.listingEnded == False]
+
+            if items:
+                queryset = WishlistListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    name__icontains=name_param_list,
+                    itemsOffer__in=items
+                ).order_by('id').reverse()
+            else:
+                queryset = WishlistListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    name__icontains=name_param_list
+                ).order_by('id').reverse()
+
+            for obj in queryset:
+                if Favorite.objects.filter(listing=obj, user=request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show wishlistn listings only to a user
+            return render(request, "search/wishlist_listings.html", context=context)
+    elif listing_type and tag_parameters:
+        #Search listings using tag parameters only
+        if listing_type == "Offers":
+            #Retrieve all active offer listings that match the params
+            listings_ids = [listing.id for listing in OfferListing.objects.all()
+                if listing.listingEnded == False]
+
+            if items:
+                queryset = OfferListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    items__in=items
+                ).order_by('id').reverse()
+            else:
+                queryset = OfferListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude]
+                ).order_by('id').reverse()
+
+            for obj in queryset:
+                time_left = obj.endTime - current_date
+                if time_left.total_seconds() <= 1800:
+                    obj.endingSoon = True
+                else:
+                    obj.endingSoon = False
+
+                if Favorite.objects.filter(listing=obj, user=request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show offer listings only to a user
+            return render(request, "search/offer_listings.html", context=context)
+        elif listing_type == "Auctions":
+            #Retrieve all active auction listings that match the params
+            listings_ids = [listing.id for listing in AuctionListing.objects.all()
+                if listing.listingEnded == False]
+
+            if items:
+                queryset = AuctionListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    items__in=items
+                ).order_by('id').reverse()
+            else:
+                queryset = AuctionListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude]
+                ).order_by('id').reverse()
+
+            for obj in queryset:
+                time_left = obj.endTime - current_date
+                if time_left.total_seconds() <= 1800:
+                    obj.endingSoon = True
+                else:
+                    obj.endingSoon = False
+
+                if Favorite.objects.filter(listing=obj, user=
+                request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show auction listings only to a user
+            return render(request, "search/auction_listings.html", context=context)
+        else:
+            #Retrieve all active wishlist listings that match the params
+            listings_ids = [listing.id for listing in WishlistListing.objects.all()
+                if listing.listingEnded == False]
+
+            if items:
+                queryset = WishlistListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude],
+                    itemsOffer__in=items
+                ).order_by('id').reverse()
+            else:
+                queryset = WishlistListing.objects.filter(
+                    id__in=listings_ids,
+                    latitude__range=[min_latitude, max_latitude],
+                    longitude__range=[min_longitude, max_longitude]
+                ).order_by('id').reverse()
+
+            for obj in queryset:
+
+                if Favorite.objects.filter(listing=obj, user=request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show wishlistn listings only to a user
+            return render(request, "search/wishlist_listings.html", context=context)
+    elif listing_type and name_parameters:
+        #Search listings using name parameters only
+        if listing_type == "Offers":
+            #Retrieve all active offer listings that match the params
+            listings_ids = [listing.id for listing in OfferListing.objects.all()
+                if listing.listingEnded == False]
+
+            queryset = OfferListing.objects.filter(
+                id__in=listings_ids,
+                latitude__range=[min_latitude, max_latitude],
+                longitude__range=[min_longitude, max_longitude],
+                name__icontains=name_param_list
+            ).order_by('id').reverse()
+
+            for obj in queryset:
+                time_left = obj.endTime - current_date
+                if time_left.total_seconds() <= 1800:
+                    obj.endingSoon = True
+                else:
+                    obj.endingSoon = False
+
+                if Favorite.objects.filter(listing=obj, user=request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show offer listings only to a user
+            return render(request, "search/offer_listings.html", context=context)
+        elif listing_type == "Auctions":
+            #Retrieve all active auction listings that match the params
+            listings_ids = [listing.id for listing in AuctionListing.objects.all()
+                if listing.listingEnded == False]
+
+            queryset = AuctionListing.objects.filter(
+                id__in=listings_ids,
+                latitude__range=[min_latitude, max_latitude],
+                longitude__range=[min_longitude, max_longitude],
+                name__icontains=name_param_list
+            ).order_by('id').reverse()
+
+            for obj in queryset:
+                time_left = obj.endTime - current_date
+                if time_left.total_seconds() <= 1800:
+                    obj.endingSoon = True
+                else:
+                    obj.endingSoon = False
+
+                if Favorite.objects.filter(listing=obj, user=
+                request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show auction listings only to a user
+            return render(request, "search/auction_listings.html", context=context)
+        else:
+            #Retrieve all active wishlist listings that match the params
+            listings_ids = [listing.id for listing in WishlistListing.objects.all()
+                if listing.listingEnded == False]
+
+            queryset = WishlistListing.objects.filter(
+                id__in=listings_ids,
+                latitude__range=[min_latitude, max_latitude],
+                longitude__range=[min_longitude, max_longitude],
+                name__icontains=name_param_list
+            ).order_by('id').reverse()
+
+            for obj in queryset:
+                if Favorite.objects.filter(listing=obj, user=request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show wishlistn listings only to a user
+            return render(request, "search/wishlist_listings.html", context=context)
+    elif listing_type:
+        #Search listings by listing type only
+        if listing_type == "Offers":
+            #Retrieve all active offer listings that match the params
+            listings_ids = [listing.id for listing in OfferListing.objects.all()
+                if listing.listingEnded == False]
+
+            queryset = OfferListing.objects.filter(
+                id__in=listings_ids,
+                latitude__range=[min_latitude, max_latitude],
+                longitude__range=[min_longitude, max_longitude]
+            ).order_by('id').reverse()
+
+            for obj in queryset:
+                time_left = obj.endTime - current_date
+                if time_left.total_seconds() <= 1800:
+                    obj.endingSoon = True
+                else:
+                    obj.endingSoon = False
+
+                if Favorite.objects.filter(listing=obj, user=request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show offer listings only to a user
+            return render(request, "search/offer_listings.html", context=context)
+        elif listing_type == "Auctions":
+            #Retrieve all active auction listings that match the params
+            listings_ids = [listing.id for listing in AuctionListing.objects.all()
+                if listing.listingEnded == False]
+
+            queryset = AuctionListing.objects.filter(
+                id__in=listings_ids,
+                latitude__range=[min_latitude, max_latitude],
+                longitude__range=[min_longitude, max_longitude]
+            ).order_by('id').reverse()
+
+            for obj in queryset:
+                time_left = obj.endTime - current_date
+                if time_left.total_seconds() <= 1800:
+                    obj.endingSoon = True
+                else:
+                    obj.endingSoon = False
+
+                if Favorite.objects.filter(listing=obj, user=
+                request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show auction listings only to a user
+            return render(request, "search/auction_listings.html", context=context)
+        else:
+            #Retrieve all active wishlist listings that match the params
+            listings_ids = [listing.id for listing in WishlistListing.objects.all()
+                if listing.listingEnded == False]
+
+            queryset = WishlistListing.objects.filter(
+                id__in=listings_ids,
+                latitude__range=[min_latitude, max_latitude],
+                longitude__range=[min_longitude, max_longitude]
+            ).order_by('id').reverse()
+
+            for obj in queryset:
+                if Favorite.objects.filter(listing=obj, user=request.user).exists():
+                    obj.favorited = True
+                else:
+                    obj.favorited = False
+
+            context["listings"] = queryset
+
+            #Return the view that will show wishlistn listings only to a user
+            return render(request, "search/wishlist_listings.html", context=context)
+
+    return HttpResponse('ok', status=201)

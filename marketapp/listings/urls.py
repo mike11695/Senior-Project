@@ -130,4 +130,8 @@ urlpatterns = [
         name="favorite-listing"),
     path('favorites/', views.FavoriteListView.as_view(),
         name="favorites"),
+
+    #Search
+    path('search-listings/', views.search_listings,
+        name="search-listings"),
 ]
