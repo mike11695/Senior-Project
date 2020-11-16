@@ -1,0 +1,58 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  {% if listings %}
+    <div class="center-block col-lg-8">
+      {% for listing in listings %}
+        <div class="wishlist-listing-container">
+          <div class="wishlist-listing-header center-block col-lg-12">
+            <div class="wishlist-listing-name">
+              <a href="{% url 'wishlist-listing-detail' pk=listing.pk %}">
+                <h3 style="display: inline-block;">{{ listing.name }}</h3>
+              </a>
+              {% if listing.owner != request.user %}
+                <button class="favorite-listing" id="listing{{listing.id}}" onclick="favorite({{ listing.id }})" data-catid="{{ listing.id }}">
+                    {% if listing.favorited %}
+                      <i id="fave-btn{{listing.id}}" class="fas fa-star"></i>
+                    {% else %}
+                      <i id="fave-btn{{listing.id}}" class="far fa-star"></i>
+                    {% endif %}
+                </button>
+              {% endif %}
+            </div>
+            <h5>{{ listing.owner }} is searching for...</h5>
+          </div>
+          <div class="center-block col-lg-12 wishlist-listing-items-container">
+            {% for item in listing.items.all %}
+              {% with item.images.all|first as image %}
+                <div class="wishlist-listing-image-container">
+                  <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                </div>
+              {% endwith %}
+            {% endfor %}
+          </div>
+          <div class="center-block col-lg-12 wishlist-listing-offer-container">
+            <h5>{{ listing.owner }} is offering...</h5>
+            {% if listing.itemsOffer.count > 0 %}
+              {% for item in listing.itemsOffer.all %}
+                {% with item.images.all|first as image %}
+                  <div class="wishlist-listing-image-container">
+                    <a href="{{ item.get_absolute_url }}"><img src="{{ image.image.url }}" class="wishlist-listing-image"></img></a>
+                  </div>
+                {% endwith %}
+              {% endfor %}
+            {% endif %}
+            {% if listing.moneyOffer and listing.moneyOffer > 0.00 %}
+              <div class="wishlist-amount-offered"><h4>${{ listing.moneyOffer }}</h4></div>
+            {% endif %}
+            {% if listing.notes %}
+              <div class="wishlist-notes">{{ listing.notes }}</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="text-align: center;">There are no listings matching your query.</p>
+  {% endif %}
+{% endblock %}

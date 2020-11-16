@@ -7302,8 +7302,8 @@ class SearchListingsViewTest(MyTestCase):
         self.global_user1.profile.longitude = -75.0000
         self.global_user1.profile.save()
 
-        self.global_user2.profile.latitude = 41.0000
-        self.global_user2.profile.longitude = -69.0000
+        self.global_user2.profile.latitude = 40.6000
+        self.global_user2.profile.longitude = -75.5500
         self.global_user2.profile.save()
 
         #Get the current date and time for testing and create active and inactive endtimes
@@ -7314,40 +7314,41 @@ class SearchListingsViewTest(MyTestCase):
         test_image = SimpleUploadedFile(name='art1.png', content=open('listings/imagetest/art1.png', 'rb').read(), content_type='image/png')
 
         self.image1 = Image.objects.create(owner=self.global_user1,
-            image=test_image, name="Test Image")
-        tags = ["Home", "Art", "Living Room"]
-        for tag_name in tags:
-            tag = Tag.objects.create(name=tag_name)
-            self.image1.tags.add(tag)
+            image=test_image, name="Test Image 1")
+        self.home_tag = Tag.objects.create(name="Home")
+        self.art_tag = Tag.objects.create(name="Art")
+        self.lr_tag = Tag.objects.create(name="Living Room")
+        self.image1.tags.add(self.home_tag)
+        self.image1.tags.add(self.art_tag)
+        self.image1.tags.add(self.lr_tag)
         self.image1.save
 
         self.image2 = Image.objects.create(owner=self.global_user1,
-            image=test_image, name="Test Image")
-        tags = ["Home", "Kitchen"]
-        for tag_name in tags:
-            tag = Tag.objects.create(name=tag_name)
-            self.image2.tags.add(tag)
+            image=test_image, name="Test Image 2")
+        self.kitchen_tag = Tag.objects.create(name="Kitchen")
+        self.image2.tags.add(self.home_tag)
+        self.image2.tags.add(self.kitchen_tag)
         self.image2.save
 
         self.image3 = Image.objects.create(owner=self.global_user1,
-            image=test_image, name="Test Image")
-        tag = Tag.objects.create(name="Bathroom")
-        self.image3.tags.add(tag)
+            image=test_image, name="Test Image 3")
+        self.bathroom_tag = Tag.objects.create(name="Bathroom")
+        self.image3.tags.add(self.bathroom_tag)
         self.image3.save
 
         #Create items for testing with
-        self.item1 = Item.objects.create(name="Art",
+        self.item1 = Item.objects.create(name="Art Item 1",
             description="Lovely art to test with", owner=self.global_user1)
         self.item1.images.add(self.image1)
         self.item1.images.add(self.image2)
         self.item1.save
 
-        self.item2 = Item.objects.create(name="Art",
+        self.item2 = Item.objects.create(name="Art Item 2",
             description="Lovely art to test with", owner=self.global_user1)
         self.item2.images.add(self.image2)
         self.item2.save
 
-        self.item3 = Item.objects.create(name="Art",
+        self.item3 = Item.objects.create(name="Art Item 3",
             description="Lovely art to test with", owner=self.global_user2)
         self.item3.images.add(self.image3)
         self.item3.save
@@ -7382,18 +7383,404 @@ class SearchListingsViewTest(MyTestCase):
         self.offer_listing_3.items.add(self.item3)
         self.offer_listing_3.save
 
+        self.auction_listing_1 = AuctionListing.objects.create(owner=self.global_user1,
+            name='Secret Listing', description="Just a test listing",
+            startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+            endTime=date_active, latitude=self.global_user1.profile.latitude,
+            longitude=self.global_user1.profile.longitude)
+        self.auction_listing_1.items.add(self.item2)
+        self.auction_listing_1.save
+
+        self.auction_listing_2 = AuctionListing.objects.create(owner=self.global_user2,
+            name='a r t', description="Just a test listing",
+            startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+            endTime=date_active, latitude=self.global_user2.profile.latitude,
+            longitude=self.global_user2.profile.longitude)
+        self.auction_listing_2.items.add(self.item3)
+        self.auction_listing_2.save
+
+        self.auction_listing_3 = AuctionListing.objects.create(owner=self.global_user2,
+            name='Just some art', description="Just a test listing",
+            startingBid=5.00, minimumIncrement=1.00, autobuy=25.00,
+            endTime=date_active, latitude=self.global_user2.profile.latitude,
+            longitude=self.global_user2.profile.longitude)
+        self.auction_listing_3.items.add(self.item3)
+        self.auction_listing_3.save
+
+        self.wishlist_listing_1 = WishlistListing.objects.create(
+            owner=self.global_user1, name='I want this stuff', endTime=date_active,
+            moneyOffer=5.00, notes="Just a test", latitude=self.global_user1.profile.latitude,
+            longitude=self.global_user1.profile.longitude)
+        self.wishlist_listing_1.items.add(self.item3)
+        self.wishlist_listing_1.itemsOffer.add(self.item1)
+        self.wishlist_listing_1.save
+
+        self.wishlist_listing_2 = WishlistListing.objects.create(
+            owner=self.global_user1, name='I would want to accuire this',
+            endTime=date_active,
+            moneyOffer=5.00, notes="Just a test", latitude=self.global_user1.profile.latitude,
+            longitude=self.global_user1.profile.longitude)
+        self.wishlist_listing_2.items.add(self.item3)
+        self.wishlist_listing_2.itemsOffer.add(self.item2)
+        self.wishlist_listing_2.save
+
+        self.wishlist_listing_3 = WishlistListing.objects.create(
+            owner=self.global_user1, name='Art I crave', endTime=date_active,
+            moneyOffer=5.00, notes="Just a test", latitude=self.global_user1.profile.latitude,
+            longitude=self.global_user1.profile.longitude)
+        self.wishlist_listing_3.items.add(self.item3)
+        self.wishlist_listing_3.itemsOffer.add(self.item1)
+        self.wishlist_listing_3.itemsOffer.add(self.item2)
+        self.wishlist_listing_3.save
+
     #Test to ensure that the view can be called called
     def test_view_is_called(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('search-listings'))
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
 
     #Test to ensure that the view responds if data is sent
-    def test_view_responds_with_no_data(self):
+    def test_view_responds_with_data(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('search-listings'))
-        self.assertEqual(response.status_code, 201)
-        post_response = self.client.get('/listings/search-listings/', {'type': 'Offers'})
-        self.assertEqual(post_response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/', {'type': 'Offers'})
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers
+    def test_view_responds_with_correct_listing_amount_for_offers(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/', {'type': 'Offers'})
+        self.assertEqual(len(response.context['listings']), 3)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers for user in different location
+    def test_view_responds_with_correct_listing_amount_for_offers_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/', {'type': 'Offers'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers including name
+    def test_view_responds_with_correct_listing_amount_for_offers_and_name(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Offers', 'name': 'art for your'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers for user in different location including name
+    def test_view_responds_with_correct_listing_amount_for_offers_and_name_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Offers', 'name': 'guess what'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers including tags
+    def test_view_responds_with_correct_listing_amount_for_offers_and_tags(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Offers', 'tags': 'Home,Art'})
+        self.assertEqual(len(response.context['listings']), 2)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers for user in different location including tags
+    def test_view_responds_with_correct_listing_amount_for_offers_and_tags_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Offers', 'tags': 'Home,Art'})
+        self.assertEqual(len(response.context['listings']), 0)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers including search radius
+    def test_view_responds_with_correct_listing_amount_for_offers_and_radius(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Offers', 'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 4)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers for user in different location
+    #including search radius
+    def test_view_responds_with_correct_listing_amount_for_offers_and_raidus_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Offers', 'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 4)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers including all params
+    def test_view_responds_with_correct_listing_amount_for_all_params(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Offers', 'name': 'art', 'tags': 'Bathroom',
+            'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of offers for user in different location
+    #including all params
+    def test_view_responds_with_correct_listing_amount_for_all_params_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Offers', 'name': 'art', 'tags': 'Bathroom',
+            'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions
+    def test_view_responds_with_correct_listing_amount_for_auctions(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/', {'type': 'Auctions'})
+        self.assertEqual(len(response.context['listings']), 2)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions for user in different location
+    def test_view_responds_with_correct_listing_amount_for_auctions_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/', {'type': 'Auctions'})
+        self.assertEqual(len(response.context['listings']), 2)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions including name
+    def test_view_responds_with_correct_listing_amount_for_auctions_and_name(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Auctions', 'name': 'secret'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions for user in different location including name
+    def test_view_responds_with_correct_listing_amount_for_auctions_and_name_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Auctions', 'name': 'art'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions including tags
+    def test_view_responds_with_correct_listing_amount_for_auctions_and_tags(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Auctions', 'tags': 'Living Room'})
+        self.assertEqual(len(response.context['listings']), 0)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions for user in different location including tags
+    def test_view_responds_with_correct_listing_amount_for_auctions_and_tags_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Auctions', 'tags': 'Bathroom'})
+        self.assertEqual(len(response.context['listings']), 2)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions including search radius
+    def test_view_responds_with_correct_listing_amount_for_auctions_and_radius(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Auctions', 'searchRadius': '0.5000'})
+        self.assertEqual(len(response.context['listings']), 2)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions for user in different location
+    #including search radius
+    def test_view_responds_with_correct_listing_amount_for_auctions_and_raidus_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Auctions', 'searchRadius': '0.5000'})
+        self.assertEqual(len(response.context['listings']), 2)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions including all params
+    def test_view_responds_with_correct_listing_amount_for_all_params_auctions(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Auctions', 'name': 'secret', 'tags': 'Home',
+            'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of auctions for user in different location
+    #including all params
+    def test_view_responds_with_correct_listing_amount_for_all_params_new_location_auctions(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Auctions', 'name': 'a r t', 'tags': 'Bathroom',
+            'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 1)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlistswishlists
+    def test_view_responds_with_correct_listing_amount_for_wishlists(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/', {'type': 'Wishlists'})
+        self.assertEqual(len(response.context['listings']), 3)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists for user in different location
+    def test_view_responds_with_correct_listing_amount_for_wishlists_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/', {'type': 'Wishlists'})
+        self.assertEqual(len(response.context['listings']), 0)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists including name
+    def test_view_responds_with_correct_listing_amount_for_wishlists_and_name(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Wishlists', 'name': 'want'})
+        self.assertEqual(len(response.context['listings']), 2)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists for user in different location including name
+    def test_view_responds_with_correct_listing_amount_for_wishlists_and_name_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Wishlists', 'name': 'art'})
+        self.assertEqual(len(response.context['listings']), 0)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists including tags
+    def test_view_responds_with_correct_listing_amount_for_wishlists_and_tags(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Wishlists', 'tags': 'Home,Kitchen'})
+        self.assertEqual(len(response.context['listings']), 3)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists for user in different location including tags
+    def test_view_responds_with_correct_listing_amount_for_wishlists_and_tags_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Wishlists', 'tags': 'Home,Kitchen'})
+        self.assertEqual(len(response.context['listings']), 0)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists including search radius
+    def test_view_responds_with_correct_listing_amount_for_wishlists_and_radius(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Wishlists', 'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 3)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists for user in different location
+    #including search radius
+    def test_view_responds_with_correct_listing_amount_for_wishlists_and_raidus_new_location(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Wishlists', 'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 3)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists including all params
+    def test_view_responds_with_correct_listing_amount_for_all_params_wishlists(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Wishlists', 'name': 'want', 'tags': 'Home,Art',
+            'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 2)
+
+    #Test to ensure that the view returns the correct amount of listings
+    #for listing type of wishlists for user in different location
+    #including all params
+    def test_view_responds_with_correct_listing_amount_for_all_params_new_location_wishlists(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('search-listings'))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/listings/search-listings/',
+            {'type': 'Wishlists', 'name': 'art', 'tags': 'Home',
+            'searchRadius': '0.6700'})
+        self.assertEqual(len(response.context['listings']), 1)

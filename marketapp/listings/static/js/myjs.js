@@ -30,3 +30,16 @@ function favorite(id) {
         }
      })
 }
+
+endpoint = '/listings/search-listings/'
+
+let ajax_call = function (endpoint, request_parameters) {
+    $.getJSON(endpoint, request_parameters)
+        .done(response => {
+            $('#listings-content').fadeTo('slow', 0).promise().then(() => {
+                $('#listings-content').html(response['html_from_view'])
+                $('#listings-content').fadeTo('slow', 1)
+                $('#search-icon').removeClass('blink')
+            })
+        })
+}

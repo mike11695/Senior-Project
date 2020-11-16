@@ -12,13 +12,15 @@ from django.db.models import Count, Max, OuterRef, Subquery
 from paypal.standard.forms import PayPalPaymentsForm
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
+from django.template.loader import render_to_string
+from django.http import JsonResponse
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
     Conversation, Message, Receipt, PaymentReceipt, ListingNotification,
     OfferNotification, BidNotification, PaymentNotification,
     InvitationNotification, EventNotification, Notification,
-    RatingNotification, WarningNotification, Favorite)
+    RatingNotification, WarningNotification, Favorite, Tag)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -866,8 +868,8 @@ class OfferListingDeleteView(LoginRequiredMixin, generic.DeleteView):
 
                     #Delete any notifications that were relevant to listing
                     notifications = ListingNotification.objects.filter(listing=self.object)
-                    old_notification = notifications.first()
-                    old_notification.delete()
+                    if notifications:
+                        notifications.delete()
                 else:
                     #Go through items and delete any that don't have an owner
                     #and have no other relationships
@@ -1256,7 +1258,7 @@ def edit_offer(request, pk):
 
                     #Create notification to notify the offer listing owner that
                     #an offer was updated
-                    content = (edited_offer.owner.username + 'has updated an ' +
+                    content = (edited_offer.owner.username + ' has updated an ' +
                          'offer on the listing "' + edited_offer.offerListing.name
                         + '".')
                     OfferNotification.objects.create(
@@ -1646,8 +1648,8 @@ class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):
 
                #Delete any notifications that were related to listing
                notifications = ListingNotification.objects.filter(listing=self.object)
-               old_notification = notifications.first()
-               old_notification.delete()
+               if notifications:
+                   notifications.delete()
            else:
                #Go through items and delete any that don't have an owner
                for item in self.object.items.all():
@@ -3144,7 +3146,7 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
             in Notification.objects.all()
             if (notification.active == True
             and notification.user == self.request.user)]
-        notifications = Notification.objects.filter(id__in=notifications_ids).order_by('id').reverse()
+        notifications = Notification.objects.filter(id__in=notifications_ids).order_by('creationDate').reverse()
         #notifications = Notification.objects.filter(user=self.request.user).order_by('id')
 
         #Get the subclass objects related to the notification
@@ -3154,7 +3156,6 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
 
             for notification in notifications:
                 if (notification.type == "Listing Ended"
-                    or notification.type == "Listing Expired"
                     or notification.type == "Auction Completed"):
                         #Get listing notification object
                         notification.obj = ListingNotification.objects.get(
@@ -3163,7 +3164,8 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
                     or notification.type == "Offer Rejected"
                     or notification.type == "Offer Retracted"
                     or notification.type == "Offer Made"
-                    or notification.type == "Offer Updated"):
+                    or notification.type == "Offer Updated"
+                    or notification.type == "Listing Expired"):
                         #Get offer notification object
                         notification.obj = OfferNotification.objects.get(
                             id=notification.id)
@@ -3295,11 +3297,15 @@ def search_listings(request):
     #using AJAX with Django
 
     context = {}
+    tags = []
+    images = []
     items = []
     current_date = timezone.localtime(timezone.now())
 
-    print(request)
+    tags = Tag.objects.all()
+    context["tags"] = tags
 
+    #Get the required parameters from the url
     listing_type = request.GET.get("type", None)
     name_parameters = request.GET.get("name", None)
     tag_parameters = request.GET.get("tags", None)
@@ -3310,12 +3316,12 @@ def search_listings(request):
     if mile_radius:
         #Get the latitude and longitude range using user's location
         user_latitude = request.user.profile.latitude
-        min_latitude = user_latitude - Decimal.from_float(mile_radius)
-        max_latitude = user_latitude + Decimal.from_float(mile_radius)
+        min_latitude = user_latitude - Decimal.from_float(float(mile_radius))
+        max_latitude = user_latitude + Decimal.from_float(float(mile_radius))
 
         user_longitude = request.user.profile.longitude
-        min_longitude = user_longitude - Decimal.from_float(mile_radius)
-        max_longitude = user_longitude + Decimal.from_float(mile_radius)
+        min_longitude = user_longitude - Decimal.from_float(float(mile_radius))
+        max_longitude = user_longitude + Decimal.from_float(float(mile_radius))
     else:
         #Get the latitude and longitude range using user's location
         user_latitude = request.user.profile.latitude
@@ -3335,16 +3341,30 @@ def search_listings(request):
             name_param_list = name_parameters
 
     if tag_parameters:
+        print("Tag Params: " + tag_parameters)
+        if ' ' in tag_parameters and ',' in tag_parameters:
+            tags_param_list = tags_param_list.replace(' ', '').split(',')
+        elif ',' in tag_parameters:
+            tags_param_list = tag_parameters.split(',')
+        print(tags_param_list)
         #Retrieve the tags requested:
-        tags = Tag.objects.filter(name__in=tag_parameters)
+        tags = Tag.objects.filter(name__in=tags_param_list)
+        print(tags)
+        tag_ids = [tag.id for tag in tags]
 
         #Retrieve the images that include the tags request
         if tags:
-            images = Image.objects.filter(tags__in=tags)
+            tag_ids = [tag.id for tag in tags]
+            print(tag_ids)
+            images = Image.objects.filter(tags__in=tag_ids).distinct()
+        print(images)
 
         #Retrieve the items that contain the images
         if images:
-            items = Item.objects.filter(images__in=images)
+            image_ids = [image.id for image in images]
+            print(image_ids)
+            items = Item.objects.filter(images__in=image_ids).distinct()
+        print(items)
 
     if listing_type and name_parameters and tag_parameters:
         #Search listings using name and tag parameters
@@ -3354,20 +3374,21 @@ def search_listings(request):
                 if listing.listingEnded == False]
 
             if items:
+                item_ids = [item.id for item in items]
                 queryset = OfferListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
                     name__icontains=name_param_list,
-                    items__in=items
-                ).order_by('id').reverse()
+                    items__in=item_ids
+                ).distinct().order_by('id').reverse()
             else:
                 queryset = OfferListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
                     name__icontains=name_param_list
-                ).order_by('id').reverse()
+                ).distinct().order_by('id').reverse()
 
             for obj in queryset:
                 time_left = obj.endTime - current_date
@@ -3382,29 +3403,41 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show offer listings only to a user
-            return render(request, "search/offer_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
         elif listing_type == "Auctions":
             #Retrieve all active auction listings that match the params
             listings_ids = [listing.id for listing in AuctionListing.objects.all()
                 if listing.listingEnded == False]
 
             if items:
+                item_ids = [item.id for item in items]
                 queryset = AuctionListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
                     name__icontains=name_param_list,
-                    items__in=items
-                ).order_by('id').reverse()
+                    items__in=item_ids
+                ).distinct().order_by('id').reverse()
             else:
                 queryset = AuctionListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
                     name__icontains=name_param_list
-                ).order_by('id').reverse()
+                ).distinct().order_by('id').reverse()
 
             for obj in queryset:
                 time_left = obj.endTime - current_date
@@ -3420,29 +3453,41 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show auction listings only to a user
-            return render(request, "search/auction_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
         else:
             #Retrieve all active wishlist listings that match the params
             listings_ids = [listing.id for listing in WishlistListing.objects.all()
                 if listing.listingEnded == False]
 
             if items:
+                item_ids = [item.id for item in items]
                 queryset = WishlistListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
                     name__icontains=name_param_list,
-                    itemsOffer__in=items
-                ).order_by('id').reverse()
+                    itemsOffer__in=item_ids
+                ).distinct().order_by('id').reverse()
             else:
                 queryset = WishlistListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
                     name__icontains=name_param_list
-                ).order_by('id').reverse()
+                ).distinct().order_by('id').reverse()
 
             for obj in queryset:
                 if Favorite.objects.filter(listing=obj, user=request.user).exists():
@@ -3451,9 +3496,20 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show wishlistn listings only to a user
-            return render(request, "search/wishlist_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
     elif listing_type and tag_parameters:
         #Search listings using tag parameters only
         if listing_type == "Offers":
@@ -3462,18 +3518,19 @@ def search_listings(request):
                 if listing.listingEnded == False]
 
             if items:
+                item_ids = [item.id for item in items]
                 queryset = OfferListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
-                    items__in=items
-                ).order_by('id').reverse()
+                    items__in=item_ids
+                ).distinct().order_by('id').reverse()
             else:
                 queryset = OfferListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude]
-                ).order_by('id').reverse()
+                ).distinct().order_by('id').reverse()
 
             for obj in queryset:
                 time_left = obj.endTime - current_date
@@ -3487,28 +3544,42 @@ def search_listings(request):
                 else:
                     obj.favorited = False
 
+            print(queryset)
+
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show offer listings only to a user
-            return render(request, "search/offer_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
         elif listing_type == "Auctions":
             #Retrieve all active auction listings that match the params
             listings_ids = [listing.id for listing in AuctionListing.objects.all()
                 if listing.listingEnded == False]
 
             if items:
+                item_ids = [item.id for item in items]
                 queryset = AuctionListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
-                    items__in=items
-                ).order_by('id').reverse()
+                    items__in=item_ids
+                ).distinct().order_by('id').reverse()
             else:
                 queryset = AuctionListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude]
-                ).order_by('id').reverse()
+                ).distinct().order_by('id').reverse()
 
             for obj in queryset:
                 time_left = obj.endTime - current_date
@@ -3524,27 +3595,39 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show auction listings only to a user
-            return render(request, "search/auction_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
         else:
             #Retrieve all active wishlist listings that match the params
             listings_ids = [listing.id for listing in WishlistListing.objects.all()
                 if listing.listingEnded == False]
 
             if items:
+                item_ids = [item.id for item in items]
                 queryset = WishlistListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
-                    itemsOffer__in=items
-                ).order_by('id').reverse()
+                    itemsOffer__in=item_ids
+                ).distinct().order_by('id').reverse()
             else:
                 queryset = WishlistListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude]
-                ).order_by('id').reverse()
+                ).distinct().order_by('id').reverse()
 
             for obj in queryset:
 
@@ -3554,9 +3637,20 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show wishlistn listings only to a user
-            return render(request, "search/wishlist_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
     elif listing_type and name_parameters:
         #Search listings using name parameters only
         if listing_type == "Offers":
@@ -3569,7 +3663,7 @@ def search_listings(request):
                 latitude__range=[min_latitude, max_latitude],
                 longitude__range=[min_longitude, max_longitude],
                 name__icontains=name_param_list
-            ).order_by('id').reverse()
+            ).distinct().order_by('id').reverse()
 
             for obj in queryset:
                 time_left = obj.endTime - current_date
@@ -3584,9 +3678,20 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show offer listings only to a user
-            return render(request, "search/offer_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
         elif listing_type == "Auctions":
             #Retrieve all active auction listings that match the params
             listings_ids = [listing.id for listing in AuctionListing.objects.all()
@@ -3597,7 +3702,7 @@ def search_listings(request):
                 latitude__range=[min_latitude, max_latitude],
                 longitude__range=[min_longitude, max_longitude],
                 name__icontains=name_param_list
-            ).order_by('id').reverse()
+            ).distinct().order_by('id').reverse()
 
             for obj in queryset:
                 time_left = obj.endTime - current_date
@@ -3613,9 +3718,20 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show auction listings only to a user
-            return render(request, "search/auction_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
         else:
             #Retrieve all active wishlist listings that match the params
             listings_ids = [listing.id for listing in WishlistListing.objects.all()
@@ -3626,7 +3742,7 @@ def search_listings(request):
                 latitude__range=[min_latitude, max_latitude],
                 longitude__range=[min_longitude, max_longitude],
                 name__icontains=name_param_list
-            ).order_by('id').reverse()
+            ).distinct().order_by('id').reverse()
 
             for obj in queryset:
                 if Favorite.objects.filter(listing=obj, user=request.user).exists():
@@ -3635,9 +3751,20 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show wishlistn listings only to a user
-            return render(request, "search/wishlist_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
     elif listing_type:
         #Search listings by listing type only
         if listing_type == "Offers":
@@ -3664,9 +3791,20 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show offer listings only to a user
-            return render(request, "search/offer_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
         elif listing_type == "Auctions":
             #Retrieve all active auction listings that match the params
             listings_ids = [listing.id for listing in AuctionListing.objects.all()
@@ -3692,9 +3830,20 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listings_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show auction listings only to a user
-            return render(request, "search/auction_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
         else:
             #Retrieve all active wishlist listings that match the params
             listings_ids = [listing.id for listing in WishlistListing.objects.all()
@@ -3713,8 +3862,19 @@ def search_listings(request):
                     obj.favorited = False
 
             context["listings"] = queryset
+            context["listing_type"] = listing_type
+
+            if request.is_ajax():
+                html = render_to_string(
+                    template_name="search/results.html",
+                    context={"listings": queryset, "listing_type": listing_type}
+                )
+
+                data_dict = {"html_from_view": html}
+
+                return JsonResponse(data=data_dict, safe=False)
 
             #Return the view that will show wishlistn listings only to a user
-            return render(request, "search/wishlist_listings.html", context=context)
+            return render(request, "search/search.html", context=context)
 
-    return HttpResponse('ok', status=201)
+    return render(request, "search/search.html", context=context)

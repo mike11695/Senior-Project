@@ -1,0 +1,21 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>Search Listings Listings</h1>
+      </div>
+    </div>
+    <div class="col-lg-12 align-center">
+      <i id="search-icon" class="fas fa-search"></i>
+      <input id="user-input" placeholder="Search Listings...">
+      <select id="tags" name="tags">
+        <option value=""></option>
+      </select>
+    </div>
+  </div>
+  <div id="listings-content" class="col-lg-10">
+    {% include '/listings/search/results.html' %}
+  </div>
+{% endblock %}

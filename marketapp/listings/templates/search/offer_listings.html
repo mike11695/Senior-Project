@@ -1,0 +1,103 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  {% if listings %}
+    <div class="center-block col-lg-10">
+    {% for listing in listings %}
+      {% if listing.endingSoon %}
+        <div class="all-listing-object-ending-soon">
+          {% with listing.items.all|first as item %}
+            {% with item.images.all|first as image %}
+              <div class="listing-image-container">
+                <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+              </div>
+            {% endwith %}
+          {% endwith %}
+          <div class="listing-details-container">
+            <div style="display: inline-block; width: 100%;">
+              <div class="listing-listview-header">
+                <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                  <h4 style="display: inline-block">{{ listing.name }}</h4>
+                </a>
+                <div class="listing-owner">
+                   Owned By: <a href="{% url 'profile-detail' pk=listing.owner.profile.id %}">{{ listing.owner }}</a>
+                </div>
+                {% if listing.owner != request.user %}
+                  <button class="favorite-listing" id="listing{{listing.id}}" onclick="favorite({{ listing.id }})" data-catid="{{ listing.id }}">
+                      {% if listing.favorited %}
+                        <i id="fave-btn{{listing.id}}" class="fas fa-star"></i>
+                      {% else %}
+                        <i id="fave-btn{{listing.id}}" class="far fa-star"></i>
+                      {% endif %}
+                  </button>
+                {% endif %}
+                <div class="ending-soon">
+                  Ending Soon!
+                </div>
+              </div>
+              {% if listing.openToMoneyOffers %}
+                <div class="listing-prices">
+                  {% if listing.maxRange > 0.00 %}
+                    Price Range: ${{ listing.minRange }} - ${{ listing.maxRange }}
+                  {% else %}
+                    Minimum Price: ${{ listing.minRange }}
+                  {% endif %}
+                </div>
+              {% endif %}
+              <div class="listing-date">Ends: {{ listing.endTime }}</div>
+            </div>
+            <div class="listing-desc">
+              {{ listing.description }}
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="all-listing-object">
+          {% with listing.items.all|first as item %}
+            {% with item.images.all|first as image %}
+              <div class="listing-image-container">
+                <a href="{{ listing.get_absolute_url }}"><img src="{{ image.image.url }}" class="listing-image"></img></a>
+              </div>
+            {% endwith %}
+          {% endwith %}
+          <div class="listing-details-container">
+            <div style="display: inline-block; width: 100%;">
+              <div class="listing-listview-header">
+                <a href="{{ listing.get_absolute_url }}" style="display: inline-block">
+                  <h4 style="display: inline-block">{{ listing.name }}</h4>
+                </a>
+                <div class="listing-owner">
+                   Owned By: <a href="{% url 'profile-detail' pk=listing.owner.profile.id %}">{{ listing.owner }}</a>
+                </div>
+                {% if listing.owner != request.user %}
+                <button class="favorite-listing" id="listing{{listing.id}}" onclick="favorite({{ listing.id }})" data-catid="{{ listing.id }}">
+                    {% if listing.favorited %}
+                      <i id="fave-btn{{listing.id}}" class="fas fa-star"></i>
+                    {% else %}
+                      <i id="fave-btn{{listing.id}}" class="far fa-star"></i>
+                    {% endif %}
+                </button>
+                {% endif %}
+              </div>
+              {% if listing.openToMoneyOffers %}
+                <div class="listing-prices">
+                  {% if listing.maxRange > 0.00 %}
+                    Price Range: ${{ listing.minRange }} - ${{ listing.maxRange }}
+                  {% else %}
+                    Minimum Price: ${{ listing.minRange }}
+                  {% endif %}
+                </div>
+              {% endif %}
+              <div class="listing-date">Ends: {{ listing.endTime }}</div>
+            </div>
+            <div class="listing-desc">
+              {{ listing.description }}
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p style="text-align: center;">There are no listings matching your query.</p>
+  {% endif %}
+{% endblock %}

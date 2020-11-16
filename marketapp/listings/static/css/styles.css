@@ -916,6 +916,7 @@ input[type="checkbox"]{
   top: -4px;
   left: 10px;
   font-weight: bolder;
+  color: black;
 }
 
 .notification-date {
