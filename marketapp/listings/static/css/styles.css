@@ -1290,3 +1290,48 @@ input[type="checkbox"]{
 .favorite-listing:hover {
   color: #d1b700;
 }
+
+.search-block-1 {
+  width: 300px;
+  display: inline-block;
+}
+
+.search-block-2 {
+  width: 300px;
+  display: inline-block;
+  height: 90px;
+}
+
+.search-option {
+  float: right;
+}
+
+.search-field {
+  margin-bottom: 13px;
+  text-align: left;
+}
+
+.search-field-2 {
+  margin-top: -5px;
+  margin-bottom: 7px;
+  text-align: left;
+}
+
+.search-field-3 {
+  text-align: left;
+}
+
+#user-input {
+  height: 26px;
+}
+
+#listing-types, #search-radius {
+  width: 182px;
+}
+
+#tags {
+  width: 182px;
+  height: 90px;
+  top: 4px;
+  position: relative;
+}

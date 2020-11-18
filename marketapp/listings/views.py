@@ -711,11 +711,6 @@ def relist_offer_listing(request, pk):
             if request.method == 'POST':
                 form = OfferListingForm(data=request.POST, user=request.user, instance=current_listing)
                 if form.is_valid():
-                    #Retrieve the old notification for the listing ending
-                    #so it can be updated
-                    notifications = ListingNotification.objects.filter(listing=current_listing)
-                    old_notification = notifications.first()
-
                     current_listing = form.save(commit=False)
 
                     #Delete the previous existing offers
@@ -797,9 +792,20 @@ def relist_offer_listing(request, pk):
 
                     current_listing.save()
 
-                    #Update the ending notification
-                    old_notification.creationDate = current_listing.endTime
-                    old_notification.save()
+                    #Retrieve the old notification for the listing ending
+                    #so it can be updated.  If it doesn't exist, remake the notification
+                    if ListingNotification.objects.filter(listing=current_listing).exists():
+                        notifications = ListingNotification.objects.filter(listing=current_listing)
+                        old_notification = notifications.first()
+                        old_notification.creationDate = current_listing.endTime
+                        old_notification.save()
+                    else:
+                        content = ('Your listing "' + current_listing.name
+                            + '" has expired.')
+                        old_notification = ListingNotification.objects.create(user=request.user,
+                            listing=current_listing, content=content,
+                            creationDate=current_listing.endTime,
+                            type="Listing Ended")
 
                     return redirect('offer-listing-detail', pk=current_listing.pk)
             else:
@@ -1082,11 +1088,6 @@ def relist_auction_listing(request, pk):
             if request.method == 'POST':
                 form = AuctionListingForm(data=request.POST, user=request.user, instance=current_listing)
                 if form.is_valid():
-                    #Retrieve the old notification for the listing ending
-                    #so it can be updated
-                    notifications = ListingNotification.objects.filter(listing=current_listing)
-                    old_notification = notifications.first()
-
                     current_listing = form.save(commit=False)
 
                     #Clear the current items from the listing
@@ -1144,9 +1145,20 @@ def relist_auction_listing(request, pk):
 
                     current_listing.save()
 
-                    #Update the ending notification
-                    old_notification.creationDate = current_listing.endTime
-                    old_notification.save()
+                    #Retrieve the old notification for the listing ending
+                    #so it can be updated.  If it doesn't exist, remake the notification
+                    if ListingNotification.objects.filter(listing=current_listing).exists():
+                        notifications = ListingNotification.objects.filter(listing=current_listing)
+                        old_notification = notifications.first()
+                        old_notification.creationDate = current_listing.endTime
+                        old_notification.save()
+                    else:
+                        content = ('Your listing "' + current_listing.name
+                            + '" has expired.')
+                        old_notification = ListingNotification.objects.create(user=request.user,
+                            listing=current_listing, content=content,
+                            creationDate=current_listing.endTime,
+                            type="Listing Ended")
 
                     return redirect('auction-listing-detail', pk=current_listing.pk)
             else:
@@ -3311,7 +3323,12 @@ def search_listings(request):
     tag_parameters = request.GET.get("tags", None)
     mile_radius = request.GET.get("searchRadius", None)
 
-    print(listing_type)
+    if listing_type == "" or listing_type == None:
+        listing_type = "Offers"
+    if mile_radius == "":
+        mile_radius = "0.3400"
+
+    context["listing_type"] = listing_type
 
     if mile_radius:
         #Get the latitude and longitude range using user's location
@@ -3341,30 +3358,30 @@ def search_listings(request):
             name_param_list = name_parameters
 
     if tag_parameters:
-        print("Tag Params: " + tag_parameters)
+        tags_param_list = []
+
         if ' ' in tag_parameters and ',' in tag_parameters:
             tags_param_list = tags_param_list.replace(' ', '').split(',')
         elif ',' in tag_parameters:
             tags_param_list = tag_parameters.split(',')
-        print(tags_param_list)
+        else:
+            tags_param_list.append(tag_parameters)
+
+
         #Retrieve the tags requested:
         tags = Tag.objects.filter(name__in=tags_param_list)
-        print(tags)
         tag_ids = [tag.id for tag in tags]
+
 
         #Retrieve the images that include the tags request
         if tags:
             tag_ids = [tag.id for tag in tags]
-            print(tag_ids)
             images = Image.objects.filter(tags__in=tag_ids).distinct()
-        print(images)
 
         #Retrieve the items that contain the images
         if images:
             image_ids = [image.id for image in images]
-            print(image_ids)
             items = Item.objects.filter(images__in=image_ids).distinct()
-        print(items)
 
     if listing_type and name_parameters and tag_parameters:
         #Search listings using name and tag parameters
@@ -3383,11 +3400,13 @@ def search_listings(request):
                     items__in=item_ids
                 ).distinct().order_by('id').reverse()
             else:
+                item_ids = []
                 queryset = OfferListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
-                    name__icontains=name_param_list
+                    name__icontains=name_param_list,
+                    items__in=item_ids
                 ).distinct().order_by('id').reverse()
 
             for obj in queryset:
@@ -3405,7 +3424,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3432,11 +3451,13 @@ def search_listings(request):
                     items__in=item_ids
                 ).distinct().order_by('id').reverse()
             else:
+                item_ids = []
                 queryset = AuctionListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
-                    name__icontains=name_param_list
+                    name__icontains=name_param_list,
+                    items__in=item_ids
                 ).distinct().order_by('id').reverse()
 
             for obj in queryset:
@@ -3455,7 +3476,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3482,11 +3503,13 @@ def search_listings(request):
                     itemsOffer__in=item_ids
                 ).distinct().order_by('id').reverse()
             else:
+                item_ids = []
                 queryset = WishlistListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
                     longitude__range=[min_longitude, max_longitude],
-                    name__icontains=name_param_list
+                    name__icontains=name_param_list,
+                    itemsOffer__in=item_ids
                 ).distinct().order_by('id').reverse()
 
             for obj in queryset:
@@ -3498,7 +3521,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3526,10 +3549,12 @@ def search_listings(request):
                     items__in=item_ids
                 ).distinct().order_by('id').reverse()
             else:
+                item_ids = []
                 queryset = OfferListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
-                    longitude__range=[min_longitude, max_longitude]
+                    longitude__range=[min_longitude, max_longitude],
+                    items__in=item_ids
                 ).distinct().order_by('id').reverse()
 
             for obj in queryset:
@@ -3549,7 +3574,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3575,10 +3600,12 @@ def search_listings(request):
                     items__in=item_ids
                 ).distinct().order_by('id').reverse()
             else:
+                item_ids = []
                 queryset = AuctionListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
-                    longitude__range=[min_longitude, max_longitude]
+                    longitude__range=[min_longitude, max_longitude],
+                    items__in=item_ids
                 ).distinct().order_by('id').reverse()
 
             for obj in queryset:
@@ -3597,7 +3624,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3623,10 +3650,12 @@ def search_listings(request):
                     itemsOffer__in=item_ids
                 ).distinct().order_by('id').reverse()
             else:
+                item_ids = []
                 queryset = WishlistListing.objects.filter(
                     id__in=listings_ids,
                     latitude__range=[min_latitude, max_latitude],
-                    longitude__range=[min_longitude, max_longitude]
+                    longitude__range=[min_longitude, max_longitude],
+                    itemsOffer__in=item_ids
                 ).distinct().order_by('id').reverse()
 
             for obj in queryset:
@@ -3639,7 +3668,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3680,7 +3709,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3720,7 +3749,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3753,7 +3782,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3793,7 +3822,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3832,7 +3861,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listings_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
@@ -3864,7 +3893,7 @@ def search_listings(request):
             context["listings"] = queryset
             context["listing_type"] = listing_type
 
-            if request.is_ajax():
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 html = render_to_string(
                     template_name="search/results.html",
                     context={"listings": queryset, "listing_type": listing_type}
