@@ -3,7 +3,8 @@ from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
-    Profile, Conversation, Message)
+    Profile, Conversation, Message, Report, ListingReport, EventReport,
+    UserReport, RatingReport, WishlistReport, ImageReport)
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -798,3 +799,14 @@ class MessageForm(ModelForm):
         model = Message
         fields = ['content']
         exclude = ['conversation', 'author', 'dateSent', 'unread']
+
+#Form for a user to report an object
+"""class ListingReportForm(UserCreationForm):
+    description = forms.CharField(max_length=250, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("Tell us more in depth about the reason for reporting"))
+
+    class Meta:
+        model = ListingReport
+        fields = ['reason', 'description']
+        exclude = ['date']"""

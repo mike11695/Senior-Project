@@ -1,11 +1,13 @@
 from django.test import TestCase
 from listings.models import (User, Profile, Rating, Warning, Conversation,
     Message, Image, Tag, Wishlist, Event, Listing, OfferListing, AuctionListing,
-    Item, Offer, Bid, WishlistListing, Receipt, PaymentReceipt)
+    Item, Offer, Bid, WishlistListing, Receipt, PaymentReceipt, Report,
+    ListingReport)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from datetime import datetime
 from django.utils.timezone import make_aware
 from django.conf import settings
+from django.utils import timezone
 
 # Create your tests here.
 class MyTestCase(TestCase):
@@ -454,18 +456,40 @@ class EventModelTest(MyTestCase):
         self.assertEqual(verbose_name, "Address where Event is Held")
 
 #Tests for Report Class
+class ReportModelTest(MyTestCase):
+    def setUp(self):
+        #Set up report record for testing
+        super(ReportModelTest, self).setUp()
+        date = timezone.localtime(timezone.now())
+        self.report = ListingReport.objects.create(
+            listing=self.global_offer_listing,
+            reason="Malicious Content",
+            description="Items in the listing are illegal.",
+            dateMade=date)
 
-#Tests for ListingReport subclass
+    #Checks to ensure that Report reason max length is correct
+    def test_report_reason_max_length(self):
+        report = self.report
+        max_length = report._meta.get_field('reason').max_length
+        self.assertEqual(max_length, 150)
 
-#Tests for EventReport subclass
+    #Checks to ensure that Report description max length is correct
+    def test_report_description_max_length(self):
+        report = self.report
+        max_length = report._meta.get_field('description').max_length
+        self.assertEqual(max_length, 250)
 
-#Tests for UserReport subclass
+    #Checks to ensure that Report reason help text is correct
+    def test_report_reason_help_text(self):
+        report = self.report
+        help_text = report._meta.get_field('reason').help_text
+        self.assertEqual(help_text, "Reason for the report")
 
-#Tests for RatingReport subclass
-
-#Tests for WishlistReport subclass
-
-#Tests for ImageReport subclass
+    #Checks to ensure that Report description help text is correct
+    def test_report_description_help_text(self):
+        report = self.report
+        help_text = report._meta.get_field('description').help_text
+        self.assertEqual(help_text, "Tell us more in depth about the reason for reporting")
 
 #Tests for Item class
 class ItemModelTest(MyTestCase):

@@ -293,50 +293,6 @@ class Invitation(models.Model):
         #String for representing the Invitation object.
         return f'"Invitation to ", {self.event.title}'
 
-#Model for Reports, when users want admins to take notice of something against
-#TOS or is inappropriate
-#Fields needed: Reason, description
-"""class Report(models.Model):
-    #Fields for Report
-
-    def get_absolute_url(self):
-        #Returns the url to access a particular instance of Report.
-        return reverse('report-detail', args=[str(self.id)])
-
-    def __str__(self):
-        #String for representing the Report object.
-        return f'"Report ", {self.id}'"""
-
-#Subclass for ListingReport, when reporting an listing
-#Fields needed: Listing
-"""class LitingReport(Report):
-    #Fields for LitingReport"""
-
-#Subclass for EventReport, when reporting an event
-#Fields needed: Event
-"""class EventReport(Report):
-    #Fields for EventReport"""
-
-#Subclass for UserReport, when reporting a user
-#Fields needed: User
-"""class UserReport(Report):
-    #Fields for UserReport"""
-
-#Subclass for RatingReport, when reporting a rating
-#Fields needed: Rating
-"""class RatingReport(Report):
-    #Fields for RatingReport"""
-
-#Subclass for WishlistReport, when reporting an wishlist
-#Fields needed: Wishlist
-"""class WishlistReport(Report):
-    #Fields for WishlistReport"""
-
-#Subclass for ImageReport, when reporting an image
-#Fields needed: Image
-"""class ImageReport(Report):
-    #Fields for ImageReport"""
-
 #Model for Listing, which contains a item(s) that users can search for and offer/bid on
 #Fields needed: Owner, name, description, endTimeChoice, endTime, listingEnded
 class Listing(models.Model):
@@ -491,6 +447,145 @@ class Offer(models.Model):
     def __str__(self):
         #String for representing the Offer object.
         return f'"Offer by ", {self.owner}'
+
+#Model for Reports, when users want admins to take notice of something against
+#TOS or is inappropriate
+#Fields needed: Reason, description
+class Report(models.Model):
+    #Fields for Report
+    description = models.TextField(max_length=250, help_text=("Tell us more " +
+        "in depth about the reason for reporting"))
+    dateMade = models.DateTimeField(auto_now_add=True)
+
+#Subclass for ListingReport, when reporting an listing
+#Fields needed: Listing
+class ListingReport(Report):
+    #Fields for ListingReport
+    MC = 'Malicious Content'
+    IC = 'Inappropriate Content'
+    FA = 'False Advertising'
+    ATS = 'Attempt to Scam'
+    MI = 'Misleading Items'
+    REASON_CHOICES = (
+        (MC, 'Malicious Content'),
+        (IC, 'Inappropriate Content'),
+        (FA, 'False Advertising'),
+        (ATS, 'Attempt to Scam'),
+        (MI, 'Misleading Items'),
+    )
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True,
+        related_name="reports")
+
+    def __str__(self):
+        #String for representing the Report object.
+        return f'"Report for Listing: ", {self.listing.name}'
+
+#Subclass for EventReport, when reporting an event
+#Fields needed: Event
+class EventReport(Report):
+    #Fields for EventReport
+    ME = 'Malicious Event'
+    IE = 'Inappropriate Event'
+    ATSP = 'Attempt to Scam Paticipants'
+    MDAE = 'Misleading Details About Event'
+    REASON_CHOICES = (
+        (ME, 'Malicious Event'),
+        (IE, 'Inappropriate Event'),
+        (ATSP, 'Attempt to Scam Paticipants'),
+        (MDAE, 'Misleading Details About Event'),
+    )
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    event = models.ForeignKey(Event, on_delete=models.SET_NULL, null=True,
+        related_name="reports")
+
+    def __str__(self):
+        #String for representing the Report object.
+        return f'"Report for Event: ", {self.event.title}'
+
+#Subclass for UserReport, when reporting a user
+#Fields needed: User
+class UserReport(Report):
+    #Fields for UserReport
+    MU = 'Malicious User'
+    ATS = 'Attempts to Scam'
+    IM = 'Inappropriate Messaging'
+    HA = 'Harassment'
+    IP = 'Inappropriate Profile'
+    REASON_CHOICES = (
+        (MU, 'Malicious User'),
+        (ATS, 'Attempts to Scam'),
+        (IM, 'Inappropriate Messaging'),
+        (HA, 'Harassment'),
+        (IP, 'Inappropriate Profile'),
+    )
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+        related_name="reports")
+
+    def __str__(self):
+        #String for representing the Report object.
+        return f'"Report for User: ", {self.user}'
+
+#Subclass for RatingReport, when reporting a rating
+#Fields needed: Rating
+class RatingReport(Report):
+    #Fields for RatingReport
+    FR = 'False Rating'
+    IR = 'Inappropriate Rating'
+    ATS = 'Attempt to Slander'
+    HA = 'Harassment'
+    REASON_CHOICES = (
+        (FR, 'False Rating'),
+        (IR, 'Inappropriate Rating'),
+        (ATS, 'Attempt to Slander'),
+        (HA, 'Harassment'),
+    )
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    rating = models.ForeignKey(Rating, on_delete=models.SET_NULL, null=True,
+        related_name="reports")
+
+    def __str__(self):
+        #String for representing the Report object.
+        return f'"Report for Rating By: ", {self.rating.reviewer}'
+
+#Subclass for WishlistReport, when reporting an wishlist
+#Fields needed: Wishlist
+class WishlistReport(Report):
+    #Fields for WishlistReport
+    MC = 'Malicious Content'
+    IC = 'Inappropriate Content'
+    REASON_CHOICES = (
+        (MC, 'Malicious Content'),
+        (IC, 'Inappropriate Content'),
+    )
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.SET_NULL, null=True,
+        related_name="reports")
+
+    def __str__(self):
+        #String for representing the Report object.
+        return f'"Report for Wishlist: ", {self.wishlist.title}'
+
+#Subclass for ImageReport, when reporting an image
+#Fields needed: Image
+class ImageReport(Report):
+    #Fields for ImageReport
+    MI = 'Malicious Image'
+    II = 'Inappropriate Image'
+    FA = 'False Advertising'
+    REASON_CHOICES = (
+        (MI, 'Malicious Image'),
+        (II, 'Inappropriate Image'),
+        (FA, 'False Advertising'),
+    )
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    image = models.ForeignKey(Image, on_delete=models.SET_NULL, null=True,
+        related_name="reports")
+
+    def __str__(self):
+        #String for representing the Report object.
+        return f'"Report for Image: ", {self.image.name}'
 
 #Model for Favorites, so a user can save a listing and come back to it
 #Fields needed: listingType, listing, user
