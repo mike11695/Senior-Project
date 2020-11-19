@@ -1,0 +1,26 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to Search Listings</h1>
+    <p>To search for listings that match a certain criteria, go to "All Listings"
+      in the navigation bar in the top right corner, and in the drop down select
+      "Search".  Clicking on this link will take you to the search page where you
+      can search for listings.  There are several different paramaters you can
+      use in your search, such as a name for a listing or possible words that
+      are in a listing, the type of listing you want to find, the search radius
+      of listings in an area, and lastly tags for images included in the items
+      in the listing.  You can combine the parameters as well to narrow down your
+      search for listings as well in order to get more specific listings.  Only
+      active listings will appear in your search however.  You will be able to
+      favorite listings that you find in your searches as well by clicking on the
+      star in the top right corner of every listing.</p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Searching</h1>
+    <h3 class="faq-question">Is there any other parameters I can include in my search?</h3>
+    <p>At the moment there is not, but there may be some new ones added in the
+      future, such as price ranges and names of items.</p>
+  </div>
+{% endblock %}

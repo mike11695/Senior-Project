@@ -23,6 +23,7 @@ urlpatterns = [
     path('FAQ/conversations', views.faq_conversations, name='faq-conversations'),
     path('FAQ/receipts', views.faq_receipts, name='faq-receipts'),
     path('FAQ/favorites', views.faq_favorites, name='faq-favorites'),
+    path('FAQ/search', views.faq_search, name='faq-search'),
 
     #Items
     path('images/', views.ImageListView.as_view(), name='images'),

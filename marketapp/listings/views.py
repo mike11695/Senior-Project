@@ -461,6 +461,12 @@ def faq_favorites(request):
     # Render the HTML template faq/favorites.html with the data in the context variable
     return render(request, 'faq/favorites.html')
 
+#FAQ page for favorites
+@login_required(login_url='/accounts/login/')
+def faq_search(request):
+    # Render the HTML template faq/search.html with the data in the context variable
+    return render(request, 'faq/search.html')
+
 #List view for a user to see all of the offer listings they have
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
     model = OfferListing

@@ -1257,6 +1257,27 @@ class FAQFavoritesViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/favorites.html')
 
+class FAQSearchViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to view FAQ
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('faq-search'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/FAQ/search')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-search'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-search'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'faq/search.html')
+
 class OfferListingsViewTest(MyTestCase):
     def setUp(self):
         super(OfferListingsViewTest, self).setUp()

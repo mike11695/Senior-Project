@@ -31,7 +31,7 @@ function favorite(id) {
      })
 }
 
-console.log(endpoint)
+endpoint = "/listings/search-listings"
 
 $(document).ready(function() {
   let scheduled_function = false
