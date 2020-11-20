@@ -1,0 +1,34 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="center-block col-lg-10">
+    <h2 style="text-align: center;">Report Listing</h2>
+    <div class="form-container-reports center-block">
+      <form enctype="multipart/form-data" method="post" action="">
+        {% csrf_token %}
+        {% for field in form %}
+          <p>
+            {% if field.label != "Tags" %}
+              <div style="display: inline-block;">
+                {{ field.label_tag }}
+              </div>
+              <div class="form-field-items" style="display: inline-block;">
+                {{ field }}
+              </div>
+              {% if field.help_text %}
+                <br><small style="color: grey">{{ field.help_text }}</small>
+              {% endif %}
+              {% for error in field.errors %}
+                <p style="color: red">{{ error }}</p>
+              {% endfor %}
+            {% else %}
+              <div>{{ field.label_tag }}</div>
+              <div class="form-field-images image-tag-selection">{{ field }}</div>
+            {% endif %}
+          </p>
+        {% endfor %}
+        <button type="btn submit" class="btn btn-blue form-button image-form-button">Report</button>
+      </form>
+    </div>
+</div>
+{% endblock %}

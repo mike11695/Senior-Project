@@ -4,7 +4,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
     PaymentNotification, InvitationNotification, EventNotification,
-    Notification, Favorite)
+    Notification, Favorite, ListingReport)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7805,3 +7805,52 @@ class SearchListingsViewTest(MyTestCase):
             {'type': 'Wishlists', 'name': 'art', 'tags': 'Home',
             'searchRadius': '0.6700'})
         self.assertEqual(len(response.context['listings']), 1)
+
+class ReportListingViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to report listing
+    def test_redirect_if_not_logged_in(self):
+        listing = self.global_offer_listing1
+        response = self.client.get(reverse('report-listing', args=[str(listing.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/report-listing/{0}'.format(listing.id))
+
+    #Test to ensure user is not redirected if logged in and is not the owner
+    def test_no_redirect_if_logged_in_does_not_own_listing(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing1
+        response = self.client.get(reverse('report-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but owns the listing
+    def test_redirect_if_logged_in_owns_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing1
+        response = self.client.get(reverse('report-listing', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing1
+        response = self.client.get(reverse('report-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/report_listing.html')
+
+    #Test to ensure that a user is able to report a listing successfully
+    def test_listing_report_is_created(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.global_offer_listing1
+        response = self.client.get(reverse('report-listing', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('report-listing', args=[str(listing.id)]),
+            data={'reason': "Malicious Content",
+                'description': "The items in this listing are illegally obtained."})
+        self.assertEqual(post_response.status_code, 302)
+        new_report = ListingReport.objects.last()
+        self.assertEqual(new_report.reason, 'Malicious Content')
+        self.assertEqual(new_report.description, 'The items in this listing are illegally obtained.')
+        self.assertEqual(new_report.listing.name, listing.name)

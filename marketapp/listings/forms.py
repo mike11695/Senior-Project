@@ -801,7 +801,7 @@ class MessageForm(ModelForm):
         exclude = ['conversation', 'author', 'dateSent', 'unread']
 
 #Form for a user to report an object
-"""class ListingReportForm(UserCreationForm):
+class ListingReportForm(ModelForm):
     description = forms.CharField(max_length=250, required=True,
         widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
         help_text=("Tell us more in depth about the reason for reporting"))
@@ -809,4 +809,4 @@ class MessageForm(ModelForm):
     class Meta:
         model = ListingReport
         fields = ['reason', 'description']
-        exclude = ['date']"""
+        exclude = ['date']

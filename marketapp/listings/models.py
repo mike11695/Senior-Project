@@ -466,14 +466,17 @@ class ListingReport(Report):
     FA = 'False Advertising'
     ATS = 'Attempt to Scam'
     MI = 'Misleading Items'
+    OT = 'Other'
     REASON_CHOICES = (
         (MC, 'Malicious Content'),
         (IC, 'Inappropriate Content'),
         (FA, 'False Advertising'),
         (ATS, 'Attempt to Scam'),
         (MI, 'Misleading Items'),
+        (OT, 'Other'),
     )
-    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES,
+        help_text="Reason for the report", null=True, default=MC)
     listing = models.ForeignKey(Listing, on_delete=models.SET_NULL, null=True,
         related_name="reports")
 
@@ -489,13 +492,16 @@ class EventReport(Report):
     IE = 'Inappropriate Event'
     ATSP = 'Attempt to Scam Paticipants'
     MDAE = 'Misleading Details About Event'
+    OT = 'Other'
     REASON_CHOICES = (
         (ME, 'Malicious Event'),
         (IE, 'Inappropriate Event'),
         (ATSP, 'Attempt to Scam Paticipants'),
         (MDAE, 'Misleading Details About Event'),
+        (OT, 'Other'),
     )
-    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES,
+        help_text="Reason for the report", null=True, default=ME)
     event = models.ForeignKey(Event, on_delete=models.SET_NULL, null=True,
         related_name="reports")
 
@@ -512,14 +518,17 @@ class UserReport(Report):
     IM = 'Inappropriate Messaging'
     HA = 'Harassment'
     IP = 'Inappropriate Profile'
+    OT = 'Other'
     REASON_CHOICES = (
         (MU, 'Malicious User'),
         (ATS, 'Attempts to Scam'),
         (IM, 'Inappropriate Messaging'),
         (HA, 'Harassment'),
         (IP, 'Inappropriate Profile'),
+        (OT, 'Other'),
     )
-    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES,
+        help_text="Reason for the report", null=True, default=MU)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
         related_name="reports")
 
@@ -535,13 +544,16 @@ class RatingReport(Report):
     IR = 'Inappropriate Rating'
     ATS = 'Attempt to Slander'
     HA = 'Harassment'
+    OT = 'Other'
     REASON_CHOICES = (
         (FR, 'False Rating'),
         (IR, 'Inappropriate Rating'),
         (ATS, 'Attempt to Slander'),
         (HA, 'Harassment'),
+        (OT, 'Other'),
     )
-    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES,
+        help_text="Reason for the report", null=True, default=FR)
     rating = models.ForeignKey(Rating, on_delete=models.SET_NULL, null=True,
         related_name="reports")
 
@@ -555,11 +567,14 @@ class WishlistReport(Report):
     #Fields for WishlistReport
     MC = 'Malicious Content'
     IC = 'Inappropriate Content'
+    OT = 'Other'
     REASON_CHOICES = (
         (MC, 'Malicious Content'),
         (IC, 'Inappropriate Content'),
+        (OT, 'Other'),
     )
-    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES,
+        help_text="Reason for the report", null=True, default=MC)
     wishlist = models.ForeignKey(Wishlist, on_delete=models.SET_NULL, null=True,
         related_name="reports")
 
@@ -574,12 +589,15 @@ class ImageReport(Report):
     MI = 'Malicious Image'
     II = 'Inappropriate Image'
     FA = 'False Advertising'
+    OT = 'Other'
     REASON_CHOICES = (
         (MI, 'Malicious Image'),
         (II, 'Inappropriate Image'),
         (FA, 'False Advertising'),
+        (OT, 'Other'),
     )
-    reason = models.TextField(max_length=150, choices=REASON_CHOICES, help_text="Reason for the report")
+    reason = models.TextField(max_length=150, choices=REASON_CHOICES,
+        help_text="Reason for the report", null=True, default=MI)
     image = models.ForeignKey(Image, on_delete=models.SET_NULL, null=True,
         related_name="reports")
 

@@ -135,4 +135,8 @@ urlpatterns = [
     #Search
     path('search-listings/', views.search_listings,
         name="search-listings"),
+
+    #Reports
+    path('report-listing/<int:pk>', views.report_listing,
+        name="report-listing"),
 ]

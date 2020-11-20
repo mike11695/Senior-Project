@@ -25,7 +25,7 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
-    MessageForm, EditImageForm)
+    MessageForm, EditImageForm, ListingReportForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -3913,3 +3913,36 @@ def search_listings(request):
             return render(request, "search/search.html", context=context)
 
     return render(request, "search/search.html", context=context)
+
+#Form view for a user to report a listing
+@login_required(login_url='/accounts/login/')
+def report_listing(request, pk):
+    #Get the listing being reported
+    listing = get_object_or_404(Listing, pk=pk)
+
+    #Check to ensure owner of listing is not reporting their own listing
+    if listing.owner != request.user:
+        if request.method == 'POST':
+            form = ListingReportForm(data=request.POST)
+            if form.is_valid():
+                new_report = form.save()
+
+                #Set the listing for the report
+                new_report.listing = listing
+
+                #Save the report
+                new_report.save()
+
+                #Redirect to the listings's detail view
+                if OfferListing.objects.filter(id=listing.id).exists():
+                    return redirect('offer-listing-detail', pk=listing.pk)
+                elif AuctionListing.objects.filter(id=listing.id).exists():
+                    return redirect('auction-listing-detail', pk=listing.pk)
+                else:
+                    return redirect('wishlist-listing-detail', pk=listing.pk)
+        else:
+            form = ListingReportForm()
+        return render(request, 'reports/report_listing.html',
+            {'form': form})
+    else:
+        return redirect('index')

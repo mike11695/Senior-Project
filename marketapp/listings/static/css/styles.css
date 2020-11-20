@@ -1215,6 +1215,17 @@ input[type="checkbox"]{
   height: 380px;
 }
 
+.form-container-reports {
+  background: #e8e8e8;
+  padding: 15px;
+  border-radius: 15px;
+  border: 2px solid #999999;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 400px;
+  height: 380px;
+}
+
 .image-tag-selection ul {
   list-style-type: none;
   padding-left: 5px;
