@@ -7806,6 +7806,55 @@ class SearchListingsViewTest(MyTestCase):
             'searchRadius': '0.6700'})
         self.assertEqual(len(response.context['listings']), 1)
 
+class ReportsViewTest(MyTestCase):
+    def setUp(self):
+        super(ReportsViewTest, self).setUp()
+
+        #Set a user to be a super user
+        self.global_user1.is_superuser = True
+        self.global_user1.save()
+
+        #Create some reports for testing with
+        for num in range(6):
+            ListingReport.objects.create(reason='Malicious Content',
+                description="Illegally obtained items in listing",
+                reportType="Listing")
+
+    #Test to ensure that a user must be logged in to view reports
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('reports'))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in and is a superuser
+    def test_no_redirect_if_logged_in_superuser(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('reports'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is not a superuser
+    def test_redirect_if_logged_in_not_superuser(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('reports'))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('reports'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/reports.html')
+
+    #Test to ensure that the user can see all reports
+    def test_list_all_reports(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('reports'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['reports']) == 6)
+
 class ReportListingViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to report listing
     def test_redirect_if_not_logged_in(self):
@@ -7853,4 +7902,5 @@ class ReportListingViewTest(MyTestCase):
         new_report = ListingReport.objects.last()
         self.assertEqual(new_report.reason, 'Malicious Content')
         self.assertEqual(new_report.description, 'The items in this listing are illegally obtained.')
+        self.assertEqual(new_report.reportType, "Listing")
         self.assertEqual(new_report.listing.name, listing.name)

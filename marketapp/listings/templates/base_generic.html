@@ -101,10 +101,13 @@
               </li>
             {% endif %}
             <div class="dropdown">
-              <div class="site-nav-url dropbtn" style="margin-left: -3px;">More...</div>
+              <div class="site-nav-url dropbtn" style="margin-left: -3px; width: 85px; text-align: center;">More...</div>
               <div class="dropdown-content more-dropdown">
-                <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'faq' %}">FAQ</a></li>
-                <li class="site-nav-url" style="margin-left: -3px;"><a href="{% url 'users' %}">Users</a></li>
+                <li class="site-nav-url" style="margin-left: -3px; width: 85px; padding-left: 18px;"><a href="{% url 'faq' %}">FAQ</a></li>
+                <li class="site-nav-url" style="margin-left: -3px; width: 85px; padding-left: 18px;"><a href="{% url 'users' %}">Users</a></li>
+                {% if request.user.is_superuser %}
+                  <li class="site-nav-url" style="margin-left: -3px; width: 85px; padding-left: 15px;"><a href="{% url 'reports' %}">Reports</a></li>
+                {% endif %}
               </div>
             </div>
             <li class="site-nav-url" style="margin-left: -4px;"><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>

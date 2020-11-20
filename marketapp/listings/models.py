@@ -456,6 +456,7 @@ class Report(models.Model):
     description = models.TextField(max_length=250, help_text=("Tell us more " +
         "in depth about the reason for reporting"))
     dateMade = models.DateTimeField(auto_now_add=True)
+    reportType =  models.TextField(max_length=50, null=True)
 
 #Subclass for ListingReport, when reporting an listing
 #Fields needed: Listing

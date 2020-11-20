@@ -20,7 +20,8 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
     Conversation, Message, Receipt, PaymentReceipt, ListingNotification,
     OfferNotification, BidNotification, PaymentNotification,
     InvitationNotification, EventNotification, Notification,
-    RatingNotification, WarningNotification, Favorite, Tag)
+    RatingNotification, WarningNotification, Favorite, Tag, Report, ListingReport,
+    EventReport, RatingReport, UserReport, WishlistReport, ImageReport)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -3914,6 +3915,47 @@ def search_listings(request):
 
     return render(request, "search/search.html", context=context)
 
+#List view for a superuser to see all of the reports made on site
+class ReportListView(LoginRequiredMixin, generic.ListView):
+    model = Report
+    context_object_name = 'reports'
+    template_name = "reports/reports.html"
+    paginate_by = 10
+
+    #Returns all of the reports on the site
+    def get_queryset(self):
+        reports = Report.objects.all().order_by('dateMade').reverse()
+
+        if reports:
+            for report in reports:
+                if report.reportType == "Listing":
+                    report.obj = ListingReport.objects.get(id=report.id)
+                    if OfferListing.objects.filter(id=report.obj.listing.id).exists():
+                        report.obj.listing = OfferListing.objects.get(id=report.obj.listing.id)
+                    elif AuctionListing.objects.filter(id=report.obj.listing.id).exists():
+                        report.obj.listing = AuctionListing.objects.get(id=report.obj.listing.id)
+                    else:
+                        report.obj.listing = WishlistListing.objects.get(id=report.obj.listing.id)
+                elif report.reportType == "Event":
+                    report.obj = EventReport.objects.get(id=report.id)
+                elif report.reportType == "User":
+                    report.obj = UserReport.objects.get(id=report.id)
+                elif report.reportType == "Rating":
+                    report.obj = RatingReport.objects.get(id=report.id)
+                elif report.reportType == "Wishlist":
+                    report.obj = WishlistReport.objects.get(id=report.id)
+                elif report.reportType == "Image":
+                    report.obj = ImageReport.objects.get(id=report.id)
+
+        return reports
+
+    #Checks to ensure that only a superuser can view list of reports
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            return super(ReportListView, self).dispatch(request, *args, **kwargs)
+        else:
+            return redirect('index')
+
 #Form view for a user to report a listing
 @login_required(login_url='/accounts/login/')
 def report_listing(request, pk):
@@ -3929,6 +3971,7 @@ def report_listing(request, pk):
 
                 #Set the listing for the report
                 new_report.listing = listing
+                new_report.reportType = "Listing"
 
                 #Save the report
                 new_report.save()

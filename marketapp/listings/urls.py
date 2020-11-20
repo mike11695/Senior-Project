@@ -137,6 +137,7 @@ urlpatterns = [
         name="search-listings"),
 
     #Reports
+    path('reports/', views.ReportListView.as_view(), name="reports"),
     path('report-listing/<int:pk>', views.report_listing,
         name="report-listing"),
 ]

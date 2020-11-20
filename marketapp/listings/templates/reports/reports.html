@@ -1,0 +1,71 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container-fluid col-lg-10 center-block listings-container">
+    <div class="center-block" style="text-align: center;">
+      <div>
+        <h1>Reports</h1>
+      </div>
+    </div>
+  </div>
+  {% if reports %}
+    <div class="center-block col-lg-5">
+      {% for report in reports %}
+        <div class="report-container">
+          <b>Report For: </b>
+          {% if report.reportType == "Listing" %}
+            <a href="{{ report.obj.listing.get_absolute_url }}" class="report-link">
+              {{ report.obj.listing.name }}
+            </a>
+          {% elif report.reportType == "Event" %}
+            <a href="{{ report.obj.event.get_absolute_url }}" class="report-link">
+              {{ report.obj.event.title }}
+            </a>
+          {% elif report.reportType == "User" %}
+            <a href="{{ report.obj.user.profile.get_absolute_url }}" class="report-link">
+              {{ report.obj.user }}
+            </a>
+          {% elif report.reportType == "Rating" %}
+            <a href="{{ report.obj.rating.get_absolute_url }}" class="report-link">
+              Rating #{{ report.obj.rating.id }}
+            </a>
+          {% elif report.reportType == "Wishlist" %}
+            <a href="{{ report.obj.wishlist.get_absolute_url }}" class="report-link">
+              {{ report.obj.wishlist.title }}
+            </a>
+          {% elif report.reportType == "Image" %}
+            <a href="{{ report.obj.image.get_absolute_url }}" class="report-link">
+              {{ report.obj.image.name }}
+            </a>
+          {% endif %}
+          <a href="#" style="float: right;"><div class="btn btn-red">DELETE</div></a><br>
+          <b>Date Made: </b>{{ report.dateMade }}<br>
+          <b>Reason: </b>{{ report.obj.reason }}<br>
+          <b>Description:</b>
+          <div class="report-description">
+            {{ report.description }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+      <div class="step-links">
+          {% if page_obj.has_previous %}
+              <a href="?page=1">&laquo; first</a>
+              <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+          </div>
+
+          {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}">next</a>
+              <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p style="text-align: center;">There are no reports at this time.</p>
+  {% endif %}
+{% endblock %}
