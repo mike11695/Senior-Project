@@ -3,7 +3,7 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
     WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm,
     ConversationForm, MessageForm, ListingReportForm, EventReportForm,
-    UserReportForm)
+    UserReportForm, WishlistReportForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
@@ -2045,5 +2045,71 @@ class UserReportFormTest(MyTestCase):
     #Test to ensure that description field help text is correct
     def test_user_report_description_help_text(self):
         form = UserReportForm()
+        self.assertEqual(form.fields['description'].help_text,
+            "Tell us more in depth about the reason for reporting")
+
+class WishlistReportFormTest(MyTestCase):
+    #Test to ensure a user is able to create a wishlist report providing all fields
+    def test_valid_wishlist_report_creation(self):
+        reason = "Malicious Content"
+        description = "The items in this wishlist are questionable"
+        data = {'reason': reason, 'description': description}
+        form = WishlistReportForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist report if fields
+    #are not provided
+    def test_invalid_wishlist_report_no_data(self):
+        reason = "Malicious Content"
+        description = "The items in this wishlist are questionable"
+        data = {}
+        form = WishlistReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist report if a
+    #reason is not provided
+    def test_invalid_wishlist_report_no_reason(self):
+        reason = "Malicious Content"
+        description = "The items in this wishlist are questionable"
+        data = {'description': description}
+        form = WishlistReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist report if a
+    #description is not provided
+    def test_invalid_wishlist_report_no_description(self):
+        reason = "Malicious Content"
+        description = "The items in this wishlist are questionable"
+        data = {'reason': reason}
+        form = WishlistReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a wishlist report if a
+    #description is too long
+    def test_invalid_wishlist_report_description_too_long(self):
+        reason = "Malicious Content"
+        description = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'reason': reason, 'description': description}
+        form = WishlistReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that reason field help text is correct
+    def test_wishlist_report_reason_help_text(self):
+        form = WishlistReportForm()
+        self.assertEqual(form.fields['reason'].help_text, "Reason for the report")
+
+    #Test to ensure that description field help text is correct
+    def test_wishlist_report_description_help_text(self):
+        form = WishlistReportForm()
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")

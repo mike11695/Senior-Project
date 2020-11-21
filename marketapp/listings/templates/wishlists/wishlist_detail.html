@@ -20,6 +20,14 @@
             </div>
           </a>
         </div>
+      {% else %}
+        <div class="add-button">
+          <a href="{% url 'report-wishlist' pk=wishlist.pk %}">
+            <div class="btn btn-red" style="margin-top: 15px; margin-bottom: 20px;">
+              Report Wishlist
+            </div>
+          </a>
+        </div>
       {% endif %}
     </div>
   </div>

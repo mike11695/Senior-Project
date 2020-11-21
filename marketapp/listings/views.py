@@ -27,7 +27,7 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
     MessageForm, EditImageForm, ListingReportForm, EventReportForm,
-    UserReportForm)
+    UserReportForm, WishlistReportForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -4051,6 +4051,35 @@ def report_user(request, pk):
         else:
             form = UserReportForm()
         return render(request, 'reports/report_user.html',
+            {'form': form})
+    else:
+        return redirect('index')
+
+#Form view for a user to report a wishlist
+@login_required(login_url='/accounts/login/')
+def report_wishlist(request, pk):
+    #Get the wishlist being reported
+    wishlist = get_object_or_404(Wishlist, pk=pk)
+
+    #Check to ensure user is not reporting their own wishlist
+    if wishlist.owner != request.user:
+        if request.method == 'POST':
+            form = WishlistReportForm(data=request.POST)
+            if form.is_valid():
+                new_report = form.save()
+
+                #Set the user for the report
+                new_report.wishlist = wishlist
+                new_report.reportType = "Wishlist"
+
+                #Save the report
+                new_report.save()
+
+                #Redirect to the listings's detail view
+                return redirect('wishlist-detail', pk=wishlist.pk)
+        else:
+            form = WishlistReportForm()
+        return render(request, 'reports/report_wishlist.html',
             {'form': form})
     else:
         return redirect('index')

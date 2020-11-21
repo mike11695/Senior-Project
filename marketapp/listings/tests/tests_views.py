@@ -4,7 +4,8 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
     PaymentNotification, InvitationNotification, EventNotification,
-    Notification, Favorite, ListingReport, EventReport, UserReport)
+    Notification, Favorite, ListingReport, EventReport, UserReport,
+    WishlistReport)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -8027,3 +8028,55 @@ class ReportUserViewTest(MyTestCase):
         self.assertEqual(new_report.description, 'User tried to scam me.')
         self.assertEqual(new_report.reportType, "User")
         self.assertEqual(new_report.user, user)
+
+class ReportWishlistViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to report a wishlist
+    def test_redirect_if_not_logged_in(self):
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('report-wishlist', args=[str(wishlist.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/report-wishlist/{0}'.format(wishlist.id))
+
+    #Test to ensure user is not redirected if logged in and is reporting a
+    #wishlist that is not theirs
+    def test_no_redirect_if_logged_in_not_reporting_own_wishlist(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('report-wishlist', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is reporting their own
+    #wishlist
+    def test_redirect_if_logged_in_reporting_own_wishlist(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('report-wishlist', args=[str(wishlist.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('report-wishlist', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/report_wishlist.html')
+
+    #Test to ensure that a user is able to report a wishlist successfully
+    def test_wishlist_report_is_created(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        wishlist = self.global_wishlist
+        response = self.client.get(reverse('report-wishlist', args=[str(wishlist.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('report-wishlist', args=[str(wishlist.id)]),
+            data={'reason': "Malicious Content",
+                'description': "Questionable items in wishlist"})
+        self.assertEqual(post_response.status_code, 302)
+        new_report = WishlistReport.objects.last()
+        self.assertEqual(new_report.reason, 'Malicious Content')
+        self.assertEqual(new_report.description, 'Questionable items in wishlist')
+        self.assertEqual(new_report.reportType, "Wishlist")
+        self.assertEqual(new_report.wishlist, wishlist)
