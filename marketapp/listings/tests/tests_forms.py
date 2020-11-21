@@ -2,7 +2,7 @@ from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
     WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm,
-    ConversationForm, MessageForm, ListingReportForm)
+    ConversationForm, MessageForm, ListingReportForm, EventReportForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
@@ -1903,3 +1903,80 @@ class ListingReportFormTest(MyTestCase):
         data = {'reason': reason, 'description': description}
         form = ListingReportForm(data=data)
         self.assertFalse(form.is_valid())
+
+    #Test to ensure that reason field help text is correct
+    def test_event_report_reason_help_text(self):
+        form = ListingReportForm()
+        self.assertEqual(form.fields['reason'].help_text, "Reason for the report")
+
+    #Test to ensure that description field help text is correct
+    def test_event_report_description_help_text(self):
+        form = ListingReportForm()
+        self.assertEqual(form.fields['description'].help_text,
+            "Tell us more in depth about the reason for reporting")
+
+class EventReportFormTest(MyTestCase):
+    #Test to ensure a user is able to create a event report providing all fields
+    def test_valid_event_report_creation(self):
+        reason = "Malicious Event"
+        description = "The event is for a pyramid scheme"
+        data = {'reason': reason, 'description': description}
+        form = EventReportForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a event report if fields
+    #are not provided
+    def test_invalid_event_report_no_data(self):
+        reason = "Malicious Event"
+        description = "The event is for a pyramid scheme"
+        data = {}
+        form = EventReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a event report if a
+    #reason is not provided
+    def test_invalid_event_report_no_reason(self):
+        reason = "Malicious Event"
+        description = "The event is for a pyramid scheme"
+        data = {'description': description}
+        form = EventReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a event report if a
+    #description is not provided
+    def test_invalid_event_report_no_description(self):
+        reason = "Malicious Event"
+        description = "The event is for a pyramid scheme"
+        data = {'reason': reason}
+        form = EventReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a event report if a
+    #description is too long
+    def test_invalid_event_report_description_too_long(self):
+        reason = "Malicious Event"
+        description = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'reason': reason, 'description': description}
+        form = EventReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that reason field help text is correct
+    def test_event_report_reason_help_text(self):
+        form = EventReportForm()
+        self.assertEqual(form.fields['reason'].help_text, "Reason for the report")
+
+    #Test to ensure that description field help text is correct
+    def test_event_report_description_help_text(self):
+        form = EventReportForm()
+        self.assertEqual(form.fields['description'].help_text,
+            "Tell us more in depth about the reason for reporting")

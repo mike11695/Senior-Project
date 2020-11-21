@@ -4,7 +4,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
     PaymentNotification, InvitationNotification, EventNotification,
-    Notification, Favorite, ListingReport)
+    Notification, Favorite, ListingReport, EventReport)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -1277,6 +1277,27 @@ class FAQSearchViewTest(MyTestCase):
         response = self.client.get(reverse('faq-search'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/search.html')
+
+class FAQReportsViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to view FAQ
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse('faq-reports'))
+        self.assertRedirects(response, '/accounts/login/?next=/listings/FAQ/reports')
+
+    #Test to ensure user is not redirected if logged in
+    def test_no_redirect_if_logged_in(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-reports'))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('faq-reports'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'faq/reports.html')
 
 class OfferListingsViewTest(MyTestCase):
     def setUp(self):
@@ -7904,3 +7925,54 @@ class ReportListingViewTest(MyTestCase):
         self.assertEqual(new_report.description, 'The items in this listing are illegally obtained.')
         self.assertEqual(new_report.reportType, "Listing")
         self.assertEqual(new_report.listing.name, listing.name)
+
+class ReportEventViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to report event
+    def test_redirect_if_not_logged_in(self):
+        event = self.global_event
+        response = self.client.get(reverse('report-event', args=[str(event.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/report-event/{0}'.format(event.id))
+
+    #Test to ensure user is not redirected if logged in and is not the host of
+    #the event
+    def test_no_redirect_if_logged_in_does_not_host_event(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('report-event', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is hosting the event
+    def test_redirect_if_logged_in_owns_listing(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('report-event', args=[str(event.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('report-event', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/report_event.html')
+
+    #Test to ensure that a user is able to report an event successfully
+    def test_event_report_is_created(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        event = self.global_event
+        response = self.client.get(reverse('report-event', args=[str(event.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('report-event', args=[str(event.id)]),
+            data={'reason': "Malicious Event",
+                'description': "The event is for a pyramid scheme"})
+        self.assertEqual(post_response.status_code, 302)
+        new_report = EventReport.objects.last()
+        self.assertEqual(new_report.reason, 'Malicious Event')
+        self.assertEqual(new_report.description, 'The event is for a pyramid scheme')
+        self.assertEqual(new_report.reportType, "Event")
+        self.assertEqual(new_report.event, event)

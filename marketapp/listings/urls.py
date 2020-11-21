@@ -24,6 +24,7 @@ urlpatterns = [
     path('FAQ/receipts', views.faq_receipts, name='faq-receipts'),
     path('FAQ/favorites', views.faq_favorites, name='faq-favorites'),
     path('FAQ/search', views.faq_search, name='faq-search'),
+    path('FAQ/reports', views.faq_reports, name='faq-reports'),
 
     #Items
     path('images/', views.ImageListView.as_view(), name='images'),
@@ -140,4 +141,6 @@ urlpatterns = [
     path('reports/', views.ReportListView.as_view(), name="reports"),
     path('report-listing/<int:pk>', views.report_listing,
         name="report-listing"),
+    path('report-event/<int:pk>', views.report_event,
+        name="report-event"),
 ]

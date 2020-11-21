@@ -61,7 +61,12 @@
     {% if wishlistlisting.listingEnded != True %}
       {% if request.user != wishlistlisting.owner %}
         <a href="">
-          <div class="btn btn-blue listing-btn center-block" style="margin-bottom: 20px;">Message</div>
+          <div class="btn btn-blue listing-btn center-block" style="margin-bottom: 10px;">Message</div>
+        </a>
+        <a href="{% url 'report-listing' pk=wishlistlisting.pk %}">
+          <div class="btn btn-red listing-btn center-block" style="margin-bottom: 20px;">
+            Report Listing
+          </div>
         </a>
       {% endif %}
     {% endif %}

@@ -69,7 +69,12 @@
     </div>
     {% if request.user != auctionlisting.owner %}
       <a href="{% url 'create-bid' pk=auctionlisting.pk %}">
-        <div class="btn btn-blue listing-btn center-block" style="margin-bottom: 20px;">Place Bid</div>
+        <div class="btn btn-blue listing-btn center-block" style="margin-bottom: 10px;">Place Bid</div>
+      </a>
+      <a href="{% url 'report-listing' pk=auctionlisting.pk %}">
+        <div class="btn btn-red listing-btn center-block" style="margin-bottom: 20px;">
+          Report Listing
+        </div>
       </a>
     {% endif %}
   {% else %}

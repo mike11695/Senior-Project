@@ -26,7 +26,7 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
-    MessageForm, EditImageForm, ListingReportForm)
+    MessageForm, EditImageForm, ListingReportForm, EventReportForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -462,11 +462,17 @@ def faq_favorites(request):
     # Render the HTML template faq/favorites.html with the data in the context variable
     return render(request, 'faq/favorites.html')
 
-#FAQ page for favorites
+#FAQ page for search
 @login_required(login_url='/accounts/login/')
 def faq_search(request):
     # Render the HTML template faq/search.html with the data in the context variable
     return render(request, 'faq/search.html')
+
+#FAQ page for reports
+@login_required(login_url='/accounts/login/')
+def faq_reports(request):
+    # Render the HTML template faq/reports.html with the data in the context variable
+    return render(request, 'faq/reports.html')
 
 #List view for a user to see all of the offer listings they have
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
@@ -3986,6 +3992,35 @@ def report_listing(request, pk):
         else:
             form = ListingReportForm()
         return render(request, 'reports/report_listing.html',
+            {'form': form})
+    else:
+        return redirect('index')
+
+#Form view for a user to report an event
+@login_required(login_url='/accounts/login/')
+def report_event(request, pk):
+    #Get the listing being reported
+    event = get_object_or_404(Event, pk=pk)
+
+    #Check to ensure owner of event is not reporting their own event
+    if event.host != request.user:
+        if request.method == 'POST':
+            form = EventReportForm(data=request.POST)
+            if form.is_valid():
+                new_report = form.save()
+
+                #Set the listing for the report
+                new_report.event = event
+                new_report.reportType = "Event"
+
+                #Save the report
+                new_report.save()
+
+                #Redirect to the listings's detail view
+                return redirect('event-detail', pk=event.pk)
+        else:
+            form = EventReportForm()
+        return render(request, 'reports/report_event.html',
             {'form': form})
     else:
         return redirect('index')
