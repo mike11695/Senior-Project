@@ -37,6 +37,11 @@
             </div>
           </a>
         {% endif %}
+        <a href="{% url 'report-user' pk=profile.user.id %}">
+          <div class="btn btn-red profile-btn">
+            Report User
+          </div>
+        </a>
       {% endif %}
     </div>
   </div>

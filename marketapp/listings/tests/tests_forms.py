@@ -2,7 +2,8 @@ from django.test import TestCase
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
     WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm,
-    ConversationForm, MessageForm, ListingReportForm, EventReportForm)
+    ConversationForm, MessageForm, ListingReportForm, EventReportForm,
+    UserReportForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
@@ -1978,5 +1979,71 @@ class EventReportFormTest(MyTestCase):
     #Test to ensure that description field help text is correct
     def test_event_report_description_help_text(self):
         form = EventReportForm()
+        self.assertEqual(form.fields['description'].help_text,
+            "Tell us more in depth about the reason for reporting")
+
+class UserReportFormTest(MyTestCase):
+    #Test to ensure a user is able to create a user report providing all fields
+    def test_valid_user_report_creation(self):
+        reason = "Malicious User"
+        description = "The user is trying to scam me"
+        data = {'reason': reason, 'description': description}
+        form = UserReportForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a user report if fields
+    #are not provided
+    def test_invalid_user_report_no_data(self):
+        reason = "Malicious User"
+        description = "The user is trying to scam me"
+        data = {}
+        form = UserReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a user report if a
+    #reason is not provided
+    def test_invalid_user_report_no_reason(self):
+        reason = "Malicious User"
+        description = "The user is trying to scam me"
+        data = {'description': description}
+        form = UserReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a user report if a
+    #description is not provided
+    def test_invalid_user_report_no_description(self):
+        reason = "Malicious User"
+        description = "The user is trying to scam me"
+        data = {'reason': reason}
+        form = UserReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a user report if a
+    #description is too long
+    def test_invalid_user_report_description_too_long(self):
+        reason = "Malicious User"
+        description = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'reason': reason, 'description': description}
+        form = UserReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that reason field help text is correct
+    def test_user_report_reason_help_text(self):
+        form = UserReportForm()
+        self.assertEqual(form.fields['reason'].help_text, "Reason for the report")
+
+    #Test to ensure that description field help text is correct
+    def test_user_report_description_help_text(self):
+        form = UserReportForm()
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")

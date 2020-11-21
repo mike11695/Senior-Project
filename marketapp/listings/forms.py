@@ -820,4 +820,15 @@ class EventReportForm(ModelForm):
     class Meta:
         model = EventReport
         fields = ['reason', 'description']
-        exclude = ['dateMade', 'reportType', 'listing']
+        exclude = ['dateMade', 'reportType', 'event']
+
+#Form for a user to report a user
+class UserReportForm(ModelForm):
+    description = forms.CharField(max_length=250, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("Tell us more in depth about the reason for reporting"))
+
+    class Meta:
+        model = UserReport
+        fields = ['reason', 'description']
+        exclude = ['dateMade', 'reportType', 'user']

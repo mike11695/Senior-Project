@@ -4,7 +4,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
     PaymentNotification, InvitationNotification, EventNotification,
-    Notification, Favorite, ListingReport, EventReport)
+    Notification, Favorite, ListingReport, EventReport, UserReport)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7976,3 +7976,54 @@ class ReportEventViewTest(MyTestCase):
         self.assertEqual(new_report.description, 'The event is for a pyramid scheme')
         self.assertEqual(new_report.reportType, "Event")
         self.assertEqual(new_report.event, event)
+
+class ReportUserViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to report a user
+    def test_redirect_if_not_logged_in(self):
+        user = self.global_user1
+        response = self.client.get(reverse('report-user', args=[str(user.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/report-user/{0}'.format(user.id))
+
+    #Test to ensure user is not redirected if logged in and is not reporting
+    #themselves
+    def test_no_redirect_if_logged_in_not_reporting_self(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        user = self.global_user1
+        response = self.client.get(reverse('report-user', args=[str(user.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is reporting themself
+    def test_redirect_if_logged_in_reporting_self(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        user = self.global_user1
+        response = self.client.get(reverse('report-user', args=[str(user.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        user = self.global_user1
+        response = self.client.get(reverse('report-user', args=[str(user.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/report_user.html')
+
+    #Test to ensure that a user is able to report a user successfully
+    def test_user_report_is_created(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        user = self.global_user1
+        response = self.client.get(reverse('report-user', args=[str(user.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('report-user', args=[str(user.id)]),
+            data={'reason': "Malicious User",
+                'description': "User tried to scam me."})
+        self.assertEqual(post_response.status_code, 302)
+        new_report = UserReport.objects.last()
+        self.assertEqual(new_report.reason, 'Malicious User')
+        self.assertEqual(new_report.description, 'User tried to scam me.')
+        self.assertEqual(new_report.reportType, "User")
+        self.assertEqual(new_report.user, user)

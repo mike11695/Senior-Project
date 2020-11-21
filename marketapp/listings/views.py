@@ -26,7 +26,8 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
-    MessageForm, EditImageForm, ListingReportForm, EventReportForm)
+    MessageForm, EditImageForm, ListingReportForm, EventReportForm,
+    UserReportForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -3999,7 +4000,7 @@ def report_listing(request, pk):
 #Form view for a user to report an event
 @login_required(login_url='/accounts/login/')
 def report_event(request, pk):
-    #Get the listing being reported
+    #Get the event being reported
     event = get_object_or_404(Event, pk=pk)
 
     #Check to ensure owner of event is not reporting their own event
@@ -4009,7 +4010,7 @@ def report_event(request, pk):
             if form.is_valid():
                 new_report = form.save()
 
-                #Set the listing for the report
+                #Set the event for the report
                 new_report.event = event
                 new_report.reportType = "Event"
 
@@ -4021,6 +4022,35 @@ def report_event(request, pk):
         else:
             form = EventReportForm()
         return render(request, 'reports/report_event.html',
+            {'form': form})
+    else:
+        return redirect('index')
+
+#Form view for a user to report a user
+@login_required(login_url='/accounts/login/')
+def report_user(request, pk):
+    #Get the user being reported
+    user = get_object_or_404(User, pk=pk)
+
+    #Check to ensure user is not reporting themselves
+    if user != request.user:
+        if request.method == 'POST':
+            form = UserReportForm(data=request.POST)
+            if form.is_valid():
+                new_report = form.save()
+
+                #Set the user for the report
+                new_report.user = user
+                new_report.reportType = "User"
+
+                #Save the report
+                new_report.save()
+
+                #Redirect to the listings's detail view
+                return redirect('profile-detail', pk=user.profile.pk)
+        else:
+            form = UserReportForm()
+        return render(request, 'reports/report_user.html',
             {'form': form})
     else:
         return redirect('index')

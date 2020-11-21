@@ -143,4 +143,6 @@ urlpatterns = [
         name="report-listing"),
     path('report-event/<int:pk>', views.report_event,
         name="report-event"),
+    path('report-user/<int:pk>', views.report_user,
+        name="report-user"),
 ]
