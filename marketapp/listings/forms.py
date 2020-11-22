@@ -877,5 +877,8 @@ class CreateRatingForm(ModelForm):
        self.user = kwargs.pop('user')
        self.receiver = kwargs.pop('receiver')
        super(CreateRatingForm, self).__init__(*args, **kwargs)
+       ticket_ids = [ticket.id for ticket in RatingTicket.objects.all() if
+            (ticket.rater == self.user and ticket.receivingUser == self.receiver
+            and ticket.listing.listingEnded)]
        self.fields['ratingTicket'].queryset = RatingTicket.objects.filter(
-            rater=self.user, receivingUser=self.receiver)
+            id__in=ticket_ids)

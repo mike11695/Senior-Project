@@ -21,7 +21,8 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
     OfferNotification, BidNotification, PaymentNotification,
     InvitationNotification, EventNotification, Notification,
     RatingNotification, WarningNotification, Favorite, Tag, Report, ListingReport,
-    EventReport, RatingReport, UserReport, WishlistReport, ImageReport)
+    EventReport, RatingReport, UserReport, WishlistReport, ImageReport,
+    Rating, RatingTicket)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
@@ -1365,6 +1366,12 @@ def accept_offer(request, pk):
             receipt.exchangee = current_offer.owner
             receipt.save()
 
+            #Create rating tickets so that users can leave feedback for one another
+            RatingTicket.objects.create(rater=offer.owner, receivingUser=current_listing.owner,
+                listing=current_listing)
+            RatingTicket.objects.create(rater=current_listing.owner, receivingUser=offer.owner,
+                listing=current_listing)
+
             #Redirect to the listing afterwards
             return redirect('offer-listing-detail', pk=current_offer.offerListing.pk)
     else:
@@ -1578,7 +1585,18 @@ def create_bid(request, pk):
                             receipt.exchangee = request.user
                             receipt.save()
 
-                            print(receipt)
+                            #Get the rating tickets so they can be updated
+                            ticket = RatingTicket.objects.get(
+                                receivingUser=current_listing.owner,
+                                listing=current_listing)
+                            ticket.rater = created_bid.bidder
+                            ticket.save()
+
+                            ticket = RatingTicket.objects.get(
+                                rater=current_listing.owner, 
+                                listing=current_listing)
+                            ticket.receivingUser = created_bid.bidder
+                            ticket.save()
 
                             return redirect('auction-listing-detail', pk=current_listing.pk)
                     else:
@@ -1634,6 +1652,13 @@ def create_bid(request, pk):
                         receipt = Receipt.objects.get(listing=current_listing)
                         receipt.exchangee = request.user
                         receipt.save()
+
+                        #Create rating tickets so that users can leave feedback
+                        #for one another once auction ends
+                        RatingTicket.objects.create(rater=created_bid.bidder,
+                            receivingUser=current_listing.owner, listing=current_listing)
+                        RatingTicket.objects.create(rater=current_listing.owner,
+                            receivingUser=created_bid.bidder, listing=current_listing)
 
                         return redirect('auction-listing-detail', pk=current_listing.pk)
                 else:

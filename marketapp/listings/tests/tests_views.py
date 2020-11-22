@@ -5,7 +5,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     ListingNotification, OfferNotification, BidNotification,
     PaymentNotification, InvitationNotification, EventNotification,
     Notification, Favorite, Report, ListingReport, EventReport, UserReport,
-    WishlistReport, ImageReport)
+    WishlistReport, ImageReport, Rating, RatingTicket)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -3148,9 +3148,25 @@ class CreateBidViewTest(MyTestCase):
         listing_notification = ListingNotification.objects.filter(listing=listing).first()
         self.assertEqual(listing_notification.active, True)
 
+    #Test to ensure that rating tickets are made upon creation of the first bid
+    def test_successful_bid_creation_rating_tickets_made(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
+            data={'amount': 5.00})
+        self.assertEqual(post_response.status_code, 302)
+        created_bid = Bid.objects.last()
+        self.assertTrue(RatingTicket.objects.filter(rater=created_bid.bidder,
+            receivingUser=listing.owner, listing=listing).exists())
+        self.assertTrue(RatingTicket.objects.filter(rater=listing.owner,
+            receivingUser=created_bid.owner, listing=listing).exists())
+
     #Test to ensure that previous winning bid is set to false and current bid
     #is winning bid, andthat a new notification is made for new bid and
-    #notification for previous bid is updated
+    #notification for previous bid is updated, and rating tickets are updated
     def test_successful_bid_creation_previous_bid_changed(self):
         listing = self.active_listing
         login = self.client.login(username='mike', password='example')
@@ -3163,6 +3179,10 @@ class CreateBidViewTest(MyTestCase):
         created_bid1 = Bid.objects.last()
         self.assertEqual(created_bid1.winningBid, True)
         self.assertEqual(created_bid1.auctionListing, listing)
+        self.assertTrue(RatingTicket.objects.filter(rater=created_bid.bidder,
+            receivingUser=listing.owner, listing=listing).exists())
+        self.assertTrue(RatingTicket.objects.filter(rater=listing.owner,
+            receivingUser=created_bid.owner, listing=listing).exists())
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
@@ -3181,6 +3201,10 @@ class CreateBidViewTest(MyTestCase):
             ' has been outbidded by a bid of $' + str(created_bid2.amount) + '.')
         self.assertEqual(previous_bid_notification.content, content)
         self.assertEqual(previous_bid_notification.active, True)
+        self.assertTrue(RatingTicket.objects.filter(rater=created_bid2.bidder,
+            receivingUser=listing.owner, listing=listing).exists())
+        self.assertTrue(RatingTicket.objects.filter(rater=listing.owner,
+            receivingUser=created_bid2.owner, listing=listing).exists())
 
 class OfferDetailViewTest(MyTestCase):
     def setUp(self):
@@ -3408,6 +3432,19 @@ class AcceptOfferViewTest(MyTestCase):
             listing=self.offer.offerListing, content=rejection_content)), 0)
         self.assertEqual(len(OfferNotification.objects.filter(
             listing=self.offer.offerListing, content=acceptance_content)), 1)
+
+    #Test to ensure that Rating Tickets are made upon accepting an offer
+    def test_rating_tickets_made_upon_acceptance(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        offer = self.offer
+        post_response = self.client.post(reverse('accept-offer', args=[str(offer.id)]))
+        self.assertEqual(post_response.status_code, 302)
+        updated_listing = OfferListing.objects.get(id=offer.offerListing.id)
+        self.assertTrue(RatingTicket.objects.filter(rater=offer.owner,
+            receivingUser=offer.offerListing.owner, listing=offer.offerListing).exists())
+        self.assertTrue(RatingTicket.objects.filter(rater=offer.offerListing.owner,
+            receivingUser=offer.owner, listing=offer.offerListing).exists())
 
 class OfferDeleteViewTest(MyTestCase):
     def setUp(self):
