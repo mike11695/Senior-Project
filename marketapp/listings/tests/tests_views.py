@@ -5,7 +5,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     ListingNotification, OfferNotification, BidNotification,
     PaymentNotification, InvitationNotification, EventNotification,
     Notification, Favorite, ListingReport, EventReport, UserReport,
-    WishlistReport)
+    WishlistReport, ImageReport)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -8080,3 +8080,55 @@ class ReportWishlistViewTest(MyTestCase):
         self.assertEqual(new_report.description, 'Questionable items in wishlist')
         self.assertEqual(new_report.reportType, "Wishlist")
         self.assertEqual(new_report.wishlist, wishlist)
+
+class ReportImageViewTest(MyTestCase):
+    #Test to ensure that a user must be logged in to report a image
+    def test_redirect_if_not_logged_in(self):
+        image = self.global_image1
+        response = self.client.get(reverse('report-image', args=[str(image.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/report-image/{0}'.format(image.id))
+
+    #Test to ensure user is not redirected if logged in and is reporting a
+    #image that is not theirs
+    def test_no_redirect_if_logged_in_not_reporting_own_image(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('report-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is reporting their own
+    #image
+    def test_redirect_if_logged_in_reporting_own_image(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('report-image', args=[str(image.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('report-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/report_image.html')
+
+    #Test to ensure that a user is able to report a image successfully
+    def test_image_report_is_created(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        image = self.global_image1
+        response = self.client.get(reverse('report-image', args=[str(image.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('report-image', args=[str(image.id)]),
+            data={'reason': "Malicious Image",
+                'description': "Questionable items in image"})
+        self.assertEqual(post_response.status_code, 302)
+        new_report = ImageReport.objects.last()
+        self.assertEqual(new_report.reason, 'Malicious Image')
+        self.assertEqual(new_report.description, 'Questionable items in image')
+        self.assertEqual(new_report.reportType, "Image")
+        self.assertEqual(new_report.image, image)

@@ -147,4 +147,6 @@ urlpatterns = [
         name="report-user"),
     path('report-wishlist/<int:pk>', views.report_wishlist,
         name="report-wishlist"),
+    path('report-image/<int:pk>', views.report_image,
+        name="report-image"),
 ]

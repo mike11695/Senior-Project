@@ -843,3 +843,14 @@ class WishlistReportForm(ModelForm):
         model = WishlistReport
         fields = ['reason', 'description']
         exclude = ['dateMade', 'reportType', 'user']
+
+#Form for a user to report an image
+class ImageReportForm(ModelForm):
+    description = forms.CharField(max_length=250, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("Tell us more in depth about the reason for reporting"))
+
+    class Meta:
+        model = ImageReport
+        fields = ['reason', 'description']
+        exclude = ['dateMade', 'reportType', 'user']

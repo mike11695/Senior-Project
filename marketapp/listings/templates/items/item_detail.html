@@ -40,11 +40,19 @@
           {% else %}
             <img src="{{ image.image.url }}" class="item-detail-image"></img><br>
           {% endif %}
+          <div>
+            <a href="{% url 'report-image' pk=image.pk %}">
+              <div class="btn btn-red" style="margin-top: 5px; width: 85px;
+                height: 30px; font-size: 12px; padding: 4px 0px 0px 0px;">
+                Report Image
+              </div>
+            </a>
+          </div>
         {% endfor %}
       {% endif %}
     </div>
     {% if request.user != item.owner %}
-      <a onclick="return confirm('Are you sure you want to add this item to your wishlist?')" 
+      <a onclick="return confirm('Are you sure you want to add this item to your wishlist?')"
         href="{% url 'quick-add-item-to-wishlist' pk=item.pk %}">
         <div class="btn btn-blue col-lg-2 center-block" style="margin-bottom: 20px;">Add To Wishlist</div>
       </a>

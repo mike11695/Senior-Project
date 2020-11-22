@@ -27,7 +27,7 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
     MessageForm, EditImageForm, ListingReportForm, EventReportForm,
-    UserReportForm, WishlistReportForm)
+    UserReportForm, WishlistReportForm, ImageReportForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -4017,7 +4017,7 @@ def report_event(request, pk):
                 #Save the report
                 new_report.save()
 
-                #Redirect to the listings's detail view
+                #Redirect to the event's detail view
                 return redirect('event-detail', pk=event.pk)
         else:
             form = EventReportForm()
@@ -4046,7 +4046,7 @@ def report_user(request, pk):
                 #Save the report
                 new_report.save()
 
-                #Redirect to the listings's detail view
+                #Redirect to the user's profile detail view
                 return redirect('profile-detail', pk=user.profile.pk)
         else:
             form = UserReportForm()
@@ -4075,11 +4075,40 @@ def report_wishlist(request, pk):
                 #Save the report
                 new_report.save()
 
-                #Redirect to the listings's detail view
+                #Redirect to the wishlist's detail view
                 return redirect('wishlist-detail', pk=wishlist.pk)
         else:
             form = WishlistReportForm()
         return render(request, 'reports/report_wishlist.html',
+            {'form': form})
+    else:
+        return redirect('index')
+
+#Form view for a user to report an image
+@login_required(login_url='/accounts/login/')
+def report_image(request, pk):
+    #Get the image being reported
+    image = get_object_or_404(Image, pk=pk)
+
+    #Check to ensure user is not reporting their own image
+    if image.owner != request.user:
+        if request.method == 'POST':
+            form = ImageReportForm(data=request.POST)
+            if form.is_valid():
+                new_report = form.save()
+
+                #Set the user for the report
+                new_report.image = image
+                new_report.reportType = "Image"
+
+                #Save the report
+                new_report.save()
+
+                #Redirect to index
+                return redirect('index')
+        else:
+            form = ImageReportForm()
+        return render(request, 'reports/report_image.html',
             {'form': form})
     else:
         return redirect('index')
