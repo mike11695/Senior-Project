@@ -149,4 +149,5 @@ urlpatterns = [
         name="report-wishlist"),
     path('report-image/<int:pk>', views.report_image,
         name="report-image"),
+    path('reports/<int:pk>/delete', views.ReportDeleteView.as_view(), name="delete-report"),
 ]

@@ -38,7 +38,9 @@
               {{ report.obj.image.name }}
             </a>
           {% endif %}
-          <a href="#" style="float: right;"><div class="btn btn-red">DELETE</div></a><br>
+          <a href="{% url 'delete-report' pk=report.pk %}" style="float: right;">
+            <div class="btn btn-red">DELETE</div>
+          </a><br>
           <b>Date Made: </b>{{ report.dateMade }}<br>
           <b>Reason: </b>{{ report.obj.reason }}<br>
           <b>Description:</b>

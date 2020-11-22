@@ -4112,3 +4112,38 @@ def report_image(request, pk):
             {'form': form})
     else:
         return redirect('index')
+
+#View for a user to delete an report that they own
+class ReportDeleteView(LoginRequiredMixin, generic.DeleteView):
+    model = Report
+    success_url = reverse_lazy('reports')
+    template_name = "reports/report_delete.html"
+    context_object_name = 'report'
+
+    #Checks to make sure owner of image clicked to delete, redirects otherwise
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if self.request.user.is_superuser:
+            return super(ReportDeleteView, self).dispatch(request, *args, **kwargs)
+        else:
+            return redirect('index')
+
+    #Receive the offers made on the listing for the owner to view
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+
+        if obj.reportType == "Listing":
+            context['report_obj'] = ListingReport.objects.get(id=obj.id)
+        elif obj.reportType == "Event":
+            context['report_obj'] = EventReport.objects.get(id=obj.id)
+        elif obj.reportType == "User":
+            context['report_obj'] = UserReport.objects.get(id=obj.id)
+        elif obj.reportType == "Rating":
+            context['report_obj'] = RatingReport.objects.get(id=obj.id)
+        elif obj.reportType == "Wishlist":
+            context['report_obj'] = WishlistReport.objects.get(id=obj.id)
+        elif obj.reportType == "Image":
+            context['report_obj'] = ImageReport.objects.get(id=obj.id)
+
+        return context

@@ -4,7 +4,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
     ListingNotification, OfferNotification, BidNotification,
     PaymentNotification, InvitationNotification, EventNotification,
-    Notification, Favorite, ListingReport, EventReport, UserReport,
+    Notification, Favorite, Report, ListingReport, EventReport, UserReport,
     WishlistReport, ImageReport)
 
 from django.urls import reverse
@@ -8132,3 +8132,58 @@ class ReportImageViewTest(MyTestCase):
         self.assertEqual(new_report.description, 'Questionable items in image')
         self.assertEqual(new_report.reportType, "Image")
         self.assertEqual(new_report.image, image)
+
+class ReportDeleteViewTest(MyTestCase):
+    def setUp(self):
+        super(ReportDeleteViewTest, self).setUp()
+
+        #Set a user to be a super user
+        self.global_user1.is_superuser = True
+        self.global_user1.save()
+
+        #Create a report to test for deletion
+        self.listing_report = ListingReport.objects.create(reason='Malicious Content',
+            description="Illegally obtained items in listing", reportType="Listing")
+        self.listing_report_id = self.listing_report.id
+
+    #Test to ensure that a user must be logged in to delete a report
+    def test_redirect_if_not_logged_in(self):
+        report = self.listing_report
+        response = self.client.get(reverse('delete-report', args=[str(report.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure user is not redirected if logged in if they are a
+    #superuser
+    def test_no_redirect_if_logged_in_superuser(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        response = self.client.get(reverse('delete-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they are not a
+    #superuser
+    def test_no_redirect_if_logged_in_not_superuser(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        response = self.client.get(reverse('delete-report', args=[str(report.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        response = self.client.get(reverse('delete-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/report_delete.html')
+
+    #Test to ensure a report can be deleted if user confirms
+    def test_succesful_deletion_of_report(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        post_response = self.client.post(reverse('delete-report', args=[str(report.id)]))
+        self.assertRedirects(post_response, reverse('reports'))
+        self.assertFalse(Report.objects.filter(id=self.listing_report_id).exists())

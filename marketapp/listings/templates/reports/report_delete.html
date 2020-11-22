@@ -1,0 +1,23 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="col-lg-10 center-block">
+    <form method="post" style="text-align: center;">{% csrf_token %}
+      <p>Are you sure you want to delete this report?</p>
+      {% if report.reportType == "Listing" %}
+        <h3>Report for listing: {{ report_obj.listing.name }}</h3>
+      {% elif report.reportType == "Event" %}
+        <h3>Report for event: {{ report_obj.event.title }}</h3>
+      {% elif report.reportType == "User" %}
+        <h3>Report for user: {{ report_obj.user }}</h3>
+      {% elif report.reportType == "Wishlist" %}
+        <h3>Report for wishlist: {{ report_obj.wishlist.title }}</h3>\
+      {% elif report.reportType == "Image" %}
+        <h3>Report for image: {{ report_obj.image.name }}</h3>
+      {% elif report.reportType == "Rating" %}
+        <h3>Report for rating: #{{ report_obj.rating.id }}</h3>
+      {% endif %}
+      <input type="submit" value="Confirm" class="btn btn-blue">
+    </form>
+  </div>
+{% endblock %}
