@@ -4,7 +4,8 @@ from django.contrib.auth.forms import UserCreationForm
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
     Profile, Conversation, Message, Report, ListingReport, EventReport,
-    UserReport, RatingReport, WishlistReport, ImageReport)
+    UserReport, RatingReport, WishlistReport, ImageReport, Rating,
+    RatingTicket)
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
 
@@ -854,3 +855,27 @@ class ImageReportForm(ModelForm):
         model = ImageReport
         fields = ['reason', 'description']
         exclude = ['dateMade', 'reportType', 'user']
+
+#Form for a user to rate a user and leave feedback
+class CreateRatingForm(ModelForm):
+    ratingTicket = forms.ModelChoiceField(queryset=RatingTicket.objects.all(),
+        help_text="A listing to leave a rating on is required", required=True,
+        label="Listing")
+    feedback = forms.CharField(max_length=500, required=False,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':23}),
+        help_text="Leave feedback for the user you're rating.")
+
+    class Meta:
+        model = Rating
+        fields = ['ratingValue', 'feedback']
+        exclude = ['profile', 'reviewer', 'listingName']
+        labels = {'ratingValue': "Rating"}
+
+    #Initializes the listing dropdown with listing they completed with the
+    #user receiving the rating
+    def __init__(self, *args, **kwargs):
+       self.user = kwargs.pop('user')
+       self.receiver = kwargs.pop('receiver')
+       super(CreateRatingForm, self).__init__(*args, **kwargs)
+       self.fields['ratingTicket'].queryset = RatingTicket.objects.filter(
+            rater=self.user, receivingUser=self.receiver)

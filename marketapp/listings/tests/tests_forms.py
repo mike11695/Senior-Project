@@ -3,10 +3,11 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
     WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm,
     ConversationForm, MessageForm, ListingReportForm, EventReportForm,
-    UserReportForm, WishlistReportForm, ImageReportForm)
+    UserReportForm, WishlistReportForm, ImageReportForm, CreateRatingForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
-    AuctionListing, Offer, Bid, Event, Invitation, Wishlist)
+    AuctionListing, Offer, Bid, Event, Invitation, Wishlist, Rating,
+    RatingTicket)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -60,6 +61,20 @@ class MyTestCase(TestCase):
             title="My Wishlist", description="Stuff I would love to trade for")
         self.global_wishlist.items.add(self.global_item1)
         self.global_wishlist.save
+
+        #Get the current date and time for testing and create active and inactive endtimes
+        date_ended = timezone.localtime(timezone.now()) - timedelta(hours=1)
+        date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
+
+        #Create a global offer listing that is not active
+        self.global_offer_listing1 = OfferListing.objects.create(owner=user1, name='Test Offer Listing',
+            description="Just a test listing", openToMoneyOffers=True, minRange=5.00,
+            maxRange=10.00, notes="Just offer", endTime=date_ended, latitude=40.0200, longitude=-75.0300)
+        self.global_offer_listing1.items.add(self.global_item1)
+        self.global_offer_listing1.save
+
+        self.global_rating_ticket = RatingTicket.objects.create(rater=self.global_user2,
+            receivingUser=self.global_user1, listing=self.global_offer_listing1)
 
 class SignUpFormTest(TestCase):
     #Test to ensure a user is able to sign up providing all fields
@@ -2179,3 +2194,144 @@ class ImageReportFormTest(MyTestCase):
         form = ImageReportForm()
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")
+
+class CreateRatingFormTest(MyTestCase):
+    #Test to ensure a user is able to create a rating providing all fields
+    def test_valid_rating_creation(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        rating_value = 5
+        feedback = ("This user is very trustworthy and honest.  I received " +
+            "all my items on time and in the condition advertised.  I would " +
+            "definitely do business with them again.")
+        data = {'ratingValue': rating_value, 'feedback': feedback,
+            'ratingTicket': self.global_rating_ticket.id}
+        form = CreateRatingForm(data=data, user=user, receiver=user2)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating if fields
+    #are not provided
+    def test_invalid_rating_no_data(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        rating_value = 5
+        feedback = ("This user is very trustworthy and honest.  I received " +
+            "all my items on time and in the condition advertised.  I would " +
+            "definitely do business with them again.")
+        data = {}
+        form = CreateRatingForm(data=data, user=user, receiver=user2)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating if rating value is
+    #not provided
+    def test_invalid_rating_no_rating_value(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        rating_value = 5
+        feedback = ("This user is very trustworthy and honest.  I received " +
+            "all my items on time and in the condition advertised.  I would " +
+            "definitely do business with them again.")
+        data = {'feedback': feedback, 'ratingTicket': self.global_rating_ticket.id}
+        form = CreateRatingForm(data=data, user=user, receiver=user2)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure user is able to create a rating if feedback is not provided
+    def test_valid_rating_no_feedback(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        rating_value = 5
+        feedback = ("This user is very trustworthy and honest.  I received " +
+            "all my items on time and in the condition advertised.  I would " +
+            "definitely do business with them again.")
+        data = {'ratingValue': rating_value,
+            'ratingTicket': self.global_rating_ticket.id}
+        form = CreateRatingForm(data=data, user=user, receiver=user2)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating if rating ticket is
+    #not provided
+    def test_invalid_rating_no_rating_ticket(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        rating_value = 5
+        feedback = ("This user is very trustworthy and honest.  I received " +
+            "all my items on time and in the condition advertised.  I would " +
+            "definitely do business with them again.")
+        data = {'ratingValue': rating_value, 'feedback': feedback}
+        form = CreateRatingForm(data=data, user=user, receiver=user2)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating using rating ticket
+    #they are not the rater for
+    def test_invalid_rating_not_rater_for_rating_ticket(self):
+        user = self.global_user1
+        user2 = self.global_user2
+        rating_value = 5
+        feedback = ("This user is very trustworthy and honest.  I received " +
+            "all my items on time and in the condition advertised.  I would " +
+            "definitely do business with them again.")
+        data = {'ratingValue': rating_value, 'feedback': feedback,
+            'ratingTicket': self.global_rating_ticket.id}
+        form = CreateRatingForm(data=data, user=user, receiver=user2)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating if the feedback
+    #provided is too long
+    def test_invalid_rating_feedback_too_long(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        rating_value = 5
+        feedback = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'ratingValue': rating_value, 'feedback': feedback,
+            'ratingTicket': self.global_rating_ticket.id}
+        form = CreateRatingForm(data=data, user=user, receiver=user2)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that rating value field help text is correct
+    def test_rating_rating_value_help_text(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        form = CreateRatingForm(user=user, receiver=user2)
+        self.assertEqual(form.fields['ratingValue'].help_text,
+            "Rating for user from 1 to 5, 5 being the best.")
+
+    #Test to ensure that feedback field help text is correct
+    def test_rating_feedback_help_text(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        form = CreateRatingForm(user=user, receiver=user2)
+        self.assertEqual(form.fields['feedback'].help_text,
+            "Leave feedback for the user you're rating.")
+
+    #Test to ensure that rating value field label is correct
+    def test_rating_rating_value_label(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        form = CreateRatingForm(user=user, receiver=user2)
+        self.assertEqual(form.fields['ratingValue'].label, "Rating")
+
+    #Test to ensure that rating ticket field label is correct
+    def test_rating_rating_value_label(self):
+        user = self.global_user2
+        user2 = self.global_user1
+        form = CreateRatingForm(user=user, receiver=user2)
+        self.assertEqual(form.fields['ratingTicket'].label, "Listing")
