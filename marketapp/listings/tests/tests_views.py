@@ -5639,6 +5639,19 @@ class ProfileDetailViewTest(MyTestCase):
             name='My Wishlist Listing', endTime=date_ended,
             moneyOffer=5.00, notes="Just a test")
 
+        #Create some ratings
+        for num in range(5):
+            Rating.objects.create(profile=self.global_user1.profile,
+                reviewer=self.global_user2, ratingValue=3,
+                feedback=("User was good on getting me the items on time" +
+                " but did not communicate with me well."),
+                listingName=self.global_offer_listing2.name)
+
+        #Create a rating ticket to use
+        self.ticket = RatingTicket.objects.create(rater=self.global_user2,
+            receivingUser=self.global_user1, listing=self.global_offer_listing2)
+        self.ticket_id = self.ticket.id
+
     #Test to ensure that a user must be logged in to view a profile
     def test_redirect_if_not_logged_in(self):
         profile = self.global_user1.profile
@@ -5672,6 +5685,38 @@ class ProfileDetailViewTest(MyTestCase):
         self.assertTrue(len(response.context['offer_listings']) == 3)
         self.assertTrue(len(response.context['auction_listings']) == 4)
         self.assertTrue(len(response.context['wishlist_listings']) == 5)
+
+    #Test that a user can see the user that owns the profile's ratings
+    def test_user_can_see_ratings(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['ratings']) == 5)
+
+    #Test to ensure that a user can create a rating succesfully and that the
+    #rating ticket used was deleted
+    def test_rating_is_created(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('profile-detail', args=[str(profile.id)]),
+            data={
+                'ratingValue': 5,
+                'feedback': "User was very kind and delivered my items on time.",
+                'ratingTicket': str(self.ticket.id)
+            })
+        self.assertEqual(post_response.status_code, 302)
+        new_rating = Rating.objects.last()
+        self.assertEqual(new_rating.ratingValue, 5)
+        self.assertEqual(new_rating.feedback,
+            "User was very kind and delivered my items on time.")
+        self.assertEqual(new_rating.reviewer, self.global_user2)
+        self.assertEqual(new_rating.listingName, self.global_offer_listing2.name)
+        self.assertFalse(Rating.objects.filter(id=self.ticket_id).exists())
 
 class EditProfileViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to edit profile

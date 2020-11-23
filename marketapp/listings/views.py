@@ -28,7 +28,7 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
     MessageForm, EditImageForm, ListingReportForm, EventReportForm,
-    UserReportForm, WishlistReportForm, ImageReportForm)
+    UserReportForm, WishlistReportForm, ImageReportForm, CreateRatingForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1593,7 +1593,7 @@ def create_bid(request, pk):
                             ticket.save()
 
                             ticket = RatingTicket.objects.get(
-                                rater=current_listing.owner, 
+                                rater=current_listing.owner,
                                 listing=current_listing)
                             ticket.receivingUser = created_bid.bidder
                             ticket.save()
@@ -2508,9 +2508,11 @@ def quick_add_item_to_wishlist(request, pk):
                 return redirect('wishlist-detail', pk=users_wishlist.pk)
 
 #Detail view for an user's profile
-class ProfileDetailView(LoginRequiredMixin, generic.DetailView):
+class ProfileDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
     model = Profile
     template_name = "profiles/profile_detail.html"
+    paginate_by = 10
+    form_class = CreateRatingForm
 
     #Receive the most recent active listings (offer/auction/wishlist) of the
     #user that owns the profile
@@ -2533,7 +2535,57 @@ class ProfileDetailView(LoginRequiredMixin, generic.DetailView):
             if listing.listingEnded == False]
         context['wishlist_listings'] = WishlistListing.objects.filter(id__in=listings_ids).order_by('-id')[:5]
 
+        rating_ticket_ids = [ticket.id for ticket in RatingTicket.objects.all() if
+             (ticket.rater == self.request.user and ticket.receivingUser == obj.user
+             and ticket.listing.listingEnded)]
+        context['rating_tickets'] = RatingTicket.objects.filter(id__in=rating_ticket_ids)
+
+        context['ratings'] = Rating.objects.filter(profile=obj)
+
         return context
+
+    def get_form_kwargs(self):
+        self.object = self.get_object() #profile object
+        kwargs = super(ProfileDetailView, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['receiver'] = self.object.user
+        return kwargs
+
+    #Post method for user to leave rating on profile
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object() #profile object
+        form = self.get_form()
+        #form = CreateRatingForm(data=request.POST, user=request.user,
+        #    receiver=self.object.user)
+        if form.is_valid():
+            print("Form is valid")
+            #new_rating = form.save()
+
+            rating_value = form.cleaned_data.get('ratingValue')
+            feedback = form.cleaned_data.get('feedback')
+            rating_ticket = form.cleaned_data.get('ratingTicket')
+
+            #Create the new rating object
+            Rating.objects.create(profile=self.object, reviewer=request.user,
+                ratingValue=rating_value, feedback=feedback,
+                listingName=rating_ticket.listing.name)
+
+            #Set the other fields for the rating
+            #new_rating.profile = self.object
+            #new_rating.reviewer = request.user
+            #new_rating.listingName = rating_ticket.listing.name
+
+            #Save the rating
+            #new_rating.save()
+
+            #Delete the rating ticket after use
+            rating_ticket.delete()
+
+            #Return to the profile detail view
+            return redirect('profile-detail', pk=self.object.pk)
+        else:
+            print("Form is invalid")
+            return super(ProfileDetailView, self).form_invalid(form)
 
 #Form view to edit a user's profile
 @login_required(login_url='/accounts/login/')
