@@ -28,7 +28,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'm34@p(-e_2c3jk9*z1c-wu)@f!7*!3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'https://marketapp-list-it.herokuapp.com/',]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'marketapp-list-it.herokuapp.com',]
 
 
 # Application definition
