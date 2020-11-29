@@ -1,3 +1,3 @@
-web: gunicorn marketapp.wsgi:application --log-file - --log-level debug
+web: gunicorn marketapp.marketapp.wsgi:application --log-file - --log-level debug
 python manage.py collectstatic --noinput
 manage.py migrate
