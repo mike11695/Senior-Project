@@ -2,7 +2,7 @@ from django.test import TestCase
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, WishlistListing,
     Profile, Conversation, Message, Receipt, PaymentReceipt,
-    ListingNotification, OfferNotification, BidNotification,
+    ListingNotification, OfferNotification, BidNotification, RatingNotification,
     PaymentNotification, InvitationNotification, EventNotification,
     Notification, Favorite, Report, ListingReport, EventReport, UserReport,
     WishlistReport, ImageReport, Rating, RatingTicket)
@@ -5717,6 +5717,28 @@ class ProfileDetailViewTest(MyTestCase):
         self.assertEqual(new_rating.reviewer, self.global_user2)
         self.assertEqual(new_rating.listingName, self.global_offer_listing2.name)
         self.assertFalse(Rating.objects.filter(id=self.ticket_id).exists())
+
+    #Test that a notification is created after rating is made
+    def test_notification_created(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('profile-detail', args=[str(profile.id)]),
+            data={
+                'ratingValue': 5,
+                'feedback': "User was very kind and delivered my items on time.",
+                'ratingTicket': str(self.ticket.id)
+            })
+        self.assertEqual(post_response.status_code, 302)
+        notification = RatingNotification.objects.last()
+        content = self.global_user2.username + " has left a rating on your profile."
+        self.assertEqual(notification.profile, profile)
+        self.assertEqual(notification.user, profile.user)
+        self.assertEqual(notification.rater, self.global_user2)
+        self.assertEqual(notification.type, "Feedback Left")
+        self.assertEqual(notification.content, content)
 
 class EditProfileViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to edit profile

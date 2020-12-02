@@ -2540,7 +2540,12 @@ class ProfileDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
              and ticket.listing.listingEnded)]
         context['rating_tickets'] = RatingTicket.objects.filter(id__in=rating_ticket_ids)
 
+        #Get the ratings related to the profile
         context['ratings'] = Rating.objects.filter(profile=obj)
+
+        #Get the rating form for profile if user has tickets
+        if len(rating_ticket_ids) > 0:
+            context['rating_form'] = self.get_form()
 
         return context
 
@@ -2570,16 +2575,15 @@ class ProfileDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
                 ratingValue=rating_value, feedback=feedback,
                 listingName=rating_ticket.listing.name)
 
-            #Set the other fields for the rating
-            #new_rating.profile = self.object
-            #new_rating.reviewer = request.user
-            #new_rating.listingName = rating_ticket.listing.name
-
-            #Save the rating
-            #new_rating.save()
-
             #Delete the rating ticket after use
             rating_ticket.delete()
+
+            #Create a notification for owner of profile
+            content = (request.user.username + " has left a rating on your profile.")
+            RatingNotification.objects.create(profile=self.object,
+                rater=request.user, user=self.object.user, content=content,
+                type="Feedback Left",
+                creationDate=timezone.localtime(timezone.now()))
 
             #Return to the profile detail view
             return redirect('profile-detail', pk=self.object.pk)

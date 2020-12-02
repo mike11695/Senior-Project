@@ -180,5 +180,32 @@
       </div>
     {% endif %}
     <h4 class="profile-listings-header">RATINGS:</h4>
+    {% if rating_form %}
+      <div class="rating-form-container center-block">
+        <form enctype="multipart/form-data" method="post" action="">
+          {% csrf_token %}
+          <h4 style="margin-bottom: 20px;">Leave Rating</h4>
+          {% for field in form %}
+            {% if field.label != "Feedback" %}
+              <div class="rating-form-label">{{ field.label_tag }}</div>
+              {% if field.label == "Listing" %}
+                <div class="rating-form-input listing-input">{{ field }}</div><br>
+              {% else %}
+                <div class="rating-form-input">{{ field }}</div><br>
+              {% endif %}
+            {% else %}
+              {{ field.label_tag }}<br>
+              {{ field }}<br>
+            {% endif %}
+          {% endfor %}
+          <button type="btn submit" class="btn btn-blue" style="width: 100%;">
+            Post
+          </button>
+        </form>
+      </div>
+      <div class="col-lg-8 center-block"
+        style="border-bottom: 1px solid grey; margin-bottom: 10px;">
+      </div>
+    {% endif %}
   </div>
 {% endblock %}

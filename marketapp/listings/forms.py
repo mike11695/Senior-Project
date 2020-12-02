@@ -860,14 +860,15 @@ class ImageReportForm(ModelForm):
 class CreateRatingForm(ModelForm):
     ratingTicket = forms.ModelChoiceField(queryset=RatingTicket.objects.all(),
         help_text="A listing to leave a rating on is required", required=True,
-        label="Listing")
+        label="Listing",
+        widget=forms.Select(attrs={'style': 'width:300px'}))
     feedback = forms.CharField(max_length=500, required=False,
-        widget=forms.Textarea(attrs={'rows':5, 'cols':23}),
+        widget=forms.Textarea(attrs={'rows':5, 'cols':63}),
         help_text="Leave feedback for the user you're rating.")
 
     class Meta:
         model = Rating
-        fields = ['ratingValue', 'feedback']
+        fields = ['ratingTicket', 'ratingValue', 'feedback']
         exclude = ['profile', 'reviewer', 'listingName']
         labels = {'ratingValue': "Rating"}
 

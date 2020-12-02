@@ -1360,3 +1360,26 @@ input[type="checkbox"]{
   padding: 5px;
   border-radius: 5px;
 }
+
+.rating-form-container {
+  background: #dedede;
+  border: 3px solid #adadad;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 15px;
+  width: 500px;
+  height: 100%;
+}
+
+.rating-form-label {
+  display: inline-block;
+}
+
+.rating-form-input {
+  display: inline-block;
+  float: right;
+}
+
+.rating-form-input input[type=number] {
+  width: 300px;
+}
