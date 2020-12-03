@@ -215,7 +215,15 @@
     {% if ratings %}
       {% for rating in ratings %}
         <div class="rating-container col-lg-7 center-block">
-          <b>Rating By:</b> {{ rating.reviewer }}<br>
+          <b>Rating By:</b> {{ rating.reviewer }}
+          {% if profile.user == request.user %}
+            <a href="{% url 'report-rating' pk=rating.pk %}" style="float: right;">
+              <div class="btn btn-red"
+              style="width: 75px; height: 30px; padding-top: 2px;">
+              Report
+            </div>
+            </a>
+          {% endif %}<br>
           <b>Rating For:</b> {{ rating.listingName }}<br>
           <b>Rating:</b>
           {% if rating.ratingValue == 1 %}

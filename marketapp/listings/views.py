@@ -23,13 +23,14 @@ from listings.models import (User, Image, Item, Listing, OfferListing, AuctionLi
     InvitationNotification, EventNotification, Notification,
     RatingNotification, WarningNotification, Favorite, Tag, Report, ListingReport,
     EventReport, RatingReport, UserReport, WishlistReport, ImageReport,
-    Rating, RatingTicket)
+    RatingReport, Rating, RatingTicket)
 from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm,
     AuctionListingForm, UpdateOfferListingForm, OfferForm, EditOfferForm, CreateBidForm,
     EventForm, InvitationForm, WishlistForm, WishlistListingForm, QuickWishlistListingForm,
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
     MessageForm, EditImageForm, ListingReportForm, EventReportForm,
-    UserReportForm, WishlistReportForm, ImageReportForm, CreateRatingForm)
+    UserReportForm, WishlistReportForm, ImageReportForm, RatingReportForm,
+    CreateRatingForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -4215,6 +4216,35 @@ def report_image(request, pk):
         else:
             form = ImageReportForm()
         return render(request, 'reports/report_image.html',
+            {'form': form})
+    else:
+        return redirect('index')
+
+#Form view for a user to report an rating
+@login_required(login_url='/accounts/login/')
+def report_rating(request, pk):
+    #Get the rating being reported
+    rating = get_object_or_404(Rating, pk=pk)
+
+    #Check to ensure user is not reporting their own image
+    if rating.profile.user == request.user:
+        if request.method == 'POST':
+            form = RatingReportForm(data=request.POST)
+            if form.is_valid():
+                new_report = form.save()
+
+                #Set the user for the report
+                new_report.rating = rating
+                new_report.reportType = "Rating"
+
+                #Save the report
+                new_report.save()
+
+                #Redirect to the profile's detail view
+                return redirect('profile-detail', pk=rating.profile.pk)
+        else:
+            form = RatingReportForm()
+        return render(request, 'reports/report_rating.html',
             {'form': form})
     else:
         return redirect('index')

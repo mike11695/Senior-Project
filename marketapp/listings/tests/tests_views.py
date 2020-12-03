@@ -5,7 +5,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     ListingNotification, OfferNotification, BidNotification, RatingNotification,
     PaymentNotification, InvitationNotification, EventNotification,
     Notification, Favorite, Report, ListingReport, EventReport, UserReport,
-    WishlistReport, ImageReport, Rating, RatingTicket)
+    WishlistReport, ImageReport, RatingReport, Rating, RatingTicket)
 
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -8266,6 +8266,68 @@ class ReportImageViewTest(MyTestCase):
         self.assertEqual(new_report.description, 'Questionable items in image')
         self.assertEqual(new_report.reportType, "Image")
         self.assertEqual(new_report.image, image)
+
+class ReportRatingViewTest(MyTestCase):
+    def setUp(self):
+        super(ReportRatingViewTest, self).setUp()
+
+        #Create a rating for testing with
+        self.rating = Rating.objects.create(profile=self.global_user1.profile,
+            reviewer=self.global_user2, ratingValue=3,
+            feedback=("User was good on getting me the items on time" +
+            " but did not communicate with me well."),
+            listingName=self.global_offer_listing2.name)
+
+    #Test to ensure that a user must be logged in to report a rating
+    def test_redirect_if_not_logged_in(self):
+        rating = self.rating
+        response = self.client.get(reverse('report-rating', args=[str(rating.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/report-rating/{0}'.format(rating.id))
+
+    #Test to ensure user is not redirected if logged in and is reporting a
+    #rating for them
+    def test_no_redirect_if_logged_in_reporting_rating_for_them(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        rating = self.rating
+        response = self.client.get(reverse('report-rating', args=[str(rating.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but are not reporting a
+    #rating meant for them
+    def test_redirect_if_logged_in_reporting_rating_not_for_them(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        rating = self.rating
+        response = self.client.get(reverse('report-rating', args=[str(rating.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        rating = self.rating
+        response = self.client.get(reverse('report-rating', args=[str(rating.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/report_rating.html')
+
+    #Test to ensure that a user is able to report a rating successfully
+    def test_rating_report_is_created(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        rating = self.rating
+        response = self.client.get(reverse('report-rating', args=[str(rating.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse('report-rating', args=[str(rating.id)]),
+            data={'reason': "False Rating",
+                'description': "This user is lying."})
+        self.assertEqual(post_response.status_code, 302)
+        new_report = RatingReport.objects.last()
+        self.assertEqual(new_report.reason, 'False Rating')
+        self.assertEqual(new_report.description, 'This user is lying.')
+        self.assertEqual(new_report.reportType, "Rating")
+        self.assertEqual(new_report.rating, rating)
 
 class ReportDeleteViewTest(MyTestCase):
     def setUp(self):

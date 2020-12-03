@@ -15,7 +15,7 @@
       {% elif report.reportType == "Image" %}
         <h3>Report for image: {{ report_obj.image.name }}</h3>
       {% elif report.reportType == "Rating" %}
-        <h3>Report for rating: #{{ report_obj.rating.id }}</h3>
+        <h3>Report for rating on {{ report_obj.rating.listingName }}</h3>
       {% endif %}
       <input type="submit" value="Confirm" class="btn btn-blue">
     </form>

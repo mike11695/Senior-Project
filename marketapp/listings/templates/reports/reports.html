@@ -26,8 +26,8 @@
               {{ report.obj.user }}
             </a>
           {% elif report.reportType == "Rating" %}
-            <a href="{{ report.obj.rating.get_absolute_url }}" class="report-link">
-              Rating #{{ report.obj.rating.id }}
+            <a href="{{ report.obj.rating.profile.get_absolute_url }}" class="report-link">
+              Rating for {{ report.obj.rating.listingName }}
             </a>
           {% elif report.reportType == "Wishlist" %}
             <a href="{{ report.obj.wishlist.get_absolute_url }}" class="report-link">

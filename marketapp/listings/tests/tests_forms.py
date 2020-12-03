@@ -3,7 +3,8 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     AuctionListingForm, OfferForm, CreateBidForm, EventForm, InvitationForm,
     WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm,
     ConversationForm, MessageForm, ListingReportForm, EventReportForm,
-    UserReportForm, WishlistReportForm, ImageReportForm, CreateRatingForm)
+    UserReportForm, WishlistReportForm, ImageReportForm, CreateRatingForm,
+    RatingReportForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, Rating,
@@ -2192,6 +2193,72 @@ class ImageReportFormTest(MyTestCase):
     #Test to ensure that description field help text is correct
     def test_image_report_description_help_text(self):
         form = ImageReportForm()
+        self.assertEqual(form.fields['description'].help_text,
+            "Tell us more in depth about the reason for reporting")
+
+class RatingReportFormTest(MyTestCase):
+    #Test to ensure a user is able to create a rating report providing all fields
+    def test_valid_rating_report_creation(self):
+        reason = "False Rating"
+        description = "This rating is not telling the truth"
+        data = {'reason': reason, 'description': description}
+        form = RatingReportForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating report if fields
+    #are not provided
+    def test_invalid_rating_report_no_data(self):
+        reason = "False Rating"
+        description = "This rating is not telling the truth"
+        data = {}
+        form = RatingReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating report if a
+    #reason is not provided
+    def test_invalid_rating_report_no_reason(self):
+        reason = "False Rating"
+        description = "This rating is not telling the truth"
+        data = {'description': description}
+        form = RatingReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating report if a
+    #description is not provided
+    def test_invalid_rating_report_no_description(self):
+        reason = "False Rating"
+        description = "This rating is not telling the truth"
+        data = {'reason': reason}
+        form = RatingReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to create a rating report if a
+    #description is too long
+    def test_invalid_rating_report_description_too_long(self):
+        reason = "False Rating"
+        description = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        data = {'reason': reason, 'description': description}
+        form = RatingReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that reason field help text is correct
+    def test_rating_report_reason_help_text(self):
+        form = RatingReportForm()
+        self.assertEqual(form.fields['reason'].help_text, "Reason for the report")
+
+    #Test to ensure that description field help text is correct
+    def test_rating_report_description_help_text(self):
+        form = RatingReportForm()
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")
 

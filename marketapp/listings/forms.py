@@ -856,6 +856,17 @@ class ImageReportForm(ModelForm):
         fields = ['reason', 'description']
         exclude = ['dateMade', 'reportType', 'user']
 
+#Form for a user to report a Rating
+class RatingReportForm(ModelForm):
+    description = forms.CharField(max_length=250, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("Tell us more in depth about the reason for reporting"))
+
+    class Meta:
+        model = RatingReport
+        fields = ['reason', 'description']
+        exclude = ['dateMade', 'reportType', 'user']
+
 #Form for a user to rate a user and leave feedback
 class CreateRatingForm(ModelForm):
     ratingTicket = forms.ModelChoiceField(queryset=RatingTicket.objects.all(),
