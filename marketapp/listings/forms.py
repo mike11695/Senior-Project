@@ -899,13 +899,12 @@ class CreateRatingForm(ModelForm):
 class TakeActionOnReportForm(forms.Form):
     ACTION_CHOICES =(
         ("Delete", "Delete"),
-        ("Take Manual Action", "Take Manual Action"),
-        ("Do Nothing", "Do Nothing"),
+        ("Take Manual Action", "Take Manual Action")
     )
     action_taken = forms.ChoiceField(choices=ACTION_CHOICES,
         help_text=("Action to preform on the object"),
-        label="Action to Take")
-    reason = forms.CharField(max_length=250, required=True,
+        label="Action to Take", required=True)
+    reason = forms.CharField(max_length=250, required=False,
         widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
         help_text=("Reason for taking action on object."),
         label="Reason for Action")

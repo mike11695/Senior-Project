@@ -30,7 +30,7 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     EditWishlistListingForm, ProfileForm, EditAccountForm, ConversationForm,
     MessageForm, EditImageForm, ListingReportForm, EventReportForm,
     UserReportForm, WishlistReportForm, ImageReportForm, RatingReportForm,
-    CreateRatingForm)
+    CreateRatingForm, TakeActionOnReportForm)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -4283,3 +4283,68 @@ class ReportDeleteView(LoginRequiredMixin, generic.DeleteView):
             context['report_obj'] = ImageReport.objects.get(id=obj.id)
 
         return context
+
+#Form view for a superuser to take action on a report
+@login_required(login_url='/accounts/login/')
+def take_action_on_report(request, pk):
+    #Get the report the action is being taken on
+    report = get_object_or_404(Report, pk=pk)
+
+    #Check to ensure user is not reporting themselves
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            form = TakeActionOnReportForm(data=request.POST)
+            if form.is_valid():
+                #Get the fields from the form
+                action_taken = form.cleaned_data.get('action_taken')
+                reason = form.cleaned_data.get('reason')
+
+                if action_taken == "Delete":
+                    #Delete the object referenced by the report, unless its
+                    #for a wishlist
+                    if report.reportType == "Listing":
+                        report.listing.delete()
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                    elif report.reportType == "Event":
+                        report.event.delete()
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                    elif report.reportType == "User":
+                        report.user.delete()
+                    elif report.reportType == "Rating":
+                        report.rating.delete()
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                    elif report.reportType == "Image":
+                        report.image.delete()
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                    elif report.reportType == "Wishlist":
+                        #For wishlist, delete the items
+                        report.wishlist.items.clear()
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                elif action_taken == "Manual Action":
+                    #Admin will proform an action manually, just notify user
+
+                    #Create a notification for the user to explain the
+                    #action taken
+
+                #Update the report to show that action has been taken
+                report.actionTaken = True
+                report.save()
+
+                #Redirect to the user's profile detail view
+                return redirect('reports')
+        else:
+            form = TakeActionOnReportForm()
+        return render(request, 'reports/take_action_on_report.html',
+            {'form': form})
+    else:
+        return redirect('index')

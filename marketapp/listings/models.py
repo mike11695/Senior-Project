@@ -467,6 +467,7 @@ class Report(models.Model):
         "in depth about the reason for reporting"))
     dateMade = models.DateTimeField(auto_now_add=True)
     reportType =  models.TextField(max_length=50, null=True)
+    actionTaken = models.BooleanField(default=False, null=True)
 
 #Subclass for ListingReport, when reporting an listing
 #Fields needed: Listing

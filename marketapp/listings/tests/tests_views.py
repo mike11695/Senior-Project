@@ -8383,3 +8383,147 @@ class ReportDeleteViewTest(MyTestCase):
         post_response = self.client.post(reverse('delete-report', args=[str(report.id)]))
         self.assertRedirects(post_response, reverse('reports'))
         self.assertFalse(Report.objects.filter(id=self.listing_report_id).exists())
+
+class TakeActionOnReportViewTest(MyTestCase):
+    def setUp(self):
+        super(TakeActionOnReportViewTest, self).setUp()
+
+        #Set a user to be a super user
+        self.global_user1.is_superuser = True
+        self.global_user1.save()
+
+        #Create some reports for testing with
+        self.listing_report = ListingReport.objects.create(
+            listing=self.global_offer_listing1, reason="Malicious Content",
+            description="The items are of concern", reportType="Listing")
+        self.user_report = UserReport.objects.create(
+            user=self.global_user2, reason="Malicious User",
+            description="This user has bad intentions", reportType="User")
+
+    #Test to ensure that a user must be logged in to take action on report
+    def test_redirect_if_not_logged_in(self):
+        report = self.listing_report
+        response = self.client.get(reverse('take-action-on-report', args=[str(report.id)]))
+        self.assertRedirects(response,
+            '/accounts/login/?next=/listings/reports/{0}/take-action'.format(report.id))
+
+    #Test to ensure user is not redirected if logged in if they are a
+    #superuser
+    def test_no_redirect_if_logged_in_superuser(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        response = self.client.get(reverse('take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged but they are not a
+    #superuser
+    def test_no_redirect_if_logged_in_not_superuser(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        response = self.client.get(reverse('take-action-on-report', args=[str(report.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure right template is used/exists
+    def test_correct_template_used(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        response = self.client.get(reverse('take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'reports/take_action_on_report.html')
+
+    #Test to ensure that a user is able to submit form and object is not deleted
+    #if "Manual Action" is action taken, and a notification is created
+    def test_manual_action_taken(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Manual Action",
+                'reason': ("Your listing was reported for malicious items " +
+                "contained in it.  The items have been removed.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(
+            OfferListing.objects.filter(id=self.global_offer_listing1.id).exists())
+        new_notification = ListingNotification.objects.last()
+        self.assertEqual(new_notification.listing, self.global_offer_listing1)
+        self.assertEqual(new_notification.user, self.global_offer_listing1.owner)
+        self.assertEqual(new_notification.type, 'Listing')
+        content = ("Your listing, " + self.global_offer_listing1.name + "has " +
+            "been changed.  Reason: Your listing was reported for malicious " +
+            "items contained in it.  The items have been removed.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is deleted
+    #if "Delete" is action taken, and a notification is created
+    def test_delete_action_taken(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.listing_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Manual Action",
+                'reason': ("Your listing was reported for malicious items " +
+                "contained in it.  The listing has been deleted.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(
+            OfferListing.objects.filter(id=self.global_offer_listing1.id).exists())
+        new_notification = ListingNotification.objects.last()
+        self.assertEqual(new_notification.listing, self.global_offer_listing1)
+        self.assertEqual(new_notification.user, self.global_offer_listing1.owner)
+        self.assertEqual(new_notification.type, 'Listing')
+        content = ("Your listing, " + self.global_offer_listing1.name + "has " +
+            "been changed.  Reason: Your listing was reported for malicious " +
+            "items contained in it.  The listing has been deleted.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is not deleted
+    #if "Manual Action" is action taken, and a notification is created for a
+    #different kind of object
+    def test_manual_action_taken_new_object_type(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.user_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Manual Action",
+                'reason': ("You were reported due to suspicious content on " +
+                "your profile.  Your profile has been cleared as a result.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(
+            User.objects.filter(id=self.global_user2.id).exists())
+        new_notification = Notification.objects.last()
+        self.assertEqual(new_notification.user, self.global_user2)
+        self.assertEqual(new_notification.type, 'User')
+        content = ("Your profile has been changed.  Reason: You were reported " +
+            "due to suspicious content on your profile.  Your profile has " +
+            "been cleared as a result.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is deleted
+    #if "Delete" is action taken
+    def test_delete_action_taken_new_object_type(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.user_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Delete"})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(
+            User.objects.filter(id=self.global_user2.id).exists())

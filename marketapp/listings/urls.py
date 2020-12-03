@@ -153,4 +153,5 @@ urlpatterns = [
     path('report-rating/<int:pk>', views.report_rating,
         name="report-rating"),
     path('reports/<int:pk>/delete', views.ReportDeleteView.as_view(), name="delete-report"),
+    path('reports/<int:pk>/take-action', views.take_action_on_report, name="take-action-on-report"),
 ]

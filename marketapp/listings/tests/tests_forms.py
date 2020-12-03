@@ -2434,12 +2434,12 @@ class TakeActionOnReportFormTest(MyTestCase):
         self.assertTrue(form.is_valid())
 
     #Test to ensure an admin cannot submit form if a reason is not provided
-    def test_invalid_form_no_reason(self):
+    def test_valid_form_no_reason(self):
         reason = "This listing was deleted due to having illegal objects advertised."
         action_taken = "Delete"
         data = {'action_taken': action_taken}
         form = TakeActionOnReportForm(data=data)
-        self.assertFalse(form.is_valid())
+        self.assertTrue(form.is_valid())
 
     #Test to ensure an admin can not submit form if a action to take is
     #not provided
