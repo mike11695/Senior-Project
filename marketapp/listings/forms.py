@@ -894,3 +894,18 @@ class CreateRatingForm(ModelForm):
             and ticket.listing.listingEnded)]
        self.fields['ratingTicket'].queryset = RatingTicket.objects.filter(
             id__in=ticket_ids)
+
+#form for admin to delete an object from a report
+class TakeActionOnReportForm(forms.Form):
+    ACTION_CHOICES =(
+        ("Delete", "Delete"),
+        ("Take Manual Action", "Take Manual Action"),
+        ("Do Nothing", "Do Nothing"),
+    )
+    action_taken = forms.ChoiceField(choices=ACTION_CHOICES,
+        help_text=("Action to preform on the object"),
+        label="Action to Take")
+    reason = forms.CharField(max_length=250, required=True,
+        widget=forms.Textarea(attrs={'rows':5, 'cols':49}),
+        help_text=("Reason for taking action on object."),
+        label="Reason for Action")

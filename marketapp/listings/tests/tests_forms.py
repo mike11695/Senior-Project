@@ -4,11 +4,12 @@ from listings.forms import (SignUpForm, AddImageForm, ItemForm, OfferListingForm
     WishlistForm, WishlistListingForm, ProfileForm, EditAccountForm,
     ConversationForm, MessageForm, ListingReportForm, EventReportForm,
     UserReportForm, WishlistReportForm, ImageReportForm, CreateRatingForm,
-    RatingReportForm)
+    RatingReportForm, TakeActionOnReportForm)
 from django.core.files.uploadedfile import SimpleUploadedFile
 from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     AuctionListing, Offer, Bid, Event, Invitation, Wishlist, Rating,
-    RatingTicket)
+    RatingTicket, ListingReport, EventReport, RatingReport, UserReport,
+    WishlistReport, ImageReport, RatingReport)
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -2402,3 +2403,99 @@ class CreateRatingFormTest(MyTestCase):
         user2 = self.global_user1
         form = CreateRatingForm(user=user, receiver=user2)
         self.assertEqual(form.fields['ratingTicket'].label, "Listing")
+
+class TakeActionOnReportFormTest(MyTestCase):
+    def setUp(self):
+        super(TakeActionOnReportFormTest, self).setUp()
+
+        #Create some reports for testing with
+        self.listingReport = ListingReport.objects.create(
+            listing=self.global_offer_listing1, reason="Malicious Content",
+            description="The items are of concern", reportType="Listing")
+        self.userReport = UserReport.objects.create(
+            user=self.global_user1, reason="Malicious User",
+            description="This user has bad intentions", reportType="User")
+
+    #Test to ensure an admin can submit form if a reason is provided
+    def test_valid_form_for_listing(self):
+        reason = "This listing was deleted due to having illegal objects advertised."
+        action_taken = "Delete"
+        data = {'reason': reason, 'action_taken': action_taken}
+        form = TakeActionOnReportForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure an admin can submit form if a reason is provided for a
+    #different kind of object
+    def test_valid_form_for_user(self):
+        reason = "Your profile was cleared for suspicious advertisement."
+        action_taken = "Take Manual Action"
+        data = {'reason': reason, 'action_taken': action_taken}
+        form = TakeActionOnReportForm(data=data)
+        self.assertTrue(form.is_valid())
+
+    #Test to ensure an admin cannot submit form if a reason is not provided
+    def test_invalid_form_no_reason(self):
+        reason = "This listing was deleted due to having illegal objects advertised."
+        action_taken = "Delete"
+        data = {'action_taken': action_taken}
+        form = TakeActionOnReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure an admin can not submit form if a action to take is
+    #not provided
+    def test_invalid_form_no_action(self):
+        reason = "This listing was deleted due to having illegal objects advertised."
+        action_taken = "Delete"
+        data = {'reason': reason}
+        form = TakeActionOnReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure an admin can not submit form if no data is provided
+    def test_invalid_form_no_data(self):
+        reason = "This listing was deleted due to having illegal objects advertised."
+        action_taken = "Delete"
+        data = {}
+        form = TakeActionOnReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure an admin can not submit form if reason provided is too long
+    def test_invalid_form_reason_too_long(self):
+        reason = ("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        action_taken = "Take Manual Action"
+        data = {'reason': reason, 'action_taken': action_taken}
+        form = TakeActionOnReportForm(data=data)
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure that reason field help text is correct
+    def test_action_on_report_reason_help_text(self):
+        form = TakeActionOnReportForm()
+        self.assertEqual(form.fields['reason'].help_text,
+            "Reason for taking action on object.")
+
+    #Test to ensure that action taken field help text is correct
+    def test_action_on_report_action_taken_help_text(self):
+        form = TakeActionOnReportForm()
+        self.assertEqual(form.fields['action_taken'].help_text,
+            "Action to preform on the object")
+
+    #Test to ensure that reason field label is correct
+    def test_action_on_report_reason_label(self):
+        form = TakeActionOnReportForm()
+        self.assertEqual(form.fields['reason'].label,
+            "Reason for Action")
+
+    #Test to ensure that action taken field label is correct
+    def test_action_on_report_action_taken_label(self):
+        form = TakeActionOnReportForm()
+        self.assertEqual(form.fields['action_taken'].label,
+            "Action to Take")
