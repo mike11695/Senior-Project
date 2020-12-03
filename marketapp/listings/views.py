@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 from django.template.loader import render_to_string
 from django.http import JsonResponse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from listings.models import (User, Image, Item, Listing, OfferListing, AuctionListing,
     Offer, Bid, Event, Invitation, Wishlist, WishlistListing, Profile,
@@ -2541,7 +2542,25 @@ class ProfileDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
         context['rating_tickets'] = RatingTicket.objects.filter(id__in=rating_ticket_ids)
 
         #Get the ratings related to the profile
-        context['ratings'] = Rating.objects.filter(profile=obj)
+        if Rating.objects.filter(profile=obj).exists():
+            ratings = Rating.objects.filter(profile=obj).order_by('id')
+            context['ratings'] = ratings
+            rating_sum = 0
+            for rating in ratings:
+                rating_sum = rating_sum + rating.ratingValue
+
+            context['average_rating'] = round((rating_sum / ratings.count()), 2)
+
+            #Pagination for list of ratings
+            page = self.request.GET.get('page', 1)
+
+            paginator = Paginator(ratings, 10)
+            try:
+                context['ratings'] = paginator.page(page)
+            except PageNotAnInteger:
+                context['ratings'] = paginator.page(1)
+            except EmptyPage:
+                context['ratings'] = paginator.page(paginator.num_pages)
 
         #Get the rating form for profile if user has tickets
         if len(rating_ticket_ids) > 0:

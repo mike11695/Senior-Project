@@ -180,6 +180,10 @@
       </div>
     {% endif %}
     <h4 class="profile-listings-header">RATINGS:</h4>
+    {% if average_rating %}
+      <div><b>Average Rating:</b> {{ average_rating }}</div>
+    {% endif %}
+
     {% if rating_form %}
       <div class="rating-form-container center-block">
         <form enctype="multipart/form-data" method="post" action="">
@@ -206,6 +210,70 @@
       <div class="col-lg-8 center-block"
         style="border-bottom: 1px solid grey; margin-bottom: 10px;">
       </div>
+    {% endif %}
+
+    {% if ratings %}
+      {% for rating in ratings %}
+        <div class="rating-container col-lg-7 center-block">
+          <b>Rating By:</b> {{ rating.reviewer }}<br>
+          <b>Rating For:</b> {{ rating.listingName }}<br>
+          <b>Rating:</b>
+          {% if rating.ratingValue == 1 %}
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star grey-star"></i>
+            <i class="fas fa-star grey-star"></i>
+            <i class="fas fa-star grey-star"></i>
+            <i class="fas fa-star grey-star"></i>
+          {% elif rating.ratingValue == 2 %}
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star rating-star"></i>
+            <i class="fas fa-star grey-star"></i>
+            <i class="fas fa-star grey-star"></i>
+          {% elif rating.ratingValue == 3 %}
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star grey-star"></i>
+            <i class="fas fa-star grey-star"></i>
+          {% elif rating.ratingValue == 4 %}
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star grey-star"></i>
+          {% else %}
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+            <i class="fas fa-star yellow-star"></i>
+          {% endif %}
+          {% if rating.feedback %}
+            <br><b>Feedback:</b><br>
+            {{ rating.feedback }}
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="pagination center-block container-fluid" style="margin-bottom: 20px;">
+        <div class="step-links">
+          {% if ratings.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ ratings.previous_page_number }}">previous</a>
+          {% endif %}
+
+          <div class="current" style="text-align: center;">
+              Page {{ ratings.number }} of {{ ratings.paginator.num_pages }}.
+          </div>
+
+          {% if ratings.has_next %}
+              <a href="?page={{ ratings.next_page_number }}">next</a>
+              <a href="?page={{ ratings.paginator.num_pages }}">last &raquo;</a>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <p style="text-align: center;">This user has no ratings currently.</p>
     {% endif %}
   </div>
 {% endblock %}

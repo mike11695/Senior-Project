@@ -1383,3 +1383,27 @@ input[type="checkbox"]{
 .rating-form-input input[type=number] {
   width: 300px;
 }
+
+.yellow-star {
+  color: #d1d100;
+}
+
+.grey-star {
+  color: grey;
+}
+
+.rating-container {
+  background: #dedede;
+  border: 3px solid #adadad;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 15px;
+}
+
+.rating-container:nth-child(even) {
+  background: white;
+  border: 3px solid #adadad;
+  border-radius: 25px;
+  margin-bottom: 10px;
+  padding: 15px;
+}
