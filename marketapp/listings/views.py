@@ -477,6 +477,12 @@ def faq_reports(request):
     # Render the HTML template faq/reports.html with the data in the context variable
     return render(request, 'faq/reports.html')
 
+#FAQ page for ratings
+@login_required(login_url='/accounts/login/')
+def faq_ratings(request):
+    # Render the HTML template faq/ratings.html with the data in the context variable
+    return render(request, 'faq/ratings.html')
+
 #List view for a user to see all of the offer listings they have
 class OfferListingListView(LoginRequiredMixin, generic.ListView):
     model = OfferListing

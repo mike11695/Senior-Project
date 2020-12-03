@@ -1,0 +1,42 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="back-to-link"><a href="{% url 'faq' %}">«Back to FAQ</a></div>
+  <div class="how-to-content col-md-10">
+    <h1>How to View Ratings</h1>
+    <p>Ratings can be found on your profile detail page.  In order to view your
+      profile, click on "Profile" in the top right navigation bar.  To view
+      the ratings you have received from other users, scroll to the bottom of
+      your profile and there will be a section for ratings.  You can view up
+      to 10 ratings at a time and can click on a page number below the ratings
+      to view more.</p>
+    <h1>How to Leave a Rating</h1>
+    <p>In order to leave a rating for another user, you must have completed at
+      least one exchange with a user, whether it be a trade or sale.  When
+      you have an offer accepted or a bid you placed wins an auction, a
+      rating ticket related to you and the listing will be created.  This
+      also applies to the owner of the listing, but they'll receive their own
+      ticket.  This ticket allows you to leave a rating for the listing on the
+      user's profile.  When creating a rating, select the listing that you want
+      to create the rating for.  For the rating value, you can rate the other
+      user on a scale of 1 to 5 for how well they did with communicating and
+      exchanging goods with you.  You can leave feedback as well, but it is
+      optional.  Once you have filled in the neccessary fields, simply click on
+      "Post" to post the rating to the user's profile.</p>
+  </div>
+  <div class="faq-content col-md-10">
+    <h1>FAQs for Ratings</h1>
+    <h3 class="faq-question">Can I edit/delete ratings I leave for other users?</h3>
+    <p>No, you cannot edit or delete a rating after you create it.  Please make
+      sure that all the info is correct when you leave feedback as it is permanent
+      once you post it.</p>
+    <h3 class="faq-question">Can I delete ratings other users left me?</h3>
+    <p>No, you cannot delete ratings from other users from your profile.  If a
+      user leaves an inappropriate or inaccurate rating, please report it and an
+      admin will look into it.</p>
+    <h3 class="faq-question">What happens if I receive many low ratings?</h3>
+    <p>Nothing will happen if many users rate you low, but please try to improve
+      on what they leave feedback on in order to improve and increase your
+      reputation.</p>
+  </div>
+{% endblock %}
