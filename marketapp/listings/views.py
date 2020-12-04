@@ -3330,6 +3330,8 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
                     #Get warning notification object
                     notification.obj = WarningNotification.objects.get(
                         id=notification.id)
+                else:
+                    notification.obj = None
 
         return notifications
 
@@ -4226,7 +4228,7 @@ def report_rating(request, pk):
     #Get the rating being reported
     rating = get_object_or_404(Rating, pk=pk)
 
-    #Check to ensure user is not reporting their own image
+    #Check to ensure user is report a rating of theirs
     if rating.profile.user == request.user:
         if request.method == 'POST':
             form = RatingReportForm(data=request.POST)
@@ -4303,38 +4305,172 @@ def take_action_on_report(request, pk):
                     #Delete the object referenced by the report, unless its
                     #for a wishlist
                     if report.reportType == "Listing":
-                        report.listing.delete()
+                        report_obj = ListingReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your listing, " + report_obj.listing.name +
+                            "has been deleted.  Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
+                        Notification.objects.create(
+                            user=report_obj.listing.owner, content=content,
+                            type="Deletion",
+                            creationDate=timezone.localtime(timezone.now()))
+
+                        #Delete listing
+                        report_obj.listing.delete()
                     elif report.reportType == "Event":
-                        report.event.delete()
+                        report_obj = EventReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your event, " + report_obj.listing.name +
+                            "has been deleted.  Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
+                        Notification.objects.create(
+                            user=report_obj.event.host, content=content,
+                            type="Deletion",
+                            creationDate=timezone.localtime(timezone.now()))
+
+                        report_obj.event.delete()
                     elif report.reportType == "User":
-                        report.user.delete()
+                        report_obj = UserReport.objects.get(id=report.id)
+
+                        report_obj.user.delete()
                     elif report.reportType == "Rating":
-                        report.rating.delete()
+                        report_obj = RatingReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your rating for the listing, " +
+                            report_obj.rating.listingName + "has been deleted.  " +
+                            "Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
+                        Notification.objects.create(
+                            user=report_obj.rating.reviewer, content=content,
+                            type="Deletion",
+                            creationDate=timezone.localtime(timezone.now()))
+
+                        report_obj.rating.delete()
                     elif report.reportType == "Image":
-                        report.image.delete()
+                        report_obj = ImageReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your image, " + report_obj.image.name +
+                            "has been deleted.  " + "Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
+                        Notification.objects.create(
+                            user=report_obj.image.owner, content=content,
+                            type="Deletion",
+                            creationDate=timezone.localtime(timezone.now()))
+
+                        report_obj.image.delete()
                     elif report.reportType == "Wishlist":
-                        #For wishlist, delete the items
-                        report.wishlist.items.clear()
+                        report_obj = WishlistReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your wishlist has been cleared.  " +
+                            "Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
-                elif action_taken == "Manual Action":
+                        Notification.objects.create(
+                            user=report_obj.wishlist.owner, content=content,
+                            type="Deletion",
+                            creationDate=timezone.localtime(timezone.now()))
+
+                        #For wishlist, delete the items and clear description
+                        report_obj.wishlist.items.clear()
+                        report_obj.wishlist.title = "None"
+                        report_obj.wishlist.description = "None"
+                        report_obj.wishlist.save()
+                elif action_taken == "Take Manual Action":
                     #Admin will proform an action manually, just notify user
 
                     #Create a notification for the user to explain the
                     #action taken
+                    if report.reportType == "Listing":
+                        report_obj = ListingReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your listing, " + report_obj.listing.name +
+                            "has been changed.  Reason: " + reason)
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                        ListingNotification.objects.create(
+                            user=report_obj.listing.owner, content=content,
+                            type="Listing", listing=report_obj.listing,
+                            creationDate=timezone.localtime(timezone.now()))
+                    elif report.reportType == "Event":
+                        report_obj = EventReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your event, " + report_obj.listing.name +
+                            "has been changed.  Reason: " + reason)
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                        EventNotification.objects.create(
+                            user=report_obj.event.host, content=content,
+                            type="Event", event=report_obj.event,
+                            creationDate=timezone.localtime(timezone.now()))
+                    elif report.reportType == "User":
+                        report_obj = UserReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("An action has been made on your account."
+                            "  Reason: " + reason)
+
+                        Notification.objects.create(
+                            user=report_obj.user, content=content,
+                            type="User",
+                            creationDate=timezone.localtime(timezone.now()))
+                    elif report.reportType == "Rating":
+                        report_obj = RatingReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your rating for the listing, " +
+                            report_obj.rating.listingName + "has been changed.  " +
+                            "Reason: " + reason)
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                        RatingNotification.objects.create(
+                            user=report_obj.rating.reviewer, content=content,
+                            type="Feedback Left", profile=report_obj.rating.profile,
+                            creationDate=timezone.localtime(timezone.now()))
+                    elif report.reportType == "Image":
+                        report_obj = ImageReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your image, " + report_obj.image.name +
+                            "has been changed.  " + "Reason: " + reason)
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                        Notification.objects.create(
+                            user=report_obj.image.owner, content=content,
+                            type="Image",
+                            creationDate=timezone.localtime(timezone.now()))
+                    elif report.reportType == "Wishlist":
+                        report_obj = WishlistReport.objects.get(id=report.id)
+
+                        #Create content for notification
+                        content = ("Your wishlist has been changed.  " +
+                            "Reason: " + reason)
+
+                        #Create a notification for the user to explain the
+                        #action taken
+                        Notification.objects.create(
+                            user=report_obj.wishlist.owner, content=content,
+                            type="Wishlist",
+                            creationDate=timezone.localtime(timezone.now()))
 
                 #Update the report to show that action has been taken
                 report.actionTaken = True

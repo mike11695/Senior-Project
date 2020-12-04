@@ -85,6 +85,7 @@
                 </td></div>
               </a>
             {% elif notification.type == "Feedback Left" %}
+              {% if notification.obj.rating != null %}
               <a href="{{ notification.obj.profile.get_absolute_url }}" class="notification-link">
                 <div class="notification-container"><td>
                   <input type="checkbox" name="data" value="{{ notification.id }}">
@@ -92,6 +93,13 @@
                   <div class="notification-date">{{ notification.creationDate }}</div>
                 </td></div>
               </a>
+              {% else %}
+                <div class="notification-container"><td>
+                  <input type="checkbox" name="data" value="{{ notification.id }}">
+                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <div class="notification-date">{{ notification.creationDate }}</div>
+                </td></div>
+              {% endif %}
             {% else %}
               <div class="notification-container"><td>
                 <input type="checkbox" name="data" value="{{ notification.id }}">
