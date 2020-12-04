@@ -8393,7 +8393,7 @@ class TakeActionOnReportViewTest(MyTestCase):
         self.global_user1.save()
 
         #Create rating for testing with
-        Rating.objects.create(profile=self.global_user1.profile,
+        self.rating = Rating.objects.create(profile=self.global_user1.profile,
             reviewer=self.global_user2, ratingValue=3,
             feedback=("User was good on getting me the items on time" +
             " but did not communicate with me well."),
@@ -8410,13 +8410,13 @@ class TakeActionOnReportViewTest(MyTestCase):
             event=self.global_event, reason="Malicious Event",
             description="This event is a scam", reportType="Event")
         self.wishlist_report = WishlistReport.objects.create(
-            event=self.global_event, reason="Malicious Content",
+            wishlist=self.global_wishlist, reason="Malicious Content",
             description="This wishlist has illegal items", reportType="Wishlist")
         self.image_report = ImageReport.objects.create(
-            event=self.global_event, reason="Malicious Image",
+            image=self.global_image1, reason="Malicious Image",
             description="The image depicts harmful items", reportType="Image")
         self.rating_report = RatingReport.objects.create(
-            event=self.global_event, reason="False Rating",
+            rating=self.rating, reason="False Rating",
             description="This rating is inaccurate", reportType="Rating")
 
     #Test to ensure that a user must be logged in to take action on report
@@ -8474,7 +8474,7 @@ class TakeActionOnReportViewTest(MyTestCase):
         self.assertEqual(new_notification.listing.name, self.global_offer_listing1.name)
         self.assertEqual(new_notification.user, self.global_offer_listing1.owner)
         self.assertEqual(new_notification.type, 'Listing')
-        content = ("Your listing, " + self.global_offer_listing1.name + "has " +
+        content = ("Your listing, " + self.global_offer_listing1.name + ", has " +
             "been changed.  Reason: Your listing was reported for malicious " +
             "items contained in it.  The items have been removed.")
         self.assertEqual(new_notification.content, content)
@@ -8496,16 +8496,16 @@ class TakeActionOnReportViewTest(MyTestCase):
         self.assertFalse(
             OfferListing.objects.filter(id=self.global_offer_listing1.id).exists())
         new_notification = Notification.objects.last()
-        self.assertEqual(new_notification.user, self.global_offer_listing1.owner)
+        self.assertEqual(new_notification.user, self.global_user1)
         self.assertEqual(new_notification.type, 'Deletion')
-        content = ("Your listing, " + self.global_offer_listing1.name + "has " +
+        content = ("Your listing, " + self.global_offer_listing1.name + ", has " +
             "been deleted.  Reason: The listing contained malicious " +
             "items.")
         self.assertEqual(new_notification.content, content)
 
     #Test to ensure that a user is able to submit form and object is not deleted
-    #if "Manual Action" is action taken, and a notification is created for a
-    #different kind of object
+    #if "Manual Action" is action taken, and a notification is created for
+    #user report
     def test_manual_action_taken_user(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -8530,7 +8530,7 @@ class TakeActionOnReportViewTest(MyTestCase):
         self.assertEqual(new_notification.content, content)
 
     #Test to ensure that a user is able to submit form and object is deleted
-    #if "Delete" is action taken
+    #if "Delete" is action taken for user report
     def test_delete_action_taken_user(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -8544,3 +8544,199 @@ class TakeActionOnReportViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         self.assertFalse(
             User.objects.filter(id=self.global_user2.id).exists())
+
+    #Test to ensure that a user is able to submit form and object is not deleted
+    #if "Manual Action" is action taken, and a notification is created for
+    #event report
+    def test_manual_action_taken_event(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.event_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Take Manual Action",
+                'reason': ("The event was reported due to malicious content.  " +
+                "The event has been changed as a result.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(
+            Event.objects.filter(id=self.global_event.id).exists())
+        new_notification = EventNotification.objects.last()
+        self.assertEqual(new_notification.event, self.global_event)
+        self.assertEqual(new_notification.user, self.global_event.host)
+        self.assertEqual(new_notification.type, 'Event')
+        content = ("Your event, " + self.global_event.title + ", has " +
+            "been changed.  Reason: The event was reported due to malicious " +
+            "content.  The event has been changed as a result.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is deleted
+    #if "Delete" is action taken for event report
+    def test_delete_action_taken_event(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.event_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Delete",
+                'reason': ("The event contained malicious content.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(
+            Event.objects.filter(id=self.global_event.id).exists())
+        new_notification = Notification.objects.last()
+        self.assertEqual(new_notification.user, self.global_user1)
+        self.assertEqual(new_notification.type, 'Deletion')
+        content = ("Your event, " + self.global_event.title + ", has " +
+            "been deleted.  Reason: The event contained malicious content.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is not deleted
+    #if "Manual Action" is action taken, and a notification is created for
+    #wishlist report
+    def test_manual_action_taken_wishlist(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.wishlist_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Take Manual Action",
+                'reason': ("Your wishlist contained malicious content.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(
+            Wishlist.objects.filter(id=self.global_wishlist.id).exists())
+        new_notification = Notification.objects.last()
+        self.assertEqual(new_notification.user, self.global_wishlist.owner)
+        self.assertEqual(new_notification.type, 'Wishlist')
+        content = ("Your wishlist has been changed.  Reason: Your " +
+            "wishlist contained malicious content.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is cleared
+    #if "Delete" is action taken for wishlist report
+    def test_delete_action_taken_wishlist(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.wishlist_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Delete",
+                'reason': ("Your wishlist contained malicious content.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(
+            Wishlist.objects.filter(id=self.global_wishlist.id).exists())
+        new_notification = Notification.objects.last()
+        self.assertEqual(new_notification.user, self.global_user1)
+        self.assertEqual(new_notification.type, 'Deletion')
+        content = ("Your wishlist has been cleared.  Reason: Your wishlist " +
+            "contained malicious content.")
+        self.assertEqual(new_notification.content, content)
+        wishlist = Wishlist.objects.get(id=self.global_wishlist.id)
+        self.assertEqual(wishlist.title, "None")
+        self.assertEqual(wishlist.description, "None")
+        self.assertEqual(wishlist.items.count(), 0)
+
+    #Test to ensure that a user is able to submit form and object is not deleted
+    #if "Manual Action" is action taken, and a notification is created for
+    #image report
+    def test_manual_action_taken_image(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.image_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Take Manual Action",
+                'reason': ("The image depicted malicious content.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(
+            Image.objects.filter(id=self.global_image1.id).exists())
+        new_notification = Notification.objects.last()
+        self.assertEqual(new_notification.user, self.global_image1.owner)
+        self.assertEqual(new_notification.type, 'Image')
+        content = ("Your image, " + self.global_image1.name + ", has been " +
+            "changed.  Reason: The image depicted malicious content.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is cleared
+    #if "Delete" is action taken for image report
+    def test_delete_action_taken_image(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.image_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Delete",
+                'reason': ("The image depicted malicious content.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(
+            Image.objects.filter(id=self.global_image1.id).exists())
+        new_notification = Notification.objects.last()
+        self.assertEqual(new_notification.user, self.global_user1)
+        self.assertEqual(new_notification.type, 'Deletion')
+        content = ("Your image, " + self.global_image1.name + ", has been " +
+            "deleted.  Reason: The image depicted malicious content.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is not deleted
+    #if "Manual Action" is action taken, and a notification is created for
+    #rating report
+    def test_manual_action_taken_rating(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.rating_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Take Manual Action",
+                'reason': ("The rating was misleading.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertTrue(
+            Rating.objects.filter(id=self.rating.id).exists())
+        new_notification = RatingNotification.objects.last()
+        self.assertEqual(new_notification.profile, self.rating.profile)
+        self.assertEqual(new_notification.user, self.rating.reviewer)
+        self.assertEqual(new_notification.type, 'Feedback Left')
+        content = ("Your rating for the listing, " + self.rating.listingName +
+            ", has been changed.  Reason: The rating was misleading.")
+        self.assertEqual(new_notification.content, content)
+
+    #Test to ensure that a user is able to submit form and object is deleted
+    #if "Delete" is action taken for rating report
+    def test_delete_action_taken_rating(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        report = self.rating_report
+        response = self.client.get(reverse(
+            'take-action-on-report', args=[str(report.id)]))
+        self.assertEqual(response.status_code, 200)
+        post_response = self.client.post(reverse(
+            'take-action-on-report', args=[str(report.id)]),
+            data={'action_taken': "Delete",
+                'reason': ("The rating was misleading.")})
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(
+            Rating.objects.filter(id=self.rating.id).exists())
+        new_notification = Notification.objects.last()
+        self.assertEqual(new_notification.user, self.global_user2)
+        self.assertEqual(new_notification.type, 'Deletion')
+        content = ("Your rating for the listing, " + self.rating.listingName +
+            ", has been deleted.  Reason: The rating was misleading.")
+        self.assertEqual(new_notification.content, content)

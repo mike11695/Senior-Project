@@ -12,36 +12,58 @@
     <div class="center-block col-lg-5">
       {% for report in reports %}
         <div class="report-container">
-          <b>Report For: </b>
-          {% if report.reportType == "Listing" %}
-            <a href="{{ report.obj.listing.get_absolute_url }}" class="report-link">
-              {{ report.obj.listing.name }}
-            </a>
-          {% elif report.reportType == "Event" %}
-            <a href="{{ report.obj.event.get_absolute_url }}" class="report-link">
-              {{ report.obj.event.title }}
-            </a>
-          {% elif report.reportType == "User" %}
-            <a href="{{ report.obj.user.profile.get_absolute_url }}" class="report-link">
-              {{ report.obj.user }}
-            </a>
-          {% elif report.reportType == "Rating" %}
-            <a href="{{ report.obj.rating.profile.get_absolute_url }}" class="report-link">
-              Rating for {{ report.obj.rating.listingName }}
-            </a>
-          {% elif report.reportType == "Wishlist" %}
-            <a href="{{ report.obj.wishlist.get_absolute_url }}" class="report-link">
-              {{ report.obj.wishlist.title }}
-            </a>
-          {% elif report.reportType == "Image" %}
-            <a href="{{ report.obj.image.get_absolute_url }}" class="report-link">
-              {{ report.obj.image.name }}
-            </a>
+          {% if report.actionTaken != True %}
+            <div>
+              <a href="{% url 'delete-report' pk=report.pk %}"
+                style="float: right; display: inline-block;">
+                <div class="btn btn-red" style="height: 30px; padding-top: 2px;">
+                  DELETE
+                </div>
+              </a>
+              <a href="{% url 'take-action-on-report' pk=report.pk %}"
+                style="float: right; display: inline-block; margin-right: 5px;">
+                <div class="btn btn-blue" style="height: 30px; padding-top: 2px;">
+                  TAKE ACTION
+                </div>
+              </a>
+            </div>
+            <b>Report For: </b>
+            {% if report.reportType == "Listing" %}
+              <a href="{{ report.obj.listing.get_absolute_url }}" class="report-link">
+                {{ report.obj.listing.name }}
+              </a>
+            {% elif report.reportType == "Event" %}
+              <a href="{{ report.obj.event.get_absolute_url }}" class="report-link">
+                {{ report.obj.event.title }}
+              </a>
+            {% elif report.reportType == "User" %}
+              <a href="{{ report.obj.user.profile.get_absolute_url }}" class="report-link">
+                {{ report.obj.user }}
+              </a>
+            {% elif report.reportType == "Rating" %}
+              <a href="{{ report.obj.rating.profile.get_absolute_url }}" class="report-link">
+                Rating for {{ report.obj.rating.listingName }}
+              </a>
+            {% elif report.reportType == "Wishlist" %}
+              <a href="{{ report.obj.wishlist.get_absolute_url }}" class="report-link">
+                {{ report.obj.wishlist.title }}
+              </a>
+            {% elif report.reportType == "Image" %}
+              <a href="{{ report.obj.image.get_absolute_url }}" class="report-link">
+                {{ report.obj.image.name }}
+              </a>
+            {% endif %}
+          {% else %}
+            <div>
+            <a href="{% url 'delete-report' pk=report.pk %}"
+              style="float: right; display: inline-block;">
+              <div class="btn btn-red" style="height: 30px; padding-top: 2px;">
+                DELETE
+              </div>
+            </a></div>
+            <b>Report Taken Care Of</b>
           {% endif %}
-          <a href="{% url 'delete-report' pk=report.pk %}" style="float: right;">
-            <div class="btn btn-red">DELETE</div>
-          </a><br>
-          <b>Date Made: </b>{{ report.dateMade }}<br>
+          <br><b>Date Made: </b>{{ report.dateMade }}<br>
           <b>Reason: </b>{{ report.obj.reason }}<br>
           <b>Description:</b>
           <div class="report-description">

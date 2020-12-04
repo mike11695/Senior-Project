@@ -434,7 +434,8 @@ class Offer(models.Model):
 #Model for Ratings, where users can leave feedback for other users after exchanges
 class Rating(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="profile")
-    reviewer = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name="reviewer")
+    reviewer = models.ForeignKey(User, on_delete=models.SET_NULL,
+        related_name="reviewer", null=True)
     ratingValue = models.IntegerField(default=1,
         verbose_name="Rating",
         help_text="Rating for user from 1 to 5, 5 being the best.",

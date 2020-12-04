@@ -4309,7 +4309,7 @@ def take_action_on_report(request, pk):
 
                         #Create content for notification
                         content = ("Your listing, " + report_obj.listing.name +
-                            "has been deleted.  Reason: " + reason)
+                            ", has been deleted.  Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
@@ -4324,8 +4324,8 @@ def take_action_on_report(request, pk):
                         report_obj = EventReport.objects.get(id=report.id)
 
                         #Create content for notification
-                        content = ("Your event, " + report_obj.listing.name +
-                            "has been deleted.  Reason: " + reason)
+                        content = ("Your event, " + report_obj.event.title +
+                            ", has been deleted.  Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
@@ -4344,7 +4344,7 @@ def take_action_on_report(request, pk):
 
                         #Create content for notification
                         content = ("Your rating for the listing, " +
-                            report_obj.rating.listingName + "has been deleted.  " +
+                            report_obj.rating.listingName + ", has been deleted.  " +
                             "Reason: " + reason)
 
                         #Create a notification for the user to explain the
@@ -4360,7 +4360,7 @@ def take_action_on_report(request, pk):
 
                         #Create content for notification
                         content = ("Your image, " + report_obj.image.name +
-                            "has been deleted.  " + "Reason: " + reason)
+                            ", has been deleted.  " + "Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
@@ -4399,7 +4399,7 @@ def take_action_on_report(request, pk):
 
                         #Create content for notification
                         content = ("Your listing, " + report_obj.listing.name +
-                            "has been changed.  Reason: " + reason)
+                            ", has been changed.  Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
@@ -4411,8 +4411,8 @@ def take_action_on_report(request, pk):
                         report_obj = EventReport.objects.get(id=report.id)
 
                         #Create content for notification
-                        content = ("Your event, " + report_obj.listing.name +
-                            "has been changed.  Reason: " + reason)
+                        content = ("Your event, " + report_obj.event.title +
+                            ", has been changed.  Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken
@@ -4436,7 +4436,7 @@ def take_action_on_report(request, pk):
 
                         #Create content for notification
                         content = ("Your rating for the listing, " +
-                            report_obj.rating.listingName + "has been changed.  " +
+                            report_obj.rating.listingName + ", has been changed.  " +
                             "Reason: " + reason)
 
                         #Create a notification for the user to explain the
@@ -4450,7 +4450,7 @@ def take_action_on_report(request, pk):
 
                         #Create content for notification
                         content = ("Your image, " + report_obj.image.name +
-                            "has been changed.  " + "Reason: " + reason)
+                            ", has been changed.  " + "Reason: " + reason)
 
                         #Create a notification for the user to explain the
                         #action taken

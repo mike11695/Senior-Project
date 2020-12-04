@@ -24,15 +24,15 @@
               {% if notification.obj.listing != null %}
                 <a href="{{ notification.obj.listing.get_absolute_url }}" class="notification-link">
                   <div class="notification-container"><td>
-                    <input type="checkbox" name="data" value="{{ notification.id }}">
-                    <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                    <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                    <div class="notification-content">{{ notification.content }}</div>
                     <div class="notification-date">{{ notification.creationDate }}</div>
                   </td></div>
                 </a>
               {% else %}
                 <div class="notification-container"><td>
-                  <input type="checkbox" name="data" value="{{ notification.id }}">
-                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                  <div class="notification-content">{{ notification.content }}</div>
                   <div class="notification-date">{{ notification.creationDate }}</div>
                 </td></div>
               {% endif %}
@@ -40,23 +40,23 @@
               {% if notification.obj.offer != null %}
                 <a href="{{ notification.obj.offer.get_absolute_url }}" class="notification-link">
                   <div class="notification-container"><td>
-                    <input type="checkbox" name="data" value="{{ notification.id }}">
-                    <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                    <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                    <div class="notification-content">{{ notification.content }}</div>
                     <div class="notification-date">{{ notification.creationDate }}</div>
                   </td></div>
                 </a>
               {% else %}
                 <div class="notification-container"><td>
-                  <input type="checkbox" name="data" value="{{ notification.id }}">
-                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                  <div class="notification-content">{{ notification.content }}</div>
                   <div class="notification-date">{{ notification.creationDate }}</div>
                 </td></div>
               {% endif %}
             {% elif notification.type == "Invitation Sent" %}
               <a href="{% url 'invitations' %}" class="notification-link">
                 <div class="notification-container"><td>
-                  <input type="checkbox" name="data" value="{{ notification.id }}">
-                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                  <div class="notification-content">{{ notification.content }}</div>
                   <div class="notification-date">{{ notification.creationDate }}</div>
                 </td></div>
               </a>
@@ -64,23 +64,23 @@
               {% if notification.obj.event != null %}
                 <a href="{{ notification.obj.event.get_absolute_url }}" class="notification-link">
                   <div class="notification-container"><td>
-                    <input type="checkbox" name="data" value="{{ notification.id }}">
-                    <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                    <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                    <div class="notification-content">{{ notification.content }}</div>
                     <div class="notification-date">{{ notification.creationDate }}</div>
                   </td></div>
                 </a>
               {% else %}
                 <div class="notification-container"><td>
-                  <input type="checkbox" name="data" value="{{ notification.id }}">
-                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                  <div class="notification-content">{{ notification.content }}</div>
                   <div class="notification-date">{{ notification.creationDate }}</div>
                 </td></div>
               {% endif %}
             {% elif notification.type == "Payment Made" %}
               <a href="{% url 'receipts' %}" class="notification-link">
                 <div class="notification-container"><td>
-                  <input type="checkbox" name="data" value="{{ notification.id }}">
-                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                  <div class="notification-content">{{ notification.content }}</div>
                   <div class="notification-date">{{ notification.creationDate }}</div>
                 </td></div>
               </a>
@@ -88,22 +88,22 @@
               {% if notification.obj.rating != null %}
               <a href="{{ notification.obj.profile.get_absolute_url }}" class="notification-link">
                 <div class="notification-container"><td>
-                  <input type="checkbox" name="data" value="{{ notification.id }}">
-                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                  <div class="notification-content">{{ notification.content }}</div>
                   <div class="notification-date">{{ notification.creationDate }}</div>
                 </td></div>
               </a>
               {% else %}
                 <div class="notification-container"><td>
-                  <input type="checkbox" name="data" value="{{ notification.id }}">
-                  <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                  <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                  <div class="notification-content">{{ notification.content }}</div>
                   <div class="notification-date">{{ notification.creationDate }}</div>
                 </td></div>
               {% endif %}
             {% else %}
               <div class="notification-container"><td>
-                <input type="checkbox" name="data" value="{{ notification.id }}">
-                <div class="notification-content">{{ notification.content|truncatechars:100 }}</div>
+                <input type="checkbox" name="data" value="{{ notification.id }}" class="notification-checkbox">
+                <div class="notification-content">{{ notification.content }}</div>
                 <div class="notification-date">{{ notification.creationDate }}</div>
               </td></div>
             {% endif %}
