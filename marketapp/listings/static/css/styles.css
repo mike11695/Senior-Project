@@ -756,7 +756,7 @@ a:hover {
   margin-bottom: 10px;
   padding: 10px;
   width: 400px;
-  height: 425px;
+  height: auto;
 }
 
 .messages-container {
@@ -1040,7 +1040,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 380px;
-  height: 540px;
+  height: auto;
 }
 
 .form-field-items {
@@ -1074,7 +1074,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 1090px;
+  height: auto;
 }
 
 .form-container-update-offer-listing {
@@ -1085,7 +1085,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 1040px;
+  height: auto;
 }
 
 .form-container-auction-listings {
@@ -1096,7 +1096,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 965px;
+  height: auto;
 }
 
 .form-container-offer-listings textarea {
@@ -1122,7 +1122,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 480px;
+  height: auto;
 }
 
 .form-container-bids {
@@ -1133,7 +1133,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 280px;
+  height: auto;
 }
 
 .form-container-profiles {
@@ -1144,7 +1144,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 460px;
+  height: auto;
 }
 
 .form-container-accounts {
@@ -1155,7 +1155,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 400px;
+  height: auto;
 }
 
 .form-field-accounts {
@@ -1170,7 +1170,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 630px;
+  height: auto;
 }
 
 .form-container-wishlist-listing {
@@ -1181,7 +1181,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 1000px;
+  height: auto;
 }
 
 .form-container-relist-wishlist-listing {
@@ -1192,7 +1192,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 950px;
+  height: auto;
 }
 
 .form-container-events {
@@ -1203,7 +1203,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 530px;
+  height: auto;
 }
 
 .form-container-invites {
@@ -1214,7 +1214,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 380px;
+  height: auto;
 }
 
 .form-container-reports {
@@ -1225,7 +1225,7 @@ input[type="checkbox"]{
   margin-top: 20px;
   margin-bottom: 20px;
   width: 400px;
-  height: 380px;
+  height: auto;
 }
 
 .image-tag-selection ul {

@@ -6,6 +6,12 @@
     <div class="form-container-wishlist-listing center-block">
       <form enctype="multipart/form-data" method="post" action="">
         {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div style="color: red; font-weight: bold;:">
+            Please fix the following errors:<br>
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
         {% for field in form %}
           <p>
             {% if field.label != "Wishlist Items" and field.label != "Items Being Offered" %}

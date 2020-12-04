@@ -33,7 +33,7 @@ class EditAccountForm(ModelForm):
     first_name = forms.CharField(max_length=30, required=True)
     last_name = forms.CharField(max_length=30, required=True)
     paypalEmail = forms.EmailField(max_length=100, label="Paypal Email",
-        help_text='Enter a valid Paypal e-mail address')
+        help_text='Enter a valid Paypal e-mail address', required=True)
 
     class Meta:
         model = User
@@ -82,8 +82,19 @@ class EditImageForm(ModelForm):
 
 #Form for a user to add and edit an item
 class ItemForm(ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        clean_images = cleaned_data.get('images')
+
+        #Check to make sure user selected an image
+        if clean_images:
+            pass
+        else:
+            raise ValidationError("An image must be selected.")
+
     images = forms.ModelMultipleChoiceField(queryset=None,
-        help_text="An image is required.", widget=forms.CheckboxSelectMultiple)
+        help_text="An image is required.", widget=forms.CheckboxSelectMultiple,
+        required=True)
     name = forms.CharField(max_length=50, required=True,
         help_text="Name for item is required.")
     description = forms.CharField(max_length=250, required=True,
@@ -108,6 +119,13 @@ class OfferListingForm(ModelForm):
         clean_openToMoneyOffers = cleaned_data.get('openToMoneyOffers')
         clean_minRange = cleaned_data.get('minRange')
         clean_maxRange = cleaned_data.get('maxRange')
+        clean_items = cleaned_data.get('items')
+
+        #Check to make sure user selected items
+        if clean_items:
+            pass
+        else:
+            raise ValidationError("You must select at least one item.")
 
         #check image size to ensure it meets the limit
         if clean_openToMoneyOffers == True:
@@ -169,6 +187,13 @@ class UpdateOfferListingForm(ModelForm):
         clean_openToMoneyOffers = cleaned_data.get('openToMoneyOffers')
         clean_minRange = cleaned_data.get('minRange')
         clean_maxRange = cleaned_data.get('maxRange')
+        clean_items = cleaned_data.get('items')
+
+        #Check to make sure user selected items
+        if clean_items:
+            pass
+        else:
+            raise ValidationError("You must select at least one item.")
 
         #check image size to ensure it meets the limit
         if clean_openToMoneyOffers == True:
@@ -226,6 +251,13 @@ class AuctionListingForm(ModelForm):
         clean_starting_bid = cleaned_data.get('startingBid')
         clean_minimum_increment = cleaned_data.get('minimumIncrement')
         clean_autobuy = cleaned_data.get('autobuy')
+        clean_items = cleaned_data.get('items')
+
+        #Check to make sure user selected items
+        if clean_items:
+            pass
+        else:
+            raise ValidationError("You must select at least one item.")
 
         #Checks to ensure that starting bid must be at least 0.01
         if clean_starting_bid:
@@ -306,7 +338,7 @@ class OfferForm(ModelForm):
                 if clean_items:
                     pass
                 else:
-                    raise forms.ValidationError("An item must be offered.")
+                    raise forms.ValidationError("An item or money amount must be offered.")
 
         return
 
@@ -481,8 +513,9 @@ class CreateBidForm(ModelForm):
 
         return
 
-    auctionListing = forms.ModelChoiceField(queryset=AuctionListing.objects.all(), required=False,
-        disabled=True, label="Auction Listing")
+    auctionListing = forms.ModelChoiceField(queryset=AuctionListing.objects.all(),
+        required=False, disabled=True, label="Auction Listing",
+        widget=forms.Select(attrs={'style': 'width:250px'}))
     bidder = forms.ModelChoiceField(queryset=User.objects.all(), required=False,
         disabled=True, label="Bidder")
 
@@ -568,6 +601,7 @@ class InvitationForm(forms.Form):
 
 #Form for a user to create a wishlist
 class WishlistForm(ModelForm):
+
     title = forms.CharField(max_length=50, required=True, help_text="Title of Wishlist.")
     description = forms.CharField(max_length=250, required=True, help_text=("Description for Wishlist" +
         " (what it contains, how you want to accuire the items, etc.)"),
@@ -593,6 +627,14 @@ class WishlistListingForm(ModelForm):
         cleaned_data = super().clean()
         clean_money_offer = cleaned_data.get('moneyOffer')
         clean_items_offer = cleaned_data.get('itemsOffer')
+        clean_items = cleaned_data.get('items')
+
+        #Check to make sure user selected at least one wishlist item
+        if clean_items:
+            pass
+        else:
+            raise forms.ValidationError("You must select at least one " +
+                "withlist item.")
 
         #Check to ensure at least money or item(s) were included in listing
         if clean_money_offer or clean_items_offer:
@@ -642,6 +684,14 @@ class EditWishlistListingForm(ModelForm):
         cleaned_data = super().clean()
         clean_money_offer = cleaned_data.get('moneyOffer')
         clean_items_offer = cleaned_data.get('itemsOffer')
+        clean_items = cleaned_data.get('items')
+
+        #Check to make sure user selected at least one wishlist item
+        if clean_items:
+            pass
+        else:
+            raise forms.ValidationError("You must select at least one " +
+                "withlist item.")
 
         #Check to ensure at least money or item(s) were included in listing
         if clean_money_offer or clean_items_offer:
@@ -784,7 +834,7 @@ class ConversationForm(ModelForm):
         help_text="Topic of the conversation.")
     message = forms.CharField(max_length=250, required=True,
         help_text="Initiating message for the conversation.",
-        widget=forms.Textarea)
+        widget=forms.Textarea(attrs={'rows':5, 'cols':46}))
 
     class Meta:
         model = Conversation

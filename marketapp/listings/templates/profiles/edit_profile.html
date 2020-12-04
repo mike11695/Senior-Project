@@ -2,10 +2,16 @@
 
 {% block content %}
   <div class="center-block col-lg-10">
-    <h2 style="text-align: center;">Edit PRofile</h2>
+    <h2 style="text-align: center;">Edit Profile</h2>
     <div class="form-container-profiles center-block">
       <form enctype="multipart/form-data" method="post" action="">
         {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div style="color: red; font-weight: bold;:">
+            Please fix the following errors:<br>
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
         {% for field in form %}
           <p>
             <div style="display: inline-block;">
