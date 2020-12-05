@@ -2528,20 +2528,33 @@ class ProfileDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
         obj = self.get_object()
 
-        #Get the most recent offer listings
-        listings_ids = [listing.id for listing in OfferListing.objects.filter(owner=obj.user)
-            if listing.listingEnded == False]
-        context['offer_listings'] = OfferListing.objects.filter(id__in=listings_ids).order_by('-id')[:5]
+        #Check to see if current user is nearby user that owns profile
+        lat_dif = self.request.user.profile.latitude -  obj.latitude
+        lon_dif = self.request.user.profile.longitude -  obj.longitude
 
-        #Get the most recent auction listings
-        listings_ids = [listing.id for listing in AuctionListing.objects.filter(owner=obj.user)
-            if listing.listingEnded == False]
-        context['auction_listings'] = AuctionListing.objects.filter(id__in=listings_ids).order_by('-id')[:5]
+        if ((lat_dif >= -0.83 and lat_dif <= 0.83)
+            and (lon_dif >= -0.83 and lon_dif <= 0.83)):
+            #Get the most recent offer listings
+            listings_ids = [listing.id for listing in OfferListing.objects.filter(
+                owner=obj.user) if listing.listingEnded == False]
+            context['offer_listings'] = OfferListing.objects.filter(
+                id__in=listings_ids).order_by('-id')[:5]
 
-        #Get the most recent wishlist listings
-        listings_ids = [listing.id for listing in WishlistListing.objects.filter(owner=obj.user)
-            if listing.listingEnded == False]
-        context['wishlist_listings'] = WishlistListing.objects.filter(id__in=listings_ids).order_by('-id')[:5]
+            #Get the most recent auction listings
+            listings_ids = [listing.id for listing in AuctionListing.objects.filter(
+                owner=obj.user) if listing.listingEnded == False]
+            context['auction_listings'] = AuctionListing.objects.filter(
+                id__in=listings_ids).order_by('-id')[:5]
+
+            #Get the most recent wishlist listings
+            listings_ids = [listing.id for listing in WishlistListing.objects.filter(
+                owner=obj.user) if listing.listingEnded == False]
+            context['wishlist_listings'] = WishlistListing.objects.filter(
+                id__in=listings_ids).order_by('-id')[:5]
+        else:
+            context['offer_listings'] = []
+            context['auction_listings'] = []
+            context['wishlist_listings'] = []
 
         rating_ticket_ids = [ticket.id for ticket in RatingTicket.objects.all() if
              (ticket.rater == self.request.user and ticket.receivingUser == obj.user

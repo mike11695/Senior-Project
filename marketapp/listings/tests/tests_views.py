@@ -5603,6 +5603,25 @@ class ProfileDetailViewTest(MyTestCase):
     def setUp(self):
         super(ProfileDetailViewTest, self).setUp()
 
+        #Set the locations of the global users
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 40.5000
+        self.global_user2.profile.longitude = -75.5000
+        self.global_user2.profile.save()
+
+        #Create an additional user for testing with
+        self.new_user = User.objects.create_user(username="mike4",
+            password="example", email="example5@text.com",
+            paypalEmail="example5@text.com", invitesOpen=True,
+            inquiriesOpen=True)
+
+        self.new_user.profile.latitude = 41.0000
+        self.new_user.profile.longitude = -76.000
+        self.new_user.profile.save()
+
         #Set number of listings for each user
         #Must account for the global listings
         number_of_offer_listings = 2
@@ -5696,9 +5715,10 @@ class ProfileDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'profiles/profile_detail.html')
 
-    #Test that a user can see the user that owns the profile's listings
-    def test_user_can_see_listings(self):
-        login = self.client.login(username='mike2', password='example')
+    #Test that a user can see the user that owns the profile's listings if they
+    #are in a location at most 50m aways
+    def test_user_can_see_listings_nearby_user(self):
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         profile = self.global_user1.profile
         response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
@@ -5706,6 +5726,18 @@ class ProfileDetailViewTest(MyTestCase):
         self.assertTrue(len(response.context['offer_listings']) == 3)
         self.assertTrue(len(response.context['auction_listings']) == 4)
         self.assertTrue(len(response.context['wishlist_listings']) == 5)
+
+    #Test that a user can not see the user that owns the profile's listings if they
+    #are in a location further than 50m aways
+    def test_user_can_not_see_listings_non_nearby_user(self):
+        login = self.client.login(username='mike4', password='example')
+        self.assertTrue(login)
+        profile = self.global_user1.profile
+        response = self.client.get(reverse('profile-detail', args=[str(profile.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.context['offer_listings']) == 0)
+        self.assertTrue(len(response.context['auction_listings']) == 0)
+        self.assertTrue(len(response.context['wishlist_listings']) == 0)
 
     #Test that a user can see the user that owns the profile's ratings on page 1
     def test_user_can_see_ratings_pg1(self):
