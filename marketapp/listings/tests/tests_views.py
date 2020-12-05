@@ -1407,16 +1407,16 @@ class OfferListingsViewTest(MyTestCase):
 class OfferListingDetailViewTest(MyTestCase):
     def setUp(self):
         super(OfferListingDetailViewTest, self).setUp()
-        user = User.objects.create_user(username="mike", password="example",
+        self.new_user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
         date = datetime.today()
         settings.TIME_ZONE
         aware_date = make_aware(date)
-        self.offerListing = OfferListing.objects.create(owner=user,
+        self.offerListing = OfferListing.objects.create(owner=self.new_user1,
             name="My Items For Offers", description="A few items up for offers",
             openToMoneyOffers=True, minRange=5.00, maxRange=10.00, notes="Just offer",
-            endTime=aware_date)
+            endTime=aware_date, latitude=40.4000, longitude=-75.4000)
         self.offerListing.items.add = self.global_item1
         self.offerListing.save
 
@@ -1435,19 +1435,52 @@ class OfferListingDetailViewTest(MyTestCase):
         completed_offer.items.add(self.global_item2)
         completed_offer.save
 
+        #Set the locations of the global users and new user
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 40.5000
+        self.global_user2.profile.longitude = -75.5000
+        self.global_user2.profile.save()
+
+        self.new_user1.profile.latitude = 40.4000
+        self.new_user1.profile.longitude = -75.4000
+        self.new_user1.profile.save()
+
+        #Create an additional user for testing with
+        self.new_user2 = User.objects.create_user(username="mike4",
+            password="example", email="example5@text.com",
+            paypalEmail="example5@text.com", invitesOpen=True,
+            inquiriesOpen=True)
+
+        self.new_user2.profile.latitude = 42.0000
+        self.new_user2.profile.longitude = -77.000
+        self.new_user2.profile.save()
+
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
         listing = self.offerListing
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
-        self.assertRedirects(response, '/accounts/login/?next=/listings/offer-listings/{0}'.format(listing.id))
+        self.assertRedirects(response, '/listings/')
 
-    #Test to ensure user is not redirected if logged in
-    def test_no_redirect_if_logged_in(self):
+    #Test to ensure user is not redirected if logged in and is nearby to owner
+    #of listing
+    def test_no_redirect_if_logged_in_nearby_user(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
         listing = self.offerListing
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in but is not nearby to owner
+    #of listing
+    def test_no_redirect_if_logged_in_not_nearby_user(self):
+        login = self.client.login(username='mike4', password='example')
+        self.assertTrue(login)
+        listing = self.offerListing
+        response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
 
     #Test to ensure right template is used/exists
     def test_correct_template_used(self):
@@ -1465,7 +1498,7 @@ class OfferListingDetailViewTest(MyTestCase):
         listing = self.offerListing
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(len(response.context['offers']) == 5)
+        self.assertEqual(len(response.context['offers']), 5)
 
     #Test that a user that does not own the listing cannot see offers
     def test_not_owner_can_not_see_offers(self):
@@ -1474,9 +1507,10 @@ class OfferListingDetailViewTest(MyTestCase):
         listing = self.offerListing
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context['offers'] == None)
+        self.assertEqual(len(response.context['offers']), 0)
 
-    #Test to ensure a user is redirected if a listing has completed and they are not the owner or offerer
+    #Test to ensure a user is redirected if a listing has completed and they are
+    #not the owner or offerer
     def test_redirect_if_not_owner_or_accepted_offer_listing_completed(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
@@ -1484,7 +1518,8 @@ class OfferListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
 
-    #Test to ensure a user is not redirected if a listing has completed and they are the owner of listing
+    #Test to ensure a user is not redirected if a listing has completed and they
+    #are the owner of listing
     def test_no_redirect_if_listing_owner_listing_completed(self):
         login = self.client.login(username='mike2', password='example')
         self.assertTrue(login)
@@ -1492,7 +1527,8 @@ class OfferListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
 
-    #Test to ensure a user is not redirected if a listing has completed and they are the owner of accepted offer
+    #Test to ensure a user is not redirected if a listing has completed and they
+    #are the owner of accepted offer
     def test_no_redirect_if_accepted_owner_listing_completed(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
@@ -2443,31 +2479,72 @@ class AuctionListingsViewTest(MyTestCase):
 class AuctionListingDetailViewTest(MyTestCase):
     def setUp(self):
         super(AuctionListingDetailViewTest, self).setUp()
-        user = User.objects.create_user(username="mike", password="example",
+        self.new_user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
         date = datetime.today()
         settings.TIME_ZONE
         aware_date = make_aware(date)
-        self.auctionListing = AuctionListing.objects.create(owner=user,
+        self.auctionListing = AuctionListing.objects.create(owner=self.new_user1,
             name="My Items For Auction", description="A few items up for bids",
-            startingBid=5.00, minimumIncrement=2.50, autobuy=50.00, endTime=aware_date)
+            startingBid=5.00, minimumIncrement=2.50, autobuy=50.00,
+            endTime=aware_date, latitude=40.4000, longitude=-75.4000)
         self.auctionListing.items.add = self.global_item1
         self.auctionListing.save
+
+        #Set the locations of the global users and new user
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 40.5000
+        self.global_user2.profile.longitude = -75.5000
+        self.global_user2.profile.save()
+
+        self.new_user1.profile.latitude = 40.4000
+        self.new_user1.profile.longitude = -75.4000
+        self.new_user1.profile.save()
+
+        #Create an additional user for testing with
+        self.new_user2 = User.objects.create_user(username="mike4",
+            password="example", email="example5@text.com",
+            paypalEmail="example5@text.com", invitesOpen=True,
+            inquiriesOpen=True)
+
+        self.new_user2.profile.latitude = 42.0000
+        self.new_user2.profile.longitude = -77.000
+        self.new_user2.profile.save()
+
+        #Make a completed auction to test that only owner and winning bid owner
+        #can view it when it ends
+        Bid.objects.create(auctionListing=self.global_auction_listing1,
+            bidder=self.global_user2, amount=5.00, winningBid=True)
+        self.global_auction_listing1.endTime = timezone.localtime(timezone.now())
+        self.global_auction_listing1.save()
 
     #Test to ensure that a user must be logged in to view listings
     def test_redirect_if_not_logged_in(self):
         listing = self.auctionListing
         response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
-        self.assertRedirects(response, '/accounts/login/?next=/listings/auction-listings/{0}'.format(listing.id))
+        self.assertRedirects(response, '/listings/')
 
-    #Test to ensure user is not redirected if logged in
-    def test_no_redirect_if_logged_in(self):
+    #Test to ensure user is not redirected if logged in and is within 50 miles
+    #of owner of listing
+    def test_no_redirect_if_logged_in_nearby_user(self):
         login = self.client.login(username='mike', password='example')
         self.assertTrue(login)
         listing = self.auctionListing
         response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in and is within 50 miles
+    #of owner of listing
+    def test_no_redirect_if_logged_in_not_nearby_user(self):
+        login = self.client.login(username='mike4', password='example')
+        self.assertTrue(login)
+        listing = self.auctionListing
+        response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
 
     #Test to ensure right template is used/exists
     def test_correct_template_used(self):
@@ -2477,6 +2554,33 @@ class AuctionListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/auction_listing_detail.html')
+
+    #Test to ensure user is not redirected if logged in and own the listing if
+    #the listing has ended
+    def test_no_redirect_if_logged_in_owner_listing_ended(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing1
+        response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is not redirected if logged in and if listing has
+    #ended, the are owner of winning bid
+    def test_no_redirect_if_logged_in_winning_bid_user_listing_ended(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing1
+        response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure user is redirected if logged in and if listing has
+    #ended and they do not own listing or have the winning bid
+    def test_redirect_if_logged_in_not_owner_or_winning_bid_user_listing_ended(self):
+        login = self.client.login(username='mike', password='example')
+        self.assertTrue(login)
+        listing = self.global_auction_listing1
+        response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
 
 class AllAuctionListingsViewTest(MyTestCase):
     def setUp(self):
@@ -4693,19 +4797,39 @@ class WishlistListingDetailViewTest(MyTestCase):
         #Get the current date and time for testing and create active endTimes
         date_active = timezone.localtime(timezone.now()) + timedelta(days=1)
 
+        #Set the locations of the global users
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 40.5000
+        self.global_user2.profile.longitude = -75.5000
+        self.global_user2.profile.save()
+
         #Wishlist listing to test with
         self.listing = WishlistListing.objects.create(owner=self.global_user1,
             name='My Wishlist Listing', endTime=date_active,
-            moneyOffer=5.00, notes="Just a test")
+            moneyOffer=5.00, notes="Just a test",
+            latitude=self.global_user1.profile.latitude,
+            longitude=self.global_user1.profile.longitude)
         self.listing.items.add(self.global_item1)
         self.listing.save
+
+        #Create an additional user for testing with
+        self.new_user2 = User.objects.create_user(username="mike4",
+            password="example", email="example5@text.com",
+            paypalEmail="example5@text.com", invitesOpen=True,
+            inquiriesOpen=True)
+
+        self.new_user2.profile.latitude = 42.0000
+        self.new_user2.profile.longitude = -77.000
+        self.new_user2.profile.save()
 
     #Test to ensure that a user must be logged in to view wishlist listings
     def test_redirect_if_not_logged_in(self):
         listing = self.listing
         response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
-        self.assertRedirects(response,
-            '/accounts/login/?next=/listings/wishlists/wishlist-listings/{0}'.format(listing.id))
+        self.assertRedirects(response, '/listings/')
 
     #Test to ensure owner is not redirected if logged in
     def test_no_redirect_if_logged_in_owner(self):
@@ -4715,13 +4839,23 @@ class WishlistListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
 
-    #Test to ensure non owner is not redirected if logged in
-    def test_no_redirect_if_logged_in_not_owner(self):
+    #Test to ensure non owner is not redirected if logged in and is within a
+    #50 mile radius of listing owner
+    def test_no_redirect_if_logged_in_not_owner_nearby(self):
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         listing = self.listing
         response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
+
+    #Test to ensure non owner is redirected if logged in and is within a
+    #50 mile radius of listing owner
+    def test_redirect_if_logged_in_not_owner_not_nearby(self):
+        login = self.client.login(username='mike4', password='example')
+        self.assertTrue(login)
+        listing = self.listing
+        response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
 
     #Test to ensure right template is used/exists
     def test_correct_template_used(self):
@@ -4731,6 +4865,27 @@ class WishlistListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wishlists/wishlist_listing_detail.html')
+
+    #Test to ensure owner is not redirected if logged in and listing has ended
+    def test_no_redirect_if_logged_in_owner_listing_ended(self):
+        login = self.client.login(username='mike2', password='example')
+        self.assertTrue(login)
+        self.listing.endTime = timezone.localtime(timezone.now())
+        self.listing.save()
+        listing = self.listing
+        response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
+        self.assertEqual(response.status_code, 200)
+
+    #Test to ensure non owner is redirected if logged in but listing has
+    #ended
+    def test_no_redirect_if_logged_in_not_owner_nearby(self):
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        self.listing.endTime = timezone.localtime(timezone.now())
+        self.listing.save()
+        listing = self.listing
+        response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
 
 class AllWishlistListingsViewTest(MyTestCase):
     def setUp(self):

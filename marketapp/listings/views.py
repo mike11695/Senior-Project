@@ -506,12 +506,16 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
         obj = self.get_object()
 
-        context['offers'] = Offer.objects.filter(offerListing=obj)
+        if obj.owner == self.request.user:
+            context['offers'] = Offer.objects.filter(offerListing=obj)
+        else:
+            context['offers'] = []
 
         return context
 
     #Checks to ensure that only the user that created the listing and user that made offer
     # can view the listing when it has been completed
+    #If still active, only allow users within a 50 mile radius to view it
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
         #listing = OfferListing.objects.get(id=obj.offerListing.id)
@@ -523,8 +527,23 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
                 return super(OfferListingDetailView, self).dispatch(request, *args, **kwargs)
             else:
                 return redirect('index')
+        elif self.request.user.is_authenticated:
+            if obj.owner == self.request.user:
+                return super(OfferListingDetailView, self).dispatch(request, *args, **kwargs)
+            else:
+                #Check users location to see if they're within a 50 mile radius
+                #from listing owner
+                lat_dif = self.request.user.profile.latitude - obj.latitude
+                lon_dif = self.request.user.profile.longitude - obj.longitude
+
+                if ((lat_dif >= -0.83 and lat_dif <= 0.83)
+                    and (lon_dif >= -0.83 and lon_dif <= 0.83)):
+                    return super(OfferListingDetailView, self).dispatch(request, *args, **kwargs)
+                else:
+                    #Return to index page if user is not nearby to owner
+                    return redirect('index')
         else:
-            return super(OfferListingDetailView, self).dispatch(request, *args, **kwargs)
+            return redirect('index')
 
 #List view for a user to see all of the offer listings that are active on site
 class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
@@ -954,6 +973,43 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
             return self.bids.all().reverse()[0]
         except IndexError:
             pass
+
+    #Checks to ensure that only the user that created the listing and user that
+    #made winning bid can view the listing when it has been completed
+    #If still active, only allow users within a 50 mile radius to view it
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        #listing = OfferListing.objects.get(id=obj.offerListing.id)
+        if obj.listingEnded:
+            if obj.owner == self.request.user:
+                return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
+            else:
+                if Bid.objects.filter(auctionListing=obj).exists():
+                    bids = Bid.objects.get(auctionListing=obj) #There will only be one offer associted with listing
+                    winning_bid = bids.last()
+                    if winning_bid.bidder == self.request.user:
+                        return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
+                    else:
+                        return redirect('index')
+                else:
+                    return redirect('index')
+        elif self.request.user.is_authenticated:
+            if obj.owner == self.request.user:
+                return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
+            else:
+                #Check users location to see if they're within a 50 mile radius
+                #from listing owner
+                lat_dif = self.request.user.profile.latitude - obj.latitude
+                lon_dif = self.request.user.profile.longitude - obj.longitude
+
+                if ((lat_dif >= -0.83 and lat_dif <= 0.83)
+                    and (lon_dif >= -0.83 and lon_dif <= 0.83)):
+                    return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
+                else:
+                    #Return to index page if user is not nearby to owner
+                    return redirect('index')
+        else:
+            return redirect('index')
 
 #List view for a user to see all of the auction listings that are active on site
 class AllAuctionListingsListView(LoginRequiredMixin, generic.ListView):
@@ -2075,6 +2131,35 @@ class WishlistListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = WishlistListing
     context_object_name = 'wishlistlisting'
     template_name = "wishlists/wishlist_listing_detail.html"
+
+    #Checks to ensure that only the user that created the listing
+    #can view the listing when it has been completed
+    #If still active, only allow users within a 50 mile radius to view it
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        #listing = OfferListing.objects.get(id=obj.offerListing.id)
+        if obj.listingEnded:
+            if obj.owner == self.request.user:
+                return super(WishlistListingDetailView, self).dispatch(request, *args, **kwargs)
+            else:
+                return redirect('index')
+        elif self.request.user.is_authenticated:
+            if obj.owner == self.request.user:
+                return super(WishlistListingDetailView, self).dispatch(request, *args, **kwargs)
+            else:
+                #Check users location to see if they're within a 50 mile radius
+                #from listing owner
+                lat_dif = self.request.user.profile.latitude - obj.latitude
+                lon_dif = self.request.user.profile.longitude - obj.longitude
+
+                if ((lat_dif >= -0.83 and lat_dif <= 0.83)
+                    and (lon_dif >= -0.83 and lon_dif <= 0.83)):
+                    return super(WishlistListingDetailView, self).dispatch(request, *args, **kwargs)
+                else:
+                    #Return to index page if user is not nearby to owner
+                    return redirect('index')
+        else:
+            return redirect('index')
 
 #List view for a user to see all of the wishlists listings that are active on site
 class AllWishlistListingsListView(LoginRequiredMixin, generic.ListView):
