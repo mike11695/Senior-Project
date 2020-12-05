@@ -3026,13 +3026,28 @@ class RelistAuctionListingViewTest(MyTestCase):
 class CreateOfferViewTest(MyTestCase):
     def setUp(self):
         super(CreateOfferViewTest, self).setUp()
-        user = User.objects.create_user(username="mike", password="example",
-            email="example@text.com", paypalEmail="example@text.com",
-            invitesOpen=True, inquiriesOpen=True)
-
         self.active_listing = self.global_offer_listing1
         self.inactive_listing = self.global_offer_listing2
         self.completed_listing = self.global_offer_listing3
+
+        #Set the locations of the global users
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 40.5000
+        self.global_user2.profile.longitude = -75.5000
+        self.global_user2.profile.save()
+
+        #Create an additional user for testing with
+        self.new_user = User.objects.create_user(username="mike4",
+            password="example", email="example5@text.com",
+            paypalEmail="example5@text.com", invitesOpen=True,
+            inquiriesOpen=True)
+
+        self.new_user.profile.latitude = 42.0000
+        self.new_user.profile.longitude = -77.000
+        self.new_user.profile.save()
 
     #Test to ensure that a user must be logged in to create offer
     def test_redirect_if_not_logged_in(self):
@@ -3051,7 +3066,7 @@ class CreateOfferViewTest(MyTestCase):
     #Test to ensure user is not redirected if logged in
     def test_no_redirect_if_logged_in(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3059,7 +3074,7 @@ class CreateOfferViewTest(MyTestCase):
     #Test to ensure right template is used/exists
     def test_correct_template_used(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3115,7 +3130,7 @@ class CreateOfferViewTest(MyTestCase):
     #Test to ensure a user is redirected if a listing has ended
     def test_redirect_if_listing_ended(self):
         listing = self.inactive_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
@@ -3123,7 +3138,15 @@ class CreateOfferViewTest(MyTestCase):
     #Test to ensure a user is redirected if a listing has been completed
     def test_redirect_if_listing_completed(self):
         listing = self.completed_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
+    #Test to ensure a user is redirected if not within a 50m radius of listing
+    def test_redirect_if_not_nearby_user(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike4', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
@@ -3131,7 +3154,7 @@ class CreateOfferViewTest(MyTestCase):
 class CreateBidViewTest(MyTestCase):
     def setUp(self):
         super(CreateBidViewTest, self).setUp()
-        user = User.objects.create_user(username="mike", password="example",
+        self.new_user1 = User.objects.create_user(username="mike", password="example",
             email="example@text.com", paypalEmail="example@text.com",
             invitesOpen=True, inquiriesOpen=True)
 
@@ -3155,6 +3178,29 @@ class CreateBidViewTest(MyTestCase):
             creationDate=self.inactive_listing.endTime,
             content=content, type="Listing Ended")
 
+        #Set the locations of the global users and new user
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.global_user2.profile.latitude = 40.5000
+        self.global_user2.profile.longitude = -75.5000
+        self.global_user2.profile.save()
+
+        self.new_user1.profile.latitude = 40.5000
+        self.new_user1.profile.longitude = -75.5000
+        self.new_user1.profile.save()
+
+        #Create an additional user for testing with
+        self.new_user2 = User.objects.create_user(username="mike4",
+            password="example", email="example5@text.com",
+            paypalEmail="example5@text.com", invitesOpen=True,
+            inquiriesOpen=True)
+
+        self.new_user2.profile.latitude = 42.0000
+        self.new_user2.profile.longitude = -77.000
+        self.new_user2.profile.save()
+
     #Test to ensure that a user must be logged in to create a bid
     def test_redirect_if_not_logged_in(self):
         listing = self.active_listing
@@ -3169,18 +3215,28 @@ class CreateBidViewTest(MyTestCase):
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
 
-    #Test to ensure user is not redirected if logged in
-    def test_no_redirect_if_logged_in(self):
+    #Test to ensure user is not redirected if logged in and is within a 50 mile
+    #radius of listing
+    def test_no_redirect_if_logged_in_nearby_user(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
 
+    #Test to ensure user is redirected if logged in and is not within a 50 mile
+    #radius of listing
+    def test_no_redirect_if_logged_in_not_nearby_user(self):
+        listing = self.active_listing
+        login = self.client.login(username='mike4', password='example')
+        self.assertTrue(login)
+        response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
+        self.assertRedirects(response, '/listings/')
+
     #Test to ensure right template is used/exists
     def test_correct_template_used(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3188,7 +3244,7 @@ class CreateBidViewTest(MyTestCase):
 
     #Test to ensure that a user is redirected if the listing has ended
     def test_redirect_if_listing_ended(self):
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         listing = self.inactive_listing
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
@@ -3198,7 +3254,7 @@ class CreateBidViewTest(MyTestCase):
     #current user
     def test_successful_bid_creation_related_to_user(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3212,7 +3268,7 @@ class CreateBidViewTest(MyTestCase):
     #Test to ensure that a bid is created succesfully and relates to the current listing
     def test_successful_bid_creation_related_to_listing(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3226,7 +3282,7 @@ class CreateBidViewTest(MyTestCase):
     #made for the bidder and the ending notification for listing is updated
     def test_successful_bid_creation_notification_made_and_updated(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3246,7 +3302,7 @@ class CreateBidViewTest(MyTestCase):
     #Test to ensure that listing receipt is updated when bid is placed
     def test_successful_bid_receipt_is_updated(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3261,7 +3317,7 @@ class CreateBidViewTest(MyTestCase):
     #Test to ensure that a auction ends if autobuy bid is made
     def test_successful_bid_creation_autobuy_ends_listing(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3276,7 +3332,7 @@ class CreateBidViewTest(MyTestCase):
     #Test to ensure that rating tickets are made upon creation of the first bid
     def test_successful_bid_creation_rating_tickets_made(self):
         listing = self.active_listing
-        login = self.client.login(username='mike', password='example')
+        login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         response = self.client.get(reverse('create-bid', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
@@ -3287,7 +3343,7 @@ class CreateBidViewTest(MyTestCase):
         self.assertTrue(RatingTicket.objects.filter(rater=created_bid.bidder,
             receivingUser=listing.owner, listing=listing).exists())
         self.assertTrue(RatingTicket.objects.filter(rater=listing.owner,
-            receivingUser=created_bid.owner, listing=listing).exists())
+            receivingUser=created_bid.bidder, listing=listing).exists())
 
     #Test to ensure that previous winning bid is set to false and current bid
     #is winning bid, andthat a new notification is made for new bid and
@@ -3304,10 +3360,10 @@ class CreateBidViewTest(MyTestCase):
         created_bid1 = Bid.objects.last()
         self.assertEqual(created_bid1.winningBid, True)
         self.assertEqual(created_bid1.auctionListing, listing)
-        self.assertTrue(RatingTicket.objects.filter(rater=created_bid.bidder,
+        self.assertTrue(RatingTicket.objects.filter(rater=created_bid1.bidder,
             receivingUser=listing.owner, listing=listing).exists())
         self.assertTrue(RatingTicket.objects.filter(rater=listing.owner,
-            receivingUser=created_bid.owner, listing=listing).exists())
+            receivingUser=created_bid1.bidder, listing=listing).exists())
         login = self.client.login(username='mike3', password='example')
         self.assertTrue(login)
         post_response = self.client.post(reverse('create-bid', args=[str(listing.id)]),
@@ -3329,7 +3385,7 @@ class CreateBidViewTest(MyTestCase):
         self.assertTrue(RatingTicket.objects.filter(rater=created_bid2.bidder,
             receivingUser=listing.owner, listing=listing).exists())
         self.assertTrue(RatingTicket.objects.filter(rater=listing.owner,
-            receivingUser=created_bid2.owner, listing=listing).exists())
+            receivingUser=created_bid2.bidder, listing=listing).exists())
 
 class OfferDetailViewTest(MyTestCase):
     def setUp(self):

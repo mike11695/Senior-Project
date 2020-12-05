@@ -8,6 +8,7 @@ from listings.models import (User, Image, Tag, Item, Listing, OfferListing,
     RatingTicket)
 from django.core.files.images import get_image_dimensions
 from django.core.exceptions import ValidationError
+from decimal import Decimal
 
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -587,7 +588,28 @@ class InvitationForm(forms.Form):
     def __init__(self, *args, **kwargs):
        event = kwargs.pop('instance')
        super(InvitationForm, self).__init__(*args, **kwargs)
+
+       #Exclude users already in event
        excluded_ids = [user.id for user in event.participants.all()]
+
+       #Exclude users not within a 50m radius of event host
+       min_lat = event.host.profile.latitude - 0.8300
+       max_lat = event.host.profile.latitude + 0.8300
+       min_lon = event.host.profile.longitude - 0.8300
+       max_lon = event.host.profile.longitude + 0.8300
+
+       profiles = Profile.objects.filter(
+           latitude__range=[min_lat, max_lat],
+           longitude__range=[min_lon, max_lon],
+       )
+       #users = User.objects.filter(profile__in=profiles)
+
+       #not_nearby_user_ids = [user.id for user in User.objects.all() if
+            #((user.profile.latitude < min_lat and user.profile.latitude > max_lat)
+            #or (user.profile.longitude < min_lon and user.profile.longitude > max_lon))]
+       #for id in not_nearby_user_ids:
+            #excluded_ids.append(id)
+
        existing_invites = Invitation.objects.filter(event=event)
        existing_recipient_ids = [invite.recipient.id for invite in existing_invites]
        for id in existing_recipient_ids:
@@ -597,7 +619,7 @@ class InvitationForm(forms.Form):
        for id in not_accepting_invites_ids:
            excluded_ids.append(id)
        excluded_ids.append(event.host.id)
-       self.fields['users'].queryset = User.objects.exclude(id__in=excluded_ids)
+       self.fields['users'].queryset = User.objects.filter(profile__in=profiles).exclude(id__in=excluded_ids)
 
 #Form for a user to create a wishlist
 class WishlistForm(ModelForm):

@@ -1272,10 +1272,16 @@ def create_offer(request, pk):
     #Get the listing object the offer is being created for
     current_listing = get_object_or_404(OfferListing, pk=pk)
 
+    #Check users location to see if they're within a 50 mile radius
+    #from listing owner
+    lat_dif = request.user.profile.latitude - current_listing.latitude
+    lon_dif = request.user.profile.longitude - current_listing.longitude
+
     #Check to ensure listing is still active
     if current_listing.listingEnded or current_listing.listingCompleted:
         return redirect('index')
-    else:
+    elif ((lat_dif >= -0.83 and lat_dif <= 0.83)
+        and (lon_dif >= -0.83 and lon_dif <= 0.83)):
         #Check to ensure the listing owner cant create an offer for their own listing
         if request.user != current_listing.owner:
             if request.method == 'POST':
@@ -1318,6 +1324,9 @@ def create_offer(request, pk):
             return render(request, 'listings/create_offer.html', {'form': form})
         else:
             return redirect('index')
+    else:
+        #Redirect if user is not within 50m of listing location
+        return redirect('index')
 
 #Form view for editing an offer a user owns
 @login_required(login_url='/accounts/login/')
@@ -1579,10 +1588,16 @@ def create_bid(request, pk):
             if bid.winningBid == True:
                 previous_winning_bid = bid
 
+    #Check users location to see if they're within a 50 mile radius
+    #from listing owner
+    lat_dif = request.user.profile.latitude - current_listing.latitude
+    lon_dif = request.user.profile.longitude - current_listing.longitude
+
     #Check to make sure listing is still active
     if current_listing.listingEnded:
         return redirect('index')
-    else:
+    elif ((lat_dif >= -0.83 and lat_dif <= 0.83)
+        and (lon_dif >= -0.83 and lon_dif <= 0.83)):
         #Check to ensure that the auction owner cannot bid on their own auction
         if request.user != current_listing.owner:
             if previous_winning_bid:
@@ -1730,6 +1745,9 @@ def create_bid(request, pk):
                 return render(request, 'listings/create_bid.html', {'form': form})
         else:
             return redirect('index')
+    else:
+        #Redirect if user is not within 50m of listing location
+        return redirect('index')
 
 #View for a user to delete an auction listing that they own
 class AuctionListingDeleteView(LoginRequiredMixin, generic.DeleteView):

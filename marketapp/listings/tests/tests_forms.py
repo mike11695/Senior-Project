@@ -1295,12 +1295,40 @@ class InvitationFormTest(MyTestCase):
         self.user4 = User.objects.create(username="mikea", password="example",
             email="examplea@text.com", paypalEmail="examplea@text.com",
             invitesOpen=True, inquiriesOpen=True)
+        self.user5 = User.objects.create(username="miken", password="example",
+            email="examplen@text.com", paypalEmail="examplen@text.com",
+            invitesOpen=True, inquiriesOpen=True)
 
+        #Set the locations of the global users and new user
+        self.user1.profile.latitude = 40.0000
+        self.user1.profile.longitude = -75.0000
+        self.user1.profile.save()
+
+        self.user2.profile.latitude = 40.1000
+        self.user2.profile.longitude = -75.1000
+        self.user2.profile.save()
+
+        self.user3.profile.latitude = 40.2000
+        self.user3.profile.longitude = -75.2000
+        self.user3.profile.save()
+
+        self.user4.profile.latitude = 40.3000
+        self.user4.profile.longitude = -75.3000
+        self.user4.profile.save()
+
+        self.user5.profile.latitude = 41.0000
+        self.user5.profile.longitude = -76.0000
+        self.user5.profile.save()
 
         #Create an event that users will receive invitstion to
         self.event = Event.objects.create(host=self.global_user1,
             title="My Awesome Event", context="Please come to my event.",
             date="2020-11-06 15:00", location="1234 Sesame Street")
+
+        #Set location for event host
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
 
         #Create an invitation for user4
         Invitation.objects.create(event=self.event, recipient=self.user4)
@@ -1344,6 +1372,14 @@ class InvitationFormTest(MyTestCase):
     def test_invalid_invitation_form_submission_host_cant_invite_self(self):
         event = self.event
         data = {'users': [str(self.global_user1.id)]}
+        form = InvitationForm(data=data, instance=event, initial={'event': event})
+        self.assertFalse(form.is_valid())
+
+    #Test to ensure a user is not able to submit invitation form if a invited user
+    #is not within 50m of host
+    def test_invalid_invitation_form_submission_user_not_in_range(self):
+        event = self.event
+        data = {'users': [str(self.user5.id)]}
         form = InvitationForm(data=data, instance=event, initial={'event': event})
         self.assertFalse(form.is_valid())
 
