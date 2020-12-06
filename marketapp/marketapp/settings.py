@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'geoip2',
     'django_celery_beat',
     'paypal.standard.ipn',
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -184,3 +186,10 @@ STATICFILES_DIRS = (
 # Simplified static file serving.
 # https://warehouse.python.org/project/whitenoise/
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'hzxn5eelp',
+    'API_KEY': '493313942867942',
+    'API_SECRET': 'IhjNQfOWAivDjaLxEeXaRJdsZb0',
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
