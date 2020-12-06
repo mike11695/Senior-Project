@@ -62,7 +62,7 @@ class AddImageForm(ModelForm):
 
     name = forms.CharField(max_length=50, required=True)
     tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(),
-        widget=forms.CheckboxSelectMultiple, required=True, label="Tags")
+        widget=forms.CheckboxSelectMultiple, required=False, label="Tags")
 
     class Meta:
         model = Image
@@ -74,7 +74,7 @@ class AddImageForm(ModelForm):
 class EditImageForm(ModelForm):
     name = forms.CharField(max_length=50, required=True)
     tags = forms.ModelMultipleChoiceField(queryset=Tag.objects.all(),
-        widget=forms.CheckboxSelectMultiple, required=True, label="Tags")
+        widget=forms.CheckboxSelectMultiple, required=False, label="Tags")
 
     class Meta:
         model = Image
@@ -593,22 +593,21 @@ class InvitationForm(forms.Form):
        excluded_ids = [user.id for user in event.participants.all()]
 
        #Exclude users not within a 50m radius of event host
-       min_lat = event.host.profile.latitude - 0.8300
-       max_lat = event.host.profile.latitude + 0.8300
-       min_lon = event.host.profile.longitude - 0.8300
-       max_lon = event.host.profile.longitude + 0.8300
+       if isinstance(event.host.profile.latitude, float):
+           min_lat = Decimal.from_float(event.host.profile.latitude) - Decimal.from_float(0.8300)
+           max_lat = Decimal.from_float(event.host.profile.latitude) + Decimal.from_float(0.8300)
+           min_lon = Decimal.from_float(event.host.profile.longitude) - Decimal.from_float(0.8300)
+           max_lon = Decimal.from_float(event.host.profile.longitude) + Decimal.from_float(0.8300)
+       else:
+           min_lat = event.host.profile.latitude - Decimal.from_float(0.8300)
+           max_lat = event.host.profile.latitude + Decimal.from_float(0.8300)
+           min_lon = event.host.profile.longitude - Decimal.from_float(0.8300)
+           max_lon = event.host.profile.longitude + Decimal.from_float(0.8300)
 
        profiles = Profile.objects.filter(
            latitude__range=[min_lat, max_lat],
            longitude__range=[min_lon, max_lon],
        )
-       #users = User.objects.filter(profile__in=profiles)
-
-       #not_nearby_user_ids = [user.id for user in User.objects.all() if
-            #((user.profile.latitude < min_lat and user.profile.latitude > max_lat)
-            #or (user.profile.longitude < min_lon and user.profile.longitude > max_lon))]
-       #for id in not_nearby_user_ids:
-            #excluded_ids.append(id)
 
        existing_invites = Invitation.objects.filter(event=event)
        existing_recipient_ids = [invite.recipient.id for invite in existing_invites]

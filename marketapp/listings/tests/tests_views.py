@@ -4407,6 +4407,23 @@ class CreateInvitationsViewTest(MyTestCase):
             email="examples@text.com", paypalEmail="examples@text.com",
             invitesOpen=True, inquiriesOpen=True)
 
+        #Set the locations of the global users
+        self.global_user1.profile.latitude = 40.0000
+        self.global_user1.profile.longitude = -75.0000
+        self.global_user1.profile.save()
+
+        self.user1.profile.latitude = 40.5000
+        self.user1.profile.longitude = -75.5000
+        self.user1.profile.save()
+
+        self.user2.profile.latitude = 40.6000
+        self.user2.profile.longitude = -75.6000
+        self.user2.profile.save()
+
+        self.user3.profile.latitude = 40.7000
+        self.user3.profile.longitude = -75.7000
+        self.user3.profile.save()
+
     #Test to ensure that a user must be logged in to create invitations
     def test_redirect_if_not_logged_in(self):
         event = self.global_event
@@ -5989,7 +6006,7 @@ class ProfileDetailViewTest(MyTestCase):
             "User was very kind and delivered my items on time.")
         self.assertEqual(new_rating.reviewer, self.global_user2)
         self.assertEqual(new_rating.listingName, self.global_offer_listing2.name)
-        self.assertFalse(Rating.objects.filter(id=self.ticket_id).exists())
+        self.assertFalse(RatingTicket.objects.filter(id=self.ticket_id).exists())
 
     #Test that a notification is created after rating is made
     def test_notification_created(self):
@@ -7526,7 +7543,7 @@ class DeleteNotificationsViewTest(MyTestCase):
         self.assertRedirects(post_response, '/listings/notifications/')
         self.assertTrue(OfferNotification.objects.filter(
             id=self.offer_notification_id).exists())
-        self.assertTrue(BidNotification.objectsdata.filter(
+        self.assertTrue(BidNotification.objects.filter(
             id=self.bid_notification_id).exists())
         self.assertTrue(PaymentNotification.objects.filter(
             id=self.payment_notification_id).exists())
@@ -8217,7 +8234,7 @@ class ReportsViewTest(MyTestCase):
         for num in range(6):
             ListingReport.objects.create(reason='Malicious Content',
                 description="Illegally obtained items in listing",
-                reportType="Listing")
+                reportType="Listing", listing=self.global_offer_listing1)
 
     #Test to ensure that a user must be logged in to view reports
     def test_redirect_if_not_logged_in(self):

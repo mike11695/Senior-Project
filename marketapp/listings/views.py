@@ -985,8 +985,13 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
                 return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
             else:
                 if Bid.objects.filter(auctionListing=obj).exists():
-                    bids = Bid.objects.get(auctionListing=obj) #There will only be one offer associted with listing
-                    winning_bid = bids.last()
+                    bids = Bid.objects.filter(auctionListing=obj) #There will only be one offer associted with listing
+
+                    if len(bids) > 1:
+                        winning_bid = bids.last()
+                    else:
+                        winning_bid = bids.first()
+
                     if winning_bid.bidder == self.request.user:
                         return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
                     else:
