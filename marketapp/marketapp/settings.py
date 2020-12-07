@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'm34@p(-e_2c3jk9*z1c-wu)@f!7*!3s*)#j=8na))1aaj=6nbn')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'marketapp-list-it.herokuapp.com',]
 
