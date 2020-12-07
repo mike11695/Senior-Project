@@ -78,6 +78,7 @@ class MyTestCase(TestCase):
         self.global_rating_ticket = RatingTicket.objects.create(rater=self.global_user2,
             receivingUser=self.global_user1, listing=self.global_offer_listing1)
 
+#Tests for the form to sign up to List.it
 class SignUpFormTest(TestCase):
     #Test to ensure a user is able to sign up providing all fields
     def test_valid_signup(self):
@@ -201,6 +202,7 @@ class SignUpFormTest(TestCase):
         form = SignUpForm(data)
         self.assertFalse(form.is_valid())
 
+#Tests for the form to edit an account
 class EditAccountFormTest(TestCase):
     #Test to ensure a user is able to edit account ptoviding all fields
     def test_valid_account_edit(self):
@@ -296,6 +298,7 @@ class EditAccountFormTest(TestCase):
         self.assertEqual(form.fields['inquiriesOpen'].label,
             "Open to Inquiries?")
 
+#Tests for the form to upload an image
 class AddImageFormTest(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -355,6 +358,7 @@ class AddImageFormTest(TestCase):
         form = AddImageForm(data, {'image': image})
         self.assertFalse(form.is_valid())
 
+#Tests for the form to create/edit an item
 class ItemFormTest(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -439,6 +443,7 @@ class ItemFormTest(TestCase):
         form = ItemForm(user=user)
         self.assertEqual(form.fields['images'].help_text, "An image is required.")
 
+#Tests for the form to create an offer listing
 class OfferListingFormTest(MyTestCase):
     #Test to ensure a user is able to create an offer listing providing all fields
     def test_valid_offer_listing_creation(self):
@@ -647,6 +652,7 @@ class OfferListingFormTest(MyTestCase):
         form = OfferListingForm(user=user)
         self.assertEqual(form.fields['maxRange'].help_text, "Maximum money offers you'll consider (leave blank if you don't have a maximum).")
 
+#Tests for the form to create an auction listing
 class CreateAuctionListingFormTest(MyTestCase):
     #Test to ensure a user is able to create an auction listing providing all fields
     def test_valid_auction_listing_creation(self):
@@ -895,6 +901,7 @@ class CreateAuctionListingFormTest(MyTestCase):
         form = AuctionListingForm(user=user)
         self.assertEqual(form.fields['autobuy'].help_text, "A bid greater than the starting bid that will automatically win the auction if placed. (Leave blank if not interested in having an autobuy price)")
 
+#Tests for the form to create an offer
 class CreateOfferFormTest(MyTestCase):
     def setUp(self):
         super(CreateOfferFormTest, self).setUp()
@@ -1014,6 +1021,7 @@ class CreateOfferFormTest(MyTestCase):
         form = OfferForm(data=data, user=user, instance=listing, initial={'offerListing': listing})
         self.assertFalse(form.is_valid())
 
+#Tests for the form to create a bid
 class CreateBidFormTest(MyTestCase):
     def setUp(self):
         super(CreateBidFormTest, self).setUp()
@@ -1167,6 +1175,7 @@ class CreateBidFormTest(MyTestCase):
             'bidder': user})
         self.assertTrue(form.is_valid())
 
+#Tests for the form to create/edit an event
 class EventFormTest(MyTestCase):
     #Test to ensure a user is able to create an event providing all fields
     def test_valid_event_creation(self):
@@ -1278,6 +1287,7 @@ class EventFormTest(MyTestCase):
         form = EventForm()
         self.assertEqual(form.fields['location'].help_text, "Address Where Event is Held.")
 
+#Tests for the form to create invitations
 class InvitationFormTest(MyTestCase):
     def setUp(self):
         super(InvitationFormTest, self).setUp()
@@ -1395,6 +1405,7 @@ class InvitationFormTest(MyTestCase):
         form = InvitationForm(instance=event)
         self.assertEqual(form.fields['users'].help_text, "Users You Would Like to Invite to Event.")
 
+#Tests for the form to create/edit a wishlist
 class WishlistFormTest(MyTestCase):
     #Test to ensure a user is able to create a wishlist providing all fields
     def test_valid_wishlist_creation(self):
@@ -1492,6 +1503,7 @@ class WishlistFormTest(MyTestCase):
         form = WishlistForm(user=user)
         self.assertEqual(form.fields['items'].help_text, "Items That You Are Seeking.")
 
+#Tests for the form to create a wishlist listing
 class WishlistListingFormTest(MyTestCase):
     #Test to ensure a user is able to create an wishlist listing providing all fields
     def test_valid_wishlist_listing_creation(self):
@@ -1742,6 +1754,7 @@ class WishlistListingFormTest(MyTestCase):
         form = WishlistListingForm(user=user)
         self.assertEqual(form.fields['moneyOffer'].label, "Money Being Offered")
 
+#Tests for the form to edit profile
 class ProfileFormTest(MyTestCase):
     #Test to ensure a user is able to submit profile form providing all fields
     def test_valid_profile_submission(self):
@@ -1809,6 +1822,7 @@ class ProfileFormTest(MyTestCase):
         form = ProfileForm()
         self.assertEqual(form.fields['deliveryAddress'].label, "Delivery Address")
 
+#Tests for the form to create a conversation
 class ConversationFormTest(MyTestCase):
     #Test to ensure a user is able to start a conversation providing all fields
     def test_valid_conversation_creation(self):
@@ -1873,6 +1887,7 @@ class ConversationFormTest(MyTestCase):
         self.assertEqual(form.fields['message'].help_text, ("Initiating " +
             "message for the conversation."))
 
+#Tests for the form to send a message
 class MessageFormTest(MyTestCase):
     #Test to ensure a user is able to create a message providing all fields
     def test_valid_message_creation(self):
@@ -1903,6 +1918,7 @@ class MessageFormTest(MyTestCase):
         form = MessageForm(data=data)
         self.assertFalse(form.is_valid())
 
+#Tests for the form to report a listing
 class ListingReportFormTest(MyTestCase):
     #Test to ensure a user is able to create a listing report providing all fields
     def test_valid_listing_report_creation(self):
@@ -1969,6 +1985,7 @@ class ListingReportFormTest(MyTestCase):
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")
 
+#Tests for the form to report an event
 class EventReportFormTest(MyTestCase):
     #Test to ensure a user is able to create a event report providing all fields
     def test_valid_event_report_creation(self):
@@ -2035,6 +2052,7 @@ class EventReportFormTest(MyTestCase):
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")
 
+#Tests for the form to report a user
 class UserReportFormTest(MyTestCase):
     #Test to ensure a user is able to create a user report providing all fields
     def test_valid_user_report_creation(self):
@@ -2101,6 +2119,7 @@ class UserReportFormTest(MyTestCase):
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")
 
+#Tests for the form to report a wishlist
 class WishlistReportFormTest(MyTestCase):
     #Test to ensure a user is able to create a wishlist report providing all fields
     def test_valid_wishlist_report_creation(self):
@@ -2167,6 +2186,7 @@ class WishlistReportFormTest(MyTestCase):
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")
 
+#Tests for the form to report a image
 class ImageReportFormTest(MyTestCase):
     #Test to ensure a user is able to create a image report providing all fields
     def test_valid_image_report_creation(self):
@@ -2233,6 +2253,7 @@ class ImageReportFormTest(MyTestCase):
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")
 
+#Tests for the form to report a rating
 class RatingReportFormTest(MyTestCase):
     #Test to ensure a user is able to create a rating report providing all fields
     def test_valid_rating_report_creation(self):
@@ -2299,6 +2320,7 @@ class RatingReportFormTest(MyTestCase):
         self.assertEqual(form.fields['description'].help_text,
             "Tell us more in depth about the reason for reporting")
 
+#Tests for the form to create a rating
 class CreateRatingFormTest(MyTestCase):
     #Test to ensure a user is able to create a rating providing all fields
     def test_valid_rating_creation(self):
@@ -2440,6 +2462,7 @@ class CreateRatingFormTest(MyTestCase):
         form = CreateRatingForm(user=user, receiver=user2)
         self.assertEqual(form.fields['ratingTicket'].label, "Listing")
 
+#Tests for the form to take action on a report
 class TakeActionOnReportFormTest(MyTestCase):
     def setUp(self):
         super(TakeActionOnReportFormTest, self).setUp()

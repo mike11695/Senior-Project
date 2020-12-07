@@ -11,21 +11,6 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-# Create your models here.
-# Model template
-"""
-class ModelName(models.Model):
-    #Fields for ModelName
-
-    def get_absolute_url(self):
-        #Returns the url to access a particular instance of ModelName.
-        return reverse('ModelName-detail', args=[str(self.id)])
-
-    def __str__(self):
-        #String for representing the ModelName object.
-        return f'{self.something}'
-"""
-
 #Extends the user model to added extra needed fields for the site
 class User(AbstractUser):
     #added fields for the User class
@@ -117,8 +102,8 @@ class Profile(models.Model):
         """String for representing the Profile object."""
         return f"{self.user}'s Profile"
 
-#Model for Warnings, used for tracking users after breaking rules
-#Fields needed: Admin, user, warningCount, reason, actionsTaken
+#Model for Warnings, used for tracking users after breaking rules (NOT USED)
+#Fields needed: User, warningCount, reason, actionsTaken
 class Warning(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
     warningCount = models.IntegerField(verbose_name="Warning Count")
@@ -432,6 +417,7 @@ class Offer(models.Model):
         return f'"Offer by ", {self.owner}'
 
 #Model for Ratings, where users can leave feedback for other users after exchanges
+#Fields needed: Profile, reviewer, ratingValue, feedback, listingName
 class Rating(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="profile")
     reviewer = models.ForeignKey(User, on_delete=models.SET_NULL,
@@ -446,10 +432,11 @@ class Rating(models.Model):
         null=True)
 
     def __str__(self):
-        """String for representing the Rating object."""
+        #String for representing the Rating object.
         return f'"Feedback from ", {self.reviewer}'
 
 #Model for RatingTicket, created after a listing is completed between two user
+#Fields needed: Rater, recevingUser, listing
 class RatingTicket(models.Model):
     rater = models.ForeignKey(User, on_delete=models.CASCADE, related_name="rating_ticket")
     receivingUser = models.ForeignKey(User, on_delete=models.CASCADE)

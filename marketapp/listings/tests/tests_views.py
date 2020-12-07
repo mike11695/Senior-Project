@@ -112,6 +112,7 @@ class MyTestCase(TestCase):
         self.global_wishlist.items.add(self.global_item1)
         self.global_wishlist.save
 
+#Tests for images list view that belong to a single user
 class ImagesViewTest(MyTestCase):
     def setUp(self):
         super(ImagesViewTest, self).setUp()
@@ -175,6 +176,7 @@ class ImagesViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['images']) == 2)
 
+#Tests for an image's detail view
 class ImageDetailViewTest(MyTestCase):
     def setUp(self):
         super(ImageDetailViewTest, self).setUp()
@@ -221,6 +223,7 @@ class ImageDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'images/image_detail.html')
 
+#Tests for users to upload an image to the site
 class AddImageViewTest(MyTestCase):
     def setUp(self):
         super(AddImageViewTest, self).setUp()
@@ -280,6 +283,7 @@ class AddImageViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         self.assertRedirects(post_response, '/listings/images/')
 
+#Tests for a user to edit an image they own
 class EditImageViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to edit an image
     def test_redirect_if_not_logged_in(self):
@@ -349,6 +353,7 @@ class EditImageViewTest(MyTestCase):
         edited_image = Image.objects.get(id=image.id)
         self.assertEqual(edited_image.name, 'My Edited Image')
 
+#Tests for users to delete an image they own
 class ImageDeleteViewTest(MyTestCase):
     def setUp(self):
         super(ImageDeleteViewTest, self).setUp()
@@ -442,6 +447,7 @@ class ImageDeleteViewTest(MyTestCase):
         updated_image = Image.objects.get(id=self.related_image_unowned_item_in_receipt_id)
         self.assertEqual(updated_image.owner, None)
 
+#Tests for a user to view a list of items they own
 class ItemsViewTest(MyTestCase):
     def setUp(self):
         super(ItemsViewTest, self).setUp()
@@ -511,6 +517,7 @@ class ItemsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['items']) == 6)
 
+#Tests for a user to view details on an item
 class ItemDetailViewTest(MyTestCase):
     def setUp(self):
         super(ItemDetailViewTest, self).setUp()
@@ -550,6 +557,7 @@ class ItemDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'items/item_detail.html')
 
+#Tests for a user to create an item
 class AddItemViewTest(MyTestCase):
     def setUp(self):
         super(AddItemViewTest, self).setUp()
@@ -636,6 +644,7 @@ class AddItemViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         self.assertRedirects(post_response, '/listings/items/')
 
+#Test for a user to edit an item they created
 class EditItemViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to edit an item
     def test_redirect_if_not_logged_in(self):
@@ -682,6 +691,7 @@ class EditItemViewTest(MyTestCase):
         edited_item = Item.objects.get(id=item.id)
         self.assertEqual(edited_item.name, 'My Edited Item')
 
+#Tests for a user to delete an item they created
 class ItemDeleteViewTest(MyTestCase):
     def setUp(self):
         super(ItemDeleteViewTest, self).setUp()
@@ -1007,6 +1017,7 @@ class ItemDeleteViewTest(MyTestCase):
         updated_item = Item.objects.get(id=self.soft_deletable_offer_item_id)
         self.assertEqual(updated_item.owner, None)
 
+#Tests for the FAQ index page
 class FAQViewTest(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="mike", password="example",
@@ -1033,6 +1044,7 @@ class FAQViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/documents.html')
 
+#Tests for the FAQ on images
 class FAQImagesViewTest(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="mike", password="example",
@@ -1059,6 +1071,7 @@ class FAQImagesViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/images.html')
 
+#Tests for the FAQ on items
 class FAQItemsViewTest(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="mike", password="example",
@@ -1085,6 +1098,7 @@ class FAQItemsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/items.html')
 
+#Tests for the FAQ on listings (offer/auction/wishlist)
 class FAQListingsViewTest(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="mike", password="example",
@@ -1111,6 +1125,7 @@ class FAQListingsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/listings.html')
 
+#Tests for the FAQ on events
 class FAQEventsViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1132,6 +1147,7 @@ class FAQEventsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/events.html')
 
+#Tests for the FAQ on wishlists
 class FAQWishlistsViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1153,6 +1169,7 @@ class FAQWishlistsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/wishlists.html')
 
+#Tests for the FAQ on profiles
 class FAQProfilesViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1174,6 +1191,7 @@ class FAQProfilesViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/profiles.html')
 
+#Tests for the FAQ on accounts
 class FAQAccountsViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1195,6 +1213,7 @@ class FAQAccountsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/accounts.html')
 
+#Tests for the FAQ on conversations
 class FAQConversationsViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1216,6 +1235,7 @@ class FAQConversationsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/conversations.html')
 
+#Tests for the FAQ on receipts
 class FAQReceiptsViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1237,6 +1257,7 @@ class FAQReceiptsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/receipts.html')
 
+#Tests for the FAQ on favorites
 class FAQFavoritesViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1258,6 +1279,7 @@ class FAQFavoritesViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/favorites.html')
 
+#Tests for the FAQ on searching for listings
 class FAQSearchViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1279,6 +1301,7 @@ class FAQSearchViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/search.html')
 
+#Tests for the FAQ on creating reports
 class FAQReportsViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1300,6 +1323,7 @@ class FAQReportsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/reports.html')
 
+#Tests for the FAQ on ratings
 class FAQRatingsViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view FAQ
     def test_redirect_if_not_logged_in(self):
@@ -1321,6 +1345,7 @@ class FAQRatingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'faq/ratings.html')
 
+#Tests for a user to view a list of their offer listings
 class OfferListingsViewTest(MyTestCase):
     def setUp(self):
         super(OfferListingsViewTest, self).setUp()
@@ -1404,6 +1429,7 @@ class OfferListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['offerlistings']) == 5)
 
+#Tests for a user to view details on an offer listing
 class OfferListingDetailViewTest(MyTestCase):
     def setUp(self):
         super(OfferListingDetailViewTest, self).setUp()
@@ -1536,6 +1562,7 @@ class OfferListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('offer-listing-detail', args=[str(listing.id)]))
         self.assertEqual(response.status_code, 200)
 
+#Tests for a user to view all offer listings within 20 miles of them
 class AllOfferListingsViewTest(MyTestCase):
     def setUp(self):
         super(AllOfferListingsViewTest, self).setUp()
@@ -1629,6 +1656,7 @@ class AllOfferListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['offerlistings']), 5)
 
+#Tests for a user to view offers they have made
 class MyOffersViewTest(MyTestCase):
     def setUp(self):
         super(MyOffersViewTest, self).setUp()
@@ -1689,6 +1717,7 @@ class MyOffersViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['offers']) == 8)
 
+#Tests for a user to create an offer listing
 class CreateOfferListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateOfferListingViewTest, self).setUp()
@@ -1940,6 +1969,7 @@ class CreateOfferListingViewTest(MyTestCase):
         self.assertEqual(new_offer_listing.minRange, 5.00)
         self.assertEqual(new_offer_listing.maxRange, 0.00)
 
+#Tests for a user to edit an offer listing they own
 class EditOfferListingViewTest(MyTestCase):
     def setUp(self):
         super(EditOfferListingViewTest, self).setUp()
@@ -2049,6 +2079,7 @@ class EditOfferListingViewTest(MyTestCase):
         self.assertEqual(edited_listing.minRange, 0.00)
         self.assertEqual(edited_listing.maxRange, 0.00)
 
+#Tests for a user to relist an expired offered listing they own
 class RelistOfferListingViewTest(MyTestCase):
     def setUp(self):
         super(RelistOfferListingViewTest, self).setUp()
@@ -2167,6 +2198,7 @@ class RelistOfferListingViewTest(MyTestCase):
         for offer_id in self.offer_ids:
             self.assertFalse(OfferNotification.objects.filter(offer__id=offer_id).exists())
 
+#Tests for a user to delete an offer listing they own
 class OfferListingDeleteViewTest(MyTestCase):
     def setUp(self):
         super(OfferListingDeleteViewTest, self).setUp()
@@ -2379,6 +2411,7 @@ class OfferListingDeleteViewTest(MyTestCase):
         self.assertEqual(updated_listing.owner, None)
         self.assertFalse(ListingNotification.objects.filter(id=self.inactive_completed_listing_notification_id).exists())
 
+#Tests for a user to view the list of auction listings they own
 class AuctionListingsViewTest(MyTestCase):
     def setUp(self):
         super(AuctionListingsViewTest, self).setUp()
@@ -2476,6 +2509,7 @@ class AuctionListingsViewTest(MyTestCase):
             if obj == listing_to_check:
                 self.assertEqual(obj.bid_count, 5)
 
+#Tests for a user to view details on an auction listing
 class AuctionListingDetailViewTest(MyTestCase):
     def setUp(self):
         super(AuctionListingDetailViewTest, self).setUp()
@@ -2582,6 +2616,7 @@ class AuctionListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('auction-listing-detail', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
 
+#Tests for a user to view all auction listings within 20 miles of them
 class AllAuctionListingsViewTest(MyTestCase):
     def setUp(self):
         super(AllAuctionListingsViewTest, self).setUp()
@@ -2664,6 +2699,7 @@ class AllAuctionListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['auctionlistings']), 5)
 
+#Tests for a user to view all bids they have placed
 class MyBidsViewTest(MyTestCase):
     def setUp(self):
         super(MyBidsViewTest, self).setUp()
@@ -2721,6 +2757,7 @@ class MyBidsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['bids']) == 1)
 
+#Tests for a user to create an auction listing
 class CreateAuctionListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateAuctionListingViewTest, self).setUp()
@@ -2937,6 +2974,7 @@ class CreateAuctionListingViewTest(MyTestCase):
         new_auction_listing_endtime = new_auction_listing.endTime.astimezone(to_tz)
         self.assertEqual(new_auction_listing_endtime.hour, end_time_check.hour)
 
+#Tests for a user to relist an expired auction listing they own
 class RelistAuctionListingViewTest(MyTestCase):
     def setUp(self):
         super(RelistAuctionListingViewTest, self).setUp()
@@ -3023,6 +3061,7 @@ class RelistAuctionListingViewTest(MyTestCase):
         self.assertEqual(updated_notification.listing.name, relisted_listing.name)
         self.assertEqual(updated_notification.creationDate, relisted_listing.endTime)
 
+#Tests for a user to create an offer on an offer listing
 class CreateOfferViewTest(MyTestCase):
     def setUp(self):
         super(CreateOfferViewTest, self).setUp()
@@ -3151,6 +3190,7 @@ class CreateOfferViewTest(MyTestCase):
         response = self.client.get(reverse('create-offer', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
 
+#Tests for a user to create a bid on an auction listing
 class CreateBidViewTest(MyTestCase):
     def setUp(self):
         super(CreateBidViewTest, self).setUp()
@@ -3387,6 +3427,7 @@ class CreateBidViewTest(MyTestCase):
         self.assertTrue(RatingTicket.objects.filter(rater=listing.owner,
             receivingUser=created_bid2.bidder, listing=listing).exists())
 
+#Tests for a user to view details on an offer
 class OfferDetailViewTest(MyTestCase):
     def setUp(self):
         super(OfferDetailViewTest, self).setUp()
@@ -3441,6 +3482,7 @@ class OfferDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'listings/offer_detail.html')
 
+#Tests for a user to accept an offer made on their offer listing
 class AcceptOfferViewTest(MyTestCase):
     def setUp(self):
         super(AcceptOfferViewTest, self).setUp()
@@ -3627,6 +3669,7 @@ class AcceptOfferViewTest(MyTestCase):
         self.assertTrue(RatingTicket.objects.filter(rater=offer.offerListing.owner,
             receivingUser=offer.owner, listing=offer.offerListing).exists())
 
+#Tests for a user to rejector retract an offer they received or made
 class OfferDeleteViewTest(MyTestCase):
     def setUp(self):
         super(OfferDeleteViewTest, self).setUp()
@@ -3757,6 +3800,7 @@ class OfferDeleteViewTest(MyTestCase):
         updated_offer = Offer.objects.get(id=offer_id)
         self.assertEqual(updated_offer.owner, None)
 
+#Tests for a user to edit an offer they have made
 class OfferEditViewTest(MyTestCase):
     def setUp(self):
         super(OfferEditViewTest, self).setUp()
@@ -3837,6 +3881,7 @@ class OfferEditViewTest(MyTestCase):
         self.assertTrue(notification.user, offer.offerListing.owner)
         self.assertTrue(notification.type, "Offer Updated")
 
+#Tests for a user to delete a completed or expired auction listing
 class AuctionListingDeleteViewTest(MyTestCase):
     def setUp(self):
         super(AuctionListingDeleteViewTest, self).setUp()
@@ -3984,6 +4029,7 @@ class AuctionListingDeleteViewTest(MyTestCase):
         self.assertEqual(updated_listing.owner, None)
         self.assertFalse(ListingNotification.objects.filter(id=self.inactive_auction_listing_id).exists())
 
+#Tests for a user to view events they're hosting and participating in
 class EventListViewTest(MyTestCase):
     def setUp(self):
         super(EventListViewTest, self).setUp()
@@ -4061,6 +4107,7 @@ class EventListViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['events']), self.number_of_events_user3)
 
+#Tests for a user to view details on an event
 class EventDetailViewTest(MyTestCase):
     def setUp(self):
         super(EventDetailViewTest, self).setUp()
@@ -4109,6 +4156,7 @@ class EventDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'events/event_detail.html')
 
+#Tests for a user to create an event
 class CreateEventViewTest(MyTestCase):
     def setUp(self):
         super(CreateEventViewTest, self).setUp()
@@ -4146,6 +4194,7 @@ class CreateEventViewTest(MyTestCase):
         created_event = Event.objects.last()
         self.assertEqual(created_event.host, post_response.wsgi_request.user)
 
+#Tests for a user to edit an event they're hosting
 class EditEventViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to edit an event
     def test_redirect_if_not_logged_in(self):
@@ -4194,6 +4243,7 @@ class EditEventViewTest(MyTestCase):
         self.assertEqual(edited_event.context, "It will be rad, please come")
         self.assertEqual(edited_event.location, "SUNY Potsdam")
 
+#Tests for a user to remove a user from an event they're hosting
 class RemoveParticipantViewTest(MyTestCase):
     def setUp(self):
         super(RemoveParticipantViewTest, self).setUp()
@@ -4278,6 +4328,7 @@ class RemoveParticipantViewTest(MyTestCase):
         self.assertEqual(notification.user, event.host)
         self.assertEqual(notification.type, "Participant Left")
 
+#Tests for a user to delete an event they're hosting
 class EventDeleteViewTest(MyTestCase):
     def setUp(self):
         super(EventDeleteViewTest, self).setUp()
@@ -4331,6 +4382,7 @@ class EventDeleteViewTest(MyTestCase):
         self.assertRedirects(post_response, reverse('events'))
         self.assertFalse(Event.objects.filter(id=self.event_id).exists())
 
+#Tests for a user to view invites they have received
 class InvitationListViewTest(MyTestCase):
     def setUp(self):
         super(InvitationListViewTest, self).setUp()
@@ -4394,6 +4446,7 @@ class InvitationListViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['invitations']), 5)
 
+#Tests for a user to create invitations for users to an event they're hosting
 class CreateInvitationsViewTest(MyTestCase):
     def setUp(self):
         super(CreateInvitationsViewTest, self).setUp()
@@ -4491,6 +4544,7 @@ class CreateInvitationsViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         self.assertRedirects(post_response, '/listings/events/{0}'.format(event.id))
 
+#Tests for a user to accept an invitation they have received
 class AcceptInvitationViewTest(MyTestCase):
     def setUp(self):
         super(AcceptInvitationViewTest, self).setUp()
@@ -4553,6 +4607,7 @@ class AcceptInvitationViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         self.assertFalse(Invitation.objects.filter(id=invitation_id).exists())
 
+#Tests for a user to deceline an invitation they received
 class DeclineInvitationViewTest(MyTestCase):
     def setUp(self):
         super(DeclineInvitationViewTest, self).setUp()
@@ -4614,6 +4669,7 @@ class DeclineInvitationViewTest(MyTestCase):
         self.assertEqual(post_response.status_code, 302)
         self.assertFalse(Invitation.objects.filter(id=invitation_id).exists())
 
+#Tests for a user to view details of a wishlist
 class WishlistDetailViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to view wishlists
     def test_redirect_if_not_logged_in(self):
@@ -4646,6 +4702,7 @@ class WishlistDetailViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'wishlists/wishlist_detail.html')
 
+#Tests for a user to create a wishlist
 class CreateWishlistViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to create a wishlist
     def test_redirect_if_not_logged_in(self):
@@ -4700,6 +4757,7 @@ class CreateWishlistViewTest(MyTestCase):
         response = self.client.get(reverse('create-wishlist'))
         self.assertRedirects(response, '/listings/')
 
+#Tests for a user to edit their wishlist
 class EditWishlistViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to edit their wishlist
     def test_redirect_if_not_logged_in(self):
@@ -4747,6 +4805,7 @@ class EditWishlistViewTest(MyTestCase):
         self.assertEqual(edited_wishlist.description, 'Stuff I would love to buy')
         self.assertEqual(edited_wishlist.items.count(), 0)
 
+#Tests for a user to remove an item from their wishlist
 class RemoveWishlistItemViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to remove an tem from wishlist
     def test_redirect_if_not_logged_in(self):
@@ -4800,6 +4859,7 @@ class RemoveWishlistItemViewTest(MyTestCase):
             args=[str(wishlist.id), str(item.id)]))
         self.assertRedirects(post_response, '/listings/')
 
+#Tests for a user to view wishlist listings they have made
 class WishlistListingsViewTest(MyTestCase):
     def setUp(self):
         super(WishlistListingsViewTest, self).setUp()
@@ -4863,6 +4923,7 @@ class WishlistListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['wishlistlistings']) == 9)
 
+#Tests for a user to view details on a wishlist listing
 class WishlistListingDetailViewTest(MyTestCase):
     def setUp(self):
         super(WishlistListingDetailViewTest, self).setUp()
@@ -4960,6 +5021,7 @@ class WishlistListingDetailViewTest(MyTestCase):
         response = self.client.get(reverse('wishlist-listing-detail', args=[str(listing.id)]))
         self.assertRedirects(response, '/listings/')
 
+#Tests for a user to view wishlist listngs within a 20 mile radius of them
 class AllWishlistListingsViewTest(MyTestCase):
     def setUp(self):
         super(AllWishlistListingsViewTest, self).setUp()
@@ -5043,6 +5105,7 @@ class AllWishlistListingsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['wishlistlistings']), 6)
 
+#Tests for a user to create a wishlist listing
 class CreateWishlistListingViewTest(MyTestCase):
     def setUp(self):
         super(CreateWishlistListingViewTest, self).setUp()
@@ -5271,6 +5334,7 @@ class CreateWishlistListingViewTest(MyTestCase):
         new_wishlist_listing = WishlistListing.objects.last()
         self.assertEqual(new_wishlist_listing.moneyOffer, 0.00)
 
+#Tests for a user to edit a wishlist listing they own
 class EditWishlistListingViewTest(MyTestCase):
     def setUp(self):
         super(EditWishlistListingViewTest, self).setUp()
@@ -5351,6 +5415,7 @@ class EditWishlistListingViewTest(MyTestCase):
         self.assertEqual(updated_wishlist_listing.moneyOffer, 10.00)
         self.assertEqual(updated_wishlist_listing.notes, "Just a simple update")
 
+#Tests for a user to relist an expired wishlist listing
 class RelistWishlistListingViewTest(MyTestCase):
     def setUp(self):
         super(RelistWishlistListingViewTest, self).setUp()
@@ -5436,6 +5501,7 @@ class RelistWishlistListingViewTest(MyTestCase):
         new_wishlist_listing_endtime = new_wishlist_listing_endtime.astimezone(to_tz)
         self.assertEqual(new_wishlist_listing_endtime.hour, end_time_check.hour)
 
+#Tests for a user to quickly list an item from their wishlist
 class QuickWishlistListingViewTest(MyTestCase):
     def setUp(self):
         super(QuickWishlistListingViewTest, self).setUp()
@@ -5690,6 +5756,7 @@ class QuickWishlistListingViewTest(MyTestCase):
         new_wishlist_listing = WishlistListing.objects.last()
         self.assertEqual(new_wishlist_listing.moneyOffer, 0.00)
 
+#Tests for a user to delete a wihslist listing they own
 class WishlistListingDeleteViewTest(MyTestCase):
     def setUp(self):
         super(WishlistListingDeleteViewTest, self).setUp()
@@ -5762,6 +5829,7 @@ class WishlistListingDeleteViewTest(MyTestCase):
         self.assertRedirects(post_response, reverse('wishlist-listings'))
         self.assertFalse(WishlistListing.objects.filter(id=listing_id).exists())
 
+#Tests for a user to quickly add another user owned item to their wishlist
 class QuickAddItemToWishlistViewTest(MyTestCase):
     def setUp(self):
         super(QuickAddItemToWishlistViewTest, self).setUp()
@@ -5827,6 +5895,7 @@ class QuickAddItemToWishlistViewTest(MyTestCase):
         self.assertTrue(wishlist.items.filter(pk=new_item.id).exists())
         self.assertTrue(self.global_user1.items.filter(pk=new_item.id).exists())
 
+#Tests for a user to view a profile's details
 class ProfileDetailViewTest(MyTestCase):
     def setUp(self):
         super(ProfileDetailViewTest, self).setUp()
@@ -6030,6 +6099,7 @@ class ProfileDetailViewTest(MyTestCase):
         self.assertEqual(notification.type, "Feedback Left")
         self.assertEqual(notification.content, content)
 
+#Tests for a user to edit their profile
 class EditProfileViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to edit profile
     def test_redirect_if_not_logged_in(self):
@@ -6079,6 +6149,7 @@ class EditProfileViewTest(MyTestCase):
         self.assertEqual(edited_profile.bio, 'My Updated Profile')
         self.assertEqual(edited_profile.deliveryAddress, 'SUNY Potsdam')
 
+#Tests for a user to view a list of users on the site
 class UsersViewTest(MyTestCase):
     def setUp(self):
         super(UsersViewTest, self).setUp()
@@ -6129,6 +6200,7 @@ class UsersViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['users']), 9)
 
+#Tests for a user to edit their account details
 class EditAccountViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to edit account
     def test_redirect_if_not_logged_in(self):
@@ -6179,6 +6251,7 @@ class EditAccountViewTest(MyTestCase):
         self.assertEqual(edited_user.first_name, 'Michael')
         self.assertEqual(edited_user.last_name, 'Lopez')
 
+#Tests for a user to view a list of conversations they're in
 class ConversationsViewTest(MyTestCase):
     def setUp(self):
         super(ConversationsViewTest, self).setUp()
@@ -6255,6 +6328,7 @@ class ConversationsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['conversations']) == 2)
 
+#Tests for a user to start a conversation with another user
 class StartConversationViewTest(MyTestCase):
     def setUp(self):
         super(StartConversationViewTest, self).setUp()
@@ -6332,6 +6406,7 @@ class StartConversationViewTest(MyTestCase):
         self.assertEqual(new_message.author, post_response.wsgi_request.user)
         self.assertEqual(new_message.conversation, new_conversation)
 
+#Tests for a user to view a conversation
 class ConversationDetailViewTest(MyTestCase):
     def setUp(self):
         super(ConversationDetailViewTest, self).setUp()
@@ -6460,6 +6535,7 @@ class ConversationDetailViewTest(MyTestCase):
             })
         self.assertEqual(post_response.status_code, 404)
 
+#Tests for a user to remove themselves from or delete a conversation
 class ConversationDeleteViewTest(MyTestCase):
     def setUp(self):
         super(ConversationDeleteViewTest, self).setUp()
@@ -6570,6 +6646,7 @@ class ConversationDeleteViewTest(MyTestCase):
         for message_id in self.inactive_message_ids:
             self.assertFalse(Message.objects.filter(id=message_id).exists())
 
+#Tests for a user to view their receipts
 class ReceiptListViewTest(MyTestCase):
     def setUp(self):
         super(ReceiptListViewTest, self).setUp()
@@ -6736,6 +6813,7 @@ class ReceiptListViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['receipts']), 0)
 
+#Tests for a user to make a payment to another user
 class MakePaypalPaymentViewTest(MyTestCase):
     def setUp(self):
         super(MakePaypalPaymentViewTest, self).setUp()
@@ -6892,6 +6970,7 @@ class MakePaypalPaymentViewTest(MyTestCase):
         response = self.client.get(reverse('send-payment', args=[str(receipt.id)]))
         self.assertRedirects(response, '/listings/')
 
+#Tests for a user to see details on payment
 class PaypalPaymentMadeViewTest(MyTestCase):
     def setUp(self):
         super(PaypalPaymentMadeViewTest, self).setUp()
@@ -7002,6 +7081,7 @@ class PaypalPaymentMadeViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'receipts/payment_made.html')
 
+#Tests for the view that creates payment details
 class CreatePaymentReceiptViewTest(MyTestCase):
     def setUp(self):
         super(CreatePaymentReceiptViewTest, self).setUp()
@@ -7083,6 +7163,7 @@ class CreatePaymentReceiptViewTest(MyTestCase):
             self.completed_offer_listing_receipt)
         self.assertEqual(payment_notification.type, "Payment Made")
 
+#Tests for a user to delete a receipt
 class ReceiptDeleteViewTest(MyTestCase):
     def setUp(self):
         super(ReceiptDeleteViewTest, self).setUp()
@@ -7399,6 +7480,7 @@ class ReceiptDeleteViewTest(MyTestCase):
         response = self.client.get(reverse('delete-receipt', args=[str(receipt.id)]))
         self.assertRedirects(response, '/listings/')
 
+#Tests for a user to view notifications they have received
 class NotificationListViewTest(MyTestCase):
     def setUp(self):
         super(NotificationListViewTest, self).setUp()
@@ -7483,6 +7565,7 @@ class NotificationListViewTest(MyTestCase):
         notification = Notification.objects.get(id=self.notification_3.id)
         self.assertTrue(notification.unread)
 
+#Tests for a user to delete notifications they have received
 class DeleteNotificationsViewTest(MyTestCase):
     def setUp(self):
         super(DeleteNotificationsViewTest, self).setUp()
@@ -7548,6 +7631,7 @@ class DeleteNotificationsViewTest(MyTestCase):
         self.assertTrue(PaymentNotification.objects.filter(
             id=self.payment_notification_id).exists())
 
+#Tests for a user to favorite a listing
 class FavoriteListingTest(MyTestCase):
     def setUp(self):
         super(FavoriteListingTest, self).setUp()
@@ -7664,6 +7748,7 @@ class FavoriteListingTest(MyTestCase):
         self.assertEqual(post_response.status_code, 200)
         self.assertFalse(Favorite.objects.filter(id=favorite_id).exists())
 
+#Tests for a user to view a list of their favorites
 class FavoritesViewTest(MyTestCase):
     def setUp(self):
         super(FavoritesViewTest, self).setUp()
@@ -7730,6 +7815,7 @@ class FavoritesViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['favorites']) == 1)
 
+#Tests for a user to search for listings
 class SearchListingsViewTest(MyTestCase):
     def setUp(self):
         super(SearchListingsViewTest, self).setUp()
@@ -8222,6 +8308,7 @@ class SearchListingsViewTest(MyTestCase):
             'searchRadius': '0.6700'})
         self.assertEqual(len(response.context['listings']), 1)
 
+#Tests for a superuser to view reports
 class ReportsViewTest(MyTestCase):
     def setUp(self):
         super(ReportsViewTest, self).setUp()
@@ -8271,6 +8358,7 @@ class ReportsViewTest(MyTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context['reports']) == 6)
 
+#Tests for a user to report a listing
 class ReportListingViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to report listing
     def test_redirect_if_not_logged_in(self):
@@ -8321,6 +8409,7 @@ class ReportListingViewTest(MyTestCase):
         self.assertEqual(new_report.reportType, "Listing")
         self.assertEqual(new_report.listing.name, listing.name)
 
+#Tests for a user to report an event
 class ReportEventViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to report event
     def test_redirect_if_not_logged_in(self):
@@ -8372,6 +8461,7 @@ class ReportEventViewTest(MyTestCase):
         self.assertEqual(new_report.reportType, "Event")
         self.assertEqual(new_report.event, event)
 
+#Tests for a user to report a user
 class ReportUserViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to report a user
     def test_redirect_if_not_logged_in(self):
@@ -8423,6 +8513,7 @@ class ReportUserViewTest(MyTestCase):
         self.assertEqual(new_report.reportType, "User")
         self.assertEqual(new_report.user, user)
 
+#Tests for a user to report a wishlist
 class ReportWishlistViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to report a wishlist
     def test_redirect_if_not_logged_in(self):
@@ -8475,6 +8566,7 @@ class ReportWishlistViewTest(MyTestCase):
         self.assertEqual(new_report.reportType, "Wishlist")
         self.assertEqual(new_report.wishlist, wishlist)
 
+#Tests for a user to report an image
 class ReportImageViewTest(MyTestCase):
     #Test to ensure that a user must be logged in to report a image
     def test_redirect_if_not_logged_in(self):
@@ -8527,6 +8619,7 @@ class ReportImageViewTest(MyTestCase):
         self.assertEqual(new_report.reportType, "Image")
         self.assertEqual(new_report.image, image)
 
+#Tests for a user to report a rating
 class ReportRatingViewTest(MyTestCase):
     def setUp(self):
         super(ReportRatingViewTest, self).setUp()
@@ -8589,6 +8682,7 @@ class ReportRatingViewTest(MyTestCase):
         self.assertEqual(new_report.reportType, "Rating")
         self.assertEqual(new_report.rating, rating)
 
+#Tests for a superuser to delete a rating
 class ReportDeleteViewTest(MyTestCase):
     def setUp(self):
         super(ReportDeleteViewTest, self).setUp()
@@ -8644,6 +8738,7 @@ class ReportDeleteViewTest(MyTestCase):
         self.assertRedirects(post_response, reverse('reports'))
         self.assertFalse(Report.objects.filter(id=self.listing_report_id).exists())
 
+#tests for a superuser to take action on a report
 class TakeActionOnReportViewTest(MyTestCase):
     def setUp(self):
         super(TakeActionOnReportViewTest, self).setUp()

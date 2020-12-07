@@ -47,6 +47,7 @@ def index(request):
 
 #Form view for users to sign up to the site
 def signup(request):
+    #Redirect the user if they are already logged in
     if request.user.is_authenticated:
         return redirect('index')
     else:
@@ -81,6 +82,7 @@ def signup(request):
 
                     user.profile.save()
 
+                #Redirect to index page
                 return redirect('index')
         else:
             form = SignUpForm()
@@ -116,12 +118,15 @@ def add_image(request):
         if form.is_valid():
             created_image = form.save()
 
+            #add the tags from the form to image
             clean_tags = form.cleaned_data.get('tags')
             for tag in clean_tags:
                 created_image.tags.add(tag)
 
             created_image.owner = request.user
             created_image.save()
+
+            #Redirect to user's list of images
             return redirect('images')
     else:
         form = AddImageForm()
@@ -179,6 +184,7 @@ class ImageDeleteView(LoginRequiredMixin, generic.DeleteView):
               self.object.delete()
               return HttpResponseRedirect(self.get_success_url())
        else:
+           #redirect if user is not the owner of image
            return redirect('index')
 
 #View for a user to see a list of items they created
@@ -205,12 +211,15 @@ def add_item(request):
         if form.is_valid():
             created_item = form.save()
 
+            #add the images from the form to the item
             clean_images = form.cleaned_data.get('images')
             for image in clean_images:
                 created_item.images.add(image)
 
             created_item.owner = request.user
             created_item.save()
+
+            #redirect to user's list of items
             return redirect('items')
     else:
         form = ItemForm(user=request.user)
@@ -493,9 +502,10 @@ class OfferListingListView(LoginRequiredMixin, generic.ListView):
 
     #Filters the list of offer listings to only show those that belong to the current logged in user
     def get_queryset(self):
-        return OfferListing.objects.filter(owner=self.request.user).order_by('endTime').reverse().annotate(offer_count=Count('offerlisting'))
+        return OfferListing.objects.filter(owner=self.request.user).order_by(
+            'endTime').reverse().annotate(offer_count=Count('offerlisting'))
 
-#Detailed view for all users to see a offer listing (need to add offers for the owner to see later)
+#Detailed view for all users to see a offer listing
 class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
     model = OfferListing
     context_object_name = 'offerlisting'
@@ -518,7 +528,6 @@ class OfferListingDetailView(LoginRequiredMixin, generic.DetailView):
     #If still active, only allow users within a 50 mile radius to view it
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
-        #listing = OfferListing.objects.get(id=obj.offerListing.id)
         if obj.listingCompleted:
             accepted_offer = Offer.objects.get(offerListing = obj) #There will only be one offer associted with listing
             if obj.owner == self.request.user:
@@ -564,6 +573,8 @@ class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
         min_longitude = user_longitude - Decimal.from_float(0.3400)
         max_longitude = user_longitude + Decimal.from_float(0.3400)
 
+        #Retrieves the offer listings that are within a 20 mile raidus of
+        #current user
         listings_ids = [listing.id for listing in OfferListing.objects.all() if listing.listingEnded == False
             and listing.listingCompleted == False]
         queryset = OfferListing.objects.filter(
@@ -574,6 +585,8 @@ class AllOfferListingsListView(LoginRequiredMixin, generic.ListView):
 
         current_date = timezone.localtime(timezone.now())
 
+        #Checks to see if the listing is ending soon and has been favorited
+        #or not by current user
         for obj in queryset:
             time_left = obj.endTime - current_date
             if time_left.total_seconds() <= 1800:
@@ -694,7 +707,10 @@ def update_offer_listing(request, pk):
     current_listing = get_object_or_404(OfferListing, pk=pk)
     existing_objects = Offer.objects.filter(offerListing=current_listing).exists()
 
+    #Check to make sure the owner is editing listing, redirect otherwise
     if request.user == current_listing.owner:
+        #Check to make sure listing is still active and no offers exist
+        #Redirect if not
         if current_listing.listingCompleted != True and current_listing.listingEnded != True and existing_objects != True:
             if request.method == 'POST':
                 form = UpdateOfferListingForm(data=request.POST, user=request.user, instance=current_listing)
@@ -748,7 +764,9 @@ def relist_offer_listing(request, pk):
     current_listing = get_object_or_404(OfferListing, pk=pk)
     existing_offers = Offer.objects.filter(offerListing=current_listing)
 
+    #Check to make sure the owner is relisting listing, redirect otherwise
     if request.user == current_listing.owner:
+        #Check to make sure the listing had ended without being completed
         if current_listing.listingEnded and current_listing.listingCompleted != True:
             if request.method == 'POST':
                 form = OfferListingForm(data=request.POST, user=request.user, instance=current_listing)
@@ -770,7 +788,6 @@ def relist_offer_listing(request, pk):
                                     notification.delete()
 
                         offer.delete()
-                    #existing_offers.delete()
 
                     #Get openToMoneyOffers value from form
                     clean_openToMoneyOffers = form.cleaned_data.get('openToMoneyOffers')
@@ -960,7 +977,8 @@ class AuctionListingListView(LoginRequiredMixin, generic.ListView):
     #Filters the list of auction listings to only show those that belong to the
     #current logged in user along with bids
     def get_queryset(self):
-        return AuctionListing.objects.filter(owner=self.request.user).order_by('endTime').reverse().annotate(bid_count=Count('bids'))
+        return AuctionListing.objects.filter(owner=self.request.user).order_by(
+            'endTime').reverse().annotate(bid_count=Count('bids'))
 
 #Detailed view for all users to see an auction
 class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
@@ -968,6 +986,7 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
     context_object_name = 'auctionlisting'
     template_name = "listings/auction_listing_detail.html"
 
+    #Gets the last bid made on the listing
     def get_last_bid(self):
         try:
             return self.bids.all().reverse()[0]
@@ -979,13 +998,14 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
     #If still active, only allow users within a 50 mile radius to view it
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
-        #listing = OfferListing.objects.get(id=obj.offerListing.id)
         if obj.listingEnded:
             if obj.owner == self.request.user:
+                #Allow owner to view listing after it ended
                 return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
             else:
                 if Bid.objects.filter(auctionListing=obj).exists():
-                    bids = Bid.objects.filter(auctionListing=obj) #There will only be one offer associted with listing
+                    #There will only be one offer associted with listing
+                    bids = Bid.objects.filter(auctionListing=obj)
 
                     if len(bids) > 1:
                         winning_bid = bids.last()
@@ -993,6 +1013,7 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
                         winning_bid = bids.first()
 
                     if winning_bid.bidder == self.request.user:
+                        #Allow owner of winning bid to view listing after it ended
                         return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
                     else:
                         return redirect('index')
@@ -1000,6 +1021,7 @@ class AuctionListingDetailView(LoginRequiredMixin, generic.DetailView):
                     return redirect('index')
         elif self.request.user.is_authenticated:
             if obj.owner == self.request.user:
+                #Allow owner to view listing
                 return super(AuctionListingDetailView, self).dispatch(request, *args, **kwargs)
             else:
                 #Check users location to see if they're within a 50 mile radius
@@ -1035,6 +1057,8 @@ class AllAuctionListingsListView(LoginRequiredMixin, generic.ListView):
         min_longitude = user_longitude - Decimal.from_float(0.3400)
         max_longitude = user_longitude + Decimal.from_float(0.3400)
 
+        #Retrieves the auction listings that are within a 20 mile raidus of
+        #current user
         listings_ids = [listing.id for listing in AuctionListing.objects.all() if listing.listingEnded == False]
         queryset = AuctionListing.objects.filter(
             id__in=listings_ids,
@@ -1044,6 +1068,8 @@ class AllAuctionListingsListView(LoginRequiredMixin, generic.ListView):
 
         current_date = timezone.localtime(timezone.now())
 
+        #Checks to see if the listing is ending soon and has been favorited
+        #or not by current user
         for obj in queryset:
             time_left = obj.endTime - current_date
             if time_left.total_seconds() <= 1800:
@@ -1167,7 +1193,9 @@ def relist_auction_listing(request, pk):
     #Get the listing to be relisted
     current_listing = get_object_or_404(AuctionListing, pk=pk)
 
+    #Check to make sure owner is relisting listing, redirect otherwise
     if current_listing.owner == request.user:
+        #Only allow owner to relist if auction ended with no bids
         if current_listing.listingEnded and current_listing.bids.count() == 0:
             if request.method == 'POST':
                 form = AuctionListingForm(data=request.POST, user=request.user, instance=current_listing)
@@ -1285,6 +1313,7 @@ def create_offer(request, pk):
     #Check to ensure listing is still active
     if current_listing.listingEnded or current_listing.listingCompleted:
         return redirect('index')
+    #Else only allow nearby users to place offers
     elif ((lat_dif >= -0.83 and lat_dif <= 0.83)
         and (lon_dif >= -0.83 and lon_dif <= 0.83)):
         #Check to ensure the listing owner cant create an offer for their own listing
@@ -1601,6 +1630,7 @@ def create_bid(request, pk):
     #Check to make sure listing is still active
     if current_listing.listingEnded:
         return redirect('index')
+    #Else only allow nearby users to place bids
     elif ((lat_dif >= -0.83 and lat_dif <= 0.83)
         and (lon_dif >= -0.83 and lon_dif <= 0.83)):
         #Check to ensure that the auction owner cannot bid on their own auction
@@ -2084,12 +2114,6 @@ def edit_wishlist(request, pk):
     #get wishlist object being edited
     current_wishlist = get_object_or_404(Wishlist, pk=pk)
 
-    #check to see if user already has made a wishlist, if so redirect to index
-    """try:
-        wishlist = request.user.wishlist
-    except Wishlist.DoesNotExist:
-        wishlist = None"""
-
     #Check to make sure the wishlist's owner is the one editing, if not redirect
     if current_wishlist.owner != request.user:
         return redirect('index')
@@ -2203,6 +2227,8 @@ class AllWishlistListingsListView(LoginRequiredMixin, generic.ListView):
         min_longitude = user_longitude - Decimal.from_float(0.3400)
         max_longitude = user_longitude + Decimal.from_float(0.3400)
 
+        #Retrieves the offer listings that are within a 20 mile raidus of
+        #current user
         listings_ids = [listing.id for listing in WishlistListing.objects.all()
             if listing.listingEnded == False]
         queryset = WishlistListing.objects.filter(
@@ -2211,6 +2237,7 @@ class AllWishlistListingsListView(LoginRequiredMixin, generic.ListView):
             longitude__range=[min_longitude, max_longitude],
         ).order_by('id').reverse()
 
+        #Checks to see if the listing has been favorited or not by current user
         for obj in queryset:
             if Favorite.objects.filter(listing=obj, user=self.request.user).exists():
                 obj.favorited = True
@@ -2373,7 +2400,7 @@ def relist_wishlist_listing(request, pk):
     #Get the listing to be relisted
     current_listing = get_object_or_404(WishlistListing, pk=pk)
 
-    #check to see if user has made a wishlist before relistng a listing,
+    #check to see if user has made a wishlist before relisting a listing,
     #if not redirect to index
     try:
         wishlist = request.user.wishlist
@@ -3401,7 +3428,6 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
             if (notification.active == True
             and notification.user == self.request.user)]
         notifications = Notification.objects.filter(id__in=notifications_ids).order_by('creationDate').reverse()
-        #notifications = Notification.objects.filter(user=self.request.user).order_by('id')
 
         #Get the subclass objects related to the notification
         if notifications:
@@ -3467,7 +3493,7 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
         return notifications
 
 #View method to delete a list of notifications selected by a user
-@csrf_exempt #Add this too.
+@csrf_exempt
 def delete_notifications(request, id=None):
     if request.method == 'POST':
         notification_id_list = request.POST.getlist('data')
@@ -3495,11 +3521,13 @@ def favorite_listing(request):
             listing_id = request.POST['listing_id']
             listing = get_object_or_404(Listing, pk=listing_id)
 
+            #Unfavorite the listing if it was already favorited by the user
             if Favorite.objects.filter(listing=listing, user=request.user).exists():
                 favorite_obj = Favorite.objects.get(listing=listing, user=request.user)
                 favorite_obj.delete()
                 return HttpResponse('Listing unfavorited', status=200)
             else:
+                #Create a favorite using the listing if they do not own listing
                 if listing.owner != request.user:
                     if OfferListing.objects.filter(id=listing.id).exists():
                         listing_type = "Offer Listing"
@@ -3593,6 +3621,7 @@ def search_listings(request):
         min_longitude = user_longitude - Decimal.from_float(0.3400)
         max_longitude = user_longitude + Decimal.from_float(0.3400)
 
+    #split words in name parameter by commas
     if name_parameters:
         if ' ' in name_parameters and ',' in name_parameters:
             name_param_list = name_parameters.replace(' ', '').split(',')
@@ -3601,6 +3630,7 @@ def search_listings(request):
         else:
             name_param_list = name_parameters
 
+    #split the list of tags given
     if tag_parameters:
         tags_param_list = []
 
@@ -3653,6 +3683,7 @@ def search_listings(request):
                     items__in=item_ids
                 ).distinct().order_by('id').reverse()
 
+            #Check to see if listing is ending soon and if it has been favorited
             for obj in queryset:
                 time_left = obj.endTime - current_date
                 if time_left.total_seconds() <= 1800:
@@ -3704,6 +3735,7 @@ def search_listings(request):
                     items__in=item_ids
                 ).distinct().order_by('id').reverse()
 
+            #Check to see if listing is ending soon and if it has been favorited
             for obj in queryset:
                 time_left = obj.endTime - current_date
                 if time_left.total_seconds() <= 1800:
@@ -3756,6 +3788,7 @@ def search_listings(request):
                     itemsOffer__in=item_ids
                 ).distinct().order_by('id').reverse()
 
+            #Check to see if listing has been favorited
             for obj in queryset:
                 if Favorite.objects.filter(listing=obj, user=request.user).exists():
                     obj.favorited = True
@@ -3801,6 +3834,7 @@ def search_listings(request):
                     items__in=item_ids
                 ).distinct().order_by('id').reverse()
 
+            #Check to see if listing is ending soon and if it has been favorited
             for obj in queryset:
                 time_left = obj.endTime - current_date
                 if time_left.total_seconds() <= 1800:
@@ -3852,6 +3886,7 @@ def search_listings(request):
                     items__in=item_ids
                 ).distinct().order_by('id').reverse()
 
+            #Check to see if listing is ending soon and if it has been favorited
             for obj in queryset:
                 time_left = obj.endTime - current_date
                 if time_left.total_seconds() <= 1800:
@@ -3902,6 +3937,7 @@ def search_listings(request):
                     itemsOffer__in=item_ids
                 ).distinct().order_by('id').reverse()
 
+            #Check to see if lisitng has been favorited
             for obj in queryset:
 
                 if Favorite.objects.filter(listing=obj, user=request.user).exists():
@@ -3938,6 +3974,7 @@ def search_listings(request):
                 name__icontains=name_param_list
             ).distinct().order_by('id').reverse()
 
+            #Check to see if listing is ending soon and if it has been favorited
             for obj in queryset:
                 time_left = obj.endTime - current_date
                 if time_left.total_seconds() <= 1800:
@@ -3977,6 +4014,7 @@ def search_listings(request):
                 name__icontains=name_param_list
             ).distinct().order_by('id').reverse()
 
+            #Check to see if listing is ending soon and if it has been favorited
             for obj in queryset:
                 time_left = obj.endTime - current_date
                 if time_left.total_seconds() <= 1800:
@@ -4017,6 +4055,7 @@ def search_listings(request):
                 name__icontains=name_param_list
             ).distinct().order_by('id').reverse()
 
+            #Check to see if listing has been favorited
             for obj in queryset:
                 if Favorite.objects.filter(listing=obj, user=request.user).exists():
                     obj.favorited = True
@@ -4051,6 +4090,7 @@ def search_listings(request):
                 longitude__range=[min_longitude, max_longitude]
             ).order_by('id').reverse()
 
+            #Check to see if listing is ending soon and if it has been favorited
             for obj in queryset:
                 time_left = obj.endTime - current_date
                 if time_left.total_seconds() <= 1800:
@@ -4089,6 +4129,7 @@ def search_listings(request):
                 longitude__range=[min_longitude, max_longitude]
             ).order_by('id').reverse()
 
+            #Check to see if listing is ending soon and if it has been favorited
             for obj in queryset:
                 time_left = obj.endTime - current_date
                 if time_left.total_seconds() <= 1800:
@@ -4128,6 +4169,7 @@ def search_listings(request):
                 longitude__range=[min_longitude, max_longitude]
             ).order_by('id').reverse()
 
+            #Check to see if listing has been favorited
             for obj in queryset:
                 if Favorite.objects.filter(listing=obj, user=request.user).exists():
                     obj.favorited = True
